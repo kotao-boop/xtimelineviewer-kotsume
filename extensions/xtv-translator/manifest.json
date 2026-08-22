@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "X Timeline Translator",
+  "version": "1.0.0",
+  "description": "XTimelineViewer用 ツイート自動翻訳拡張機能",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://translate.googleapis.com/*",
+    "https://x.com/*",
+    "https://twitter.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "48": "icon.png"
+  }
+}

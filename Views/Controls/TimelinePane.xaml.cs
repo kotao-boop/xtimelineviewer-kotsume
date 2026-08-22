@@ -40,6 +40,7 @@ namespace XTimelineViewer.Views.Controls
             ToolTipService.SetToolTip(AutoLoadIcon, AutoLoadTooltip);
             RefreshLocalizedText();
             UpdateUrlHeader();
+            InitializeResizeGrip();
 
             // ヘッダーをクリックしたら自分をアクティブにする。
             // 以前は MainWindow が headerGrid に直接購読していた。
@@ -48,6 +49,86 @@ namespace XTimelineViewer.Views.Controls
             {
                 SetFocus();
                 _webView.Source = new Uri(Config.Url);
+            };
+        }
+
+        // ── ドラッグリサイズ ────────────────────────────────────
+        private bool _isResizing = false;
+        private double _resizeStartPointerX;
+        private double _resizeStartWidth;
+
+        /// <summary>横幅がドラッグによって変更・確定された時のイベント</summary>
+        internal event Action<TimelinePane, double>? WidthResized;
+
+        private void InitializeResizeGrip()
+        {
+            ResizeGrip.PointerEntered += (s, e) =>
+            {
+                if (!_isResizing)
+                {
+                    ResizeGripBar.Opacity = 0.6;
+                    try { this.ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast); } catch { }
+                }
+            };
+
+            ResizeGrip.PointerExited += (s, e) =>
+            {
+                if (!_isResizing)
+                {
+                    ResizeGripBar.Opacity = 0.0;
+                    try { this.ProtectedCursor = null; } catch { }
+                }
+            };
+
+            ResizeGrip.PointerPressed += (s, e) =>
+            {
+                var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
+                if (pt.Properties.IsLeftButtonPressed)
+                {
+                    _isResizing = true;
+                    _resizeStartPointerX = pt.Position.X;
+                    _resizeStartWidth = this.ActualWidth > 0 ? this.ActualWidth : (double.IsNaN(this.Width) ? Config.Width : this.Width);
+                    ResizeGrip.CapturePointer(e.Pointer);
+                    ResizeGripBar.Opacity = 1.0;
+                    e.Handled = true;
+                }
+            };
+
+            ResizeGrip.PointerMoved += (s, e) =>
+            {
+                if (_isResizing)
+                {
+                    var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
+                    var deltaX = pt.Position.X - _resizeStartPointerX;
+                    var newWidth = Math.Clamp(_resizeStartWidth + deltaX, 220, 1600);
+                    this.Width = newWidth;
+                    Config.Width = newWidth;
+                    e.Handled = true;
+                }
+            };
+
+            ResizeGrip.PointerReleased += (s, e) =>
+            {
+                if (_isResizing)
+                {
+                    _isResizing = false;
+                    ResizeGrip.ReleasePointerCapture(e.Pointer);
+                    ResizeGripBar.Opacity = 0.0;
+                    try { this.ProtectedCursor = null; } catch { }
+                    WidthResized?.Invoke(this, this.Width);
+                    e.Handled = true;
+                }
+            };
+
+            ResizeGrip.PointerCaptureLost += (s, e) =>
+            {
+                if (_isResizing)
+                {
+                    _isResizing = false;
+                    ResizeGripBar.Opacity = 0.0;
+                    try { this.ProtectedCursor = null; } catch { }
+                    WidthResized?.Invoke(this, this.Width);
+                }
             };
         }
 

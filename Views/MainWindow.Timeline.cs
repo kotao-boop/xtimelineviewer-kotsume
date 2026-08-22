@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -54,6 +54,9 @@ namespace XTimelineViewer.Views
         {
             foreach (var cfg in TimelineStore.Load(SaveFilePath))
                 AddTimeline(cfg);
+
+            if (_appSettings.LayoutMode != "Classic")
+                ApplyLayoutMode(_appSettings.LayoutMode);
         }
 
 
@@ -177,12 +180,160 @@ namespace XTimelineViewer.Views
             pane.SetAutoLoadIndicator(glyph, opacity, R.Get(tipKey));
         }
 
+        private List<TimelinePane> GetAllPanes()
+        {
+            var list = new List<TimelinePane>();
+            list.AddRange(TimelinePanel.Children.OfType<TimelinePane>());
+            list.AddRange(TimelineGrid.Children.OfType<TimelinePane>());
+            return list;
+        }
+
+        // ── レイアウトテンプレート切替 ─────────────────────────────────
+
+        private void LayoutMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is string mode)
+            {
+                _appSettings.LayoutMode = mode;
+                SaveSettings();
+                ApplyLayoutMode(mode);
+            }
+        }
+
+        private void ApplyLayoutMode(string? mode = null)
+        {
+            mode ??= _appSettings.LayoutMode ?? "Classic";
+
+            var panes = GetAllPanes();
+            if (panes.Count == 0) return;
+
+            if (mode == "Classic")
+            {
+                TimelineGrid.Visibility = Visibility.Collapsed;
+                TimelineScroll.Visibility = Visibility.Visible;
+
+                TimelineGrid.Children.Clear();
+                TimelineGrid.RowDefinitions.Clear();
+                TimelineGrid.ColumnDefinitions.Clear();
+
+                TimelinePanel.Children.Clear();
+                foreach (var pane in panes)
+                {
+                    pane.Width = double.IsNaN(pane.Config.Width) || pane.Config.Width <= 0 ? 350 : pane.Config.Width;
+                    pane.HorizontalAlignment = HorizontalAlignment.Left;
+                    pane.VerticalAlignment = VerticalAlignment.Stretch;
+                    TimelinePanel.Children.Add(pane);
+                }
+            }
+            else
+            {
+                TimelineScroll.Visibility = Visibility.Collapsed;
+                TimelineGrid.Visibility = Visibility.Visible;
+
+                TimelinePanel.Children.Clear();
+                TimelineGrid.Children.Clear();
+                TimelineGrid.RowDefinitions.Clear();
+                TimelineGrid.ColumnDefinitions.Clear();
+
+                if (mode == "Grid2x2")
+                {
+                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                    for (int i = 0; i < panes.Count; i++)
+                    {
+                        var p = panes[i];
+                        p.Width = double.NaN;
+                        p.HorizontalAlignment = HorizontalAlignment.Stretch;
+                        p.VerticalAlignment = VerticalAlignment.Stretch;
+                        int r = (i / 2) % 2;
+                        int c = i % 2;
+                        Grid.SetRow(p, r);
+                        Grid.SetColumn(p, c);
+                        TimelineGrid.Children.Add(p);
+                    }
+                }
+                else if (mode == "Grid2x3")
+                {
+                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                    for (int i = 0; i < panes.Count; i++)
+                    {
+                        var p = panes[i];
+                        p.Width = double.NaN;
+                        p.HorizontalAlignment = HorizontalAlignment.Stretch;
+                        p.VerticalAlignment = VerticalAlignment.Stretch;
+                        int r = (i / 3) % 2;
+                        int c = i % 3;
+                        Grid.SetRow(p, r);
+                        Grid.SetColumn(p, c);
+                        TimelineGrid.Children.Add(p);
+                    }
+                }
+                else if (mode == "VerticalSplit")
+                {
+                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                    for (int i = 0; i < panes.Count; i++)
+                    {
+                        var p = panes[i];
+                        p.Width = double.NaN;
+                        p.HorizontalAlignment = HorizontalAlignment.Stretch;
+                        p.VerticalAlignment = VerticalAlignment.Stretch;
+                        int r = i % 2;
+                        Grid.SetRow(p, r);
+                        Grid.SetColumn(p, 0);
+                        TimelineGrid.Children.Add(p);
+                    }
+                }
+                else if (mode == "Focus")
+                {
+                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.4, GridUnitType.Star) });
+                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                    for (int i = 0; i < panes.Count; i++)
+                    {
+                        var p = panes[i];
+                        p.Width = double.NaN;
+                        p.HorizontalAlignment = HorizontalAlignment.Stretch;
+                        p.VerticalAlignment = VerticalAlignment.Stretch;
+                        if (i == 0)
+                        {
+                            Grid.SetRow(p, 0);
+                            Grid.SetRowSpan(p, 2);
+                            Grid.SetColumn(p, 0);
+                        }
+                        else
+                        {
+                            int r = (i - 1) % 2;
+                            Grid.SetRow(p, r);
+                            Grid.SetRowSpan(p, 1);
+                            Grid.SetColumn(p, 1);
+                        }
+                        TimelineGrid.Children.Add(p);
+                    }
+                }
+            }
+
+            RefreshTimelineNumbers();
+        }
+
         // ── タイムライン番号バッジ / 番号フォーカス（#225）──────────────────────
-        // 表示順（TimelinePanel の子の並び）に従って 1..9 を割り当てる。10 個目以降はバッジ非表示。
+        // 表示順に従って 1..9 を割り当てる。10 個目以降はバッジ非表示。
         private void RefreshTimelineNumbers()
         {
             int n = 1;
-            foreach (var pane in TimelinePanel.Children.OfType<TimelinePane>())
+            foreach (var pane in GetAllPanes())
             {
                 pane.SetNumber(n <= 9 ? n : null);
                 n++;
@@ -192,20 +343,19 @@ namespace XTimelineViewer.Views
         // Ctrl+数字 で、表示順 oneBased 番目のタイムラインをアクティブ化する。
         private void FocusTimelineByIndex(int oneBased)
         {
-            var panes = TimelinePanel.Children.OfType<TimelinePane>().ToList();
+            var panes = GetAllPanes();
             int i = oneBased - 1;
             if (i < 0 || i >= panes.Count) return;
             {
                 panes[i].SetFocus();
-                panes[i].StartBringIntoView();  // 視界外なら横スクロールして表示（#231）
+                panes[i].StartBringIntoView();
             }
         }
 
         // Ctrl+←/→（WebView2 非フォーカス時）。現在アクティブなペインを基準に隣へ移動する。
-        // 未フォーカス時は先頭（→）/末尾（←）を基準にフォールバック。端では止まる（ラップしない）。
         private void FocusAdjacentFromActive(int direction)
         {
-            var panes = TimelinePanel.Children.OfType<TimelinePane>().ToList();
+            var panes = GetAllPanes();
             if (panes.Count == 0) return;
 
             int cur = _focusedPane is null ? -1 : panes.IndexOf(_focusedPane);
@@ -297,6 +447,9 @@ namespace XTimelineViewer.Views
                 RefreshPaneThemes();
             };
 
+            // 手動ドラッグによる幅変更を保存する
+            pane.WidthResized += (p, w) => SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
+
             TimelinePanel.Children.Add(pane);
             ApplyPaneTheme(pane);
             RefreshTimelineNumbers();  // 番号バッジを振り直す（#225）
@@ -343,6 +496,11 @@ namespace XTimelineViewer.Views
             pane.SettingsButton.Click += async (s, e2) => await ShowPaneSettingsDialogAsync(pane);
 
             InitWebViewAsync(pane.WebView, cfg).FireAndForget(nameof(InitWebViewAsync));
+
+            if (_appSettings.LayoutMode != "Classic")
+            {
+                ApplyLayoutMode(_appSettings.LayoutMode);
+            }
         }
 
         // ⚙ でプロファイルを切り替えると WebView2 を作り直すので、
