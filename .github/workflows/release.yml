@@ -48,8 +48,13 @@ jobs:
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
-          Compress-Archive -Path publish/x64/*   -DestinationPath "XTimelineViewer-$tag-win-x64.zip"
-          Compress-Archive -Path publish/arm64/* -DestinationPath "XTimelineViewer-$tag-win-arm64.zip"
+          Compress-Archive -Path publish/x64/*   -DestinationPath "XTimelineViewer-Kotsume-$tag-win-x64-Portable.zip"
+          Compress-Archive -Path publish/arm64/* -DestinationPath "XTimelineViewer-Kotsume-$tag-win-arm64-Portable.zip"
+
+      - name: Setup Inno Setup
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: scripts/installer.iss
 
       - name: Create or update GitHub Release
         shell: bash
@@ -57,34 +62,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${{ github.ref_name }}"
-          if gh release view "$tag" > /dev/null 2>&1; then
-            gh release upload "$tag" \
-              "XTimelineViewer-${tag}-win-x64.zip" \
-              "XTimelineViewer-${tag}-win-arm64.zip" \
-              --clobber
-          else
-            gh release create "$tag" \
-              "XTimelineViewer-${tag}-win-x64.zip" \
-              "XTimelineViewer-${tag}-win-arm64.zip" \
-              --title "$tag" \
-              --generate-notes
+          files=(
+            "XTimelineViewer-Kotsume-${tag}-win-x64-Portable.zip"
+            "XTimelineViewer-Kotsume-${tag}-win-arm64-Portable.zip"
+          )
+          if [ -f "dist/XTimelineViewer-Kotsume-v2.1.0-Setup.exe" ]; then
+            files+=("dist/XTimelineViewer-Kotsume-v2.1.0-Setup.exe")
           fi
-
-      # winget-pkgs の fork が upstream から遅れていると、次の winget 公開が
-      # 「does not have the correct permissions to execute `CreateRef`」で失敗する
-      # （権限エラーに見えるが実体は fork の同期ずれ。winget-releaser#319）。
-      # 毎回ここで fork を同期しておく。失敗しても公開自体は試みる。
-      - name: Sync winget-pkgs fork
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.WINGET_TOKEN }}
-        run: |
-          gh api -X POST repos/daruyanagi/winget-pkgs/merge-upstream \
-            -f branch=master --jq '.message'
-
-      - name: Publish to winget
-        uses: vedantmgoyal9/winget-releaser@v2
-        with:
-          identifier: daruyanagi.XTimelineViewer
-          installers-regex: \.zip$
-          token: ${{ secrets.WINGET_TOKEN }}
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release upload "$tag" "${files[@]}" --clobber
+          else
+            gh release create "$tag" "${files[@]}" --title "$tag" --generate-notes
+          fi

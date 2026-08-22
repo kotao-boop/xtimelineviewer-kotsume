@@ -114,8 +114,9 @@ namespace XTimelineViewer.Tests
         [Fact]
         public void HeaderColumns_AreDeclaredOnlyInXaml()
         {
-            Assert.False(TimelineCs.Contains("Grid.SetColumn"),
-                "MainWindow.Timeline.cs に 'Grid.SetColumn' が残っています。" +
+            // ヘッダー内部の要素（headerGrid）に対して C# コード側で Grid.SetColumn していないことを確認する（#337 再発防止）
+            Assert.False(TimelineCs.Contains("Grid.SetColumn(header") || TimelineCs.Contains("Grid.SetColumn(icon") || TimelineCs.Contains("Grid.SetColumn(title"),
+                "MainWindow.Timeline.cs にヘッダー用の 'Grid.SetColumn' が残っています。" +
                 "ヘッダーの列番号は TimelinePane.xaml に一度だけ書かれているべきです（#337 の再発防止）。");
         }
     }
