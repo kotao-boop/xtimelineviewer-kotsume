@@ -100,3 +100,4 @@ X（旧 Twitter）の複数タイムラインを並列表示できる、軽量�
 - **ライセンス**: [MIT License](LICENSE)
 - **原作者**: [daruyanagi](https://github.com/daruyanagi)（[Original XTimelineViewer Repository](https://github.com/daruyanagi/XTimelineViewer)）
 - **カスタマイズ & 拡張**: Kotsume Project
+- **コード署名**: Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/)
