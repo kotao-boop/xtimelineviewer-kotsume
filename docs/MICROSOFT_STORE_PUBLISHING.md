@@ -13,14 +13,14 @@ Store外でサイドロードするMSIXは署名されない。
 
 ## 現在止めている理由
 
-`Package.appxmanifest`には派生元のStore Identityが残っている。
+派生元のStore Identityは削除済みで、現在は誤提出を防ぐ開発用Identityを使用している。
 
-- `Name="4275.XTimelineViewer"`
-- `Publisher="CN=B73FDB0C-06E5-4824-9E7F-3AF969921DF4"`
-- `PublisherDisplayName="だるやなぎ"`
+- `Name="XTimelineViewerKotsume.Development"`
+- `Publisher="CN=Kotsume Development"`
+- `PublisherDisplayName="Kotsume Project"`
 
-これらをKotsume Editionが推測で再利用してはいけない。Partner CenterでKotsume Edition用の製品名を
-予約した後、Product managementに表示される正確なIdentity値へ置き換える。
+この開発用IdentityをStoreへ提出してはいけない。Partner CenterでKotsume Edition用の製品名を予約した後、
+Product managementに表示される正確なIdentity値へ置き換える。
 
 ## 利用者本人が行う必要がある手順
 
@@ -41,6 +41,15 @@ Store外でサイドロードするMSIXは署名されない。
 5. Partner Centerへ提出し、認定結果を確認する。
 6. Store版とGitHub版の更新経路・署名状態をREADMEで区別する。
 
+提出前の全確認は `docs/store/SUBMISSION_CHECKLIST.md`、認証担当者向け説明は
+`docs/store/CERTIFICATION_NOTES_TEMPLATE.md` を使う。
+
+Partner Centerの正確なIdentityへ置き換えた後は、GitHub Actionsの
+`Microsoft Store Package Candidate` を手動実行する。開発用Identityが残っている間は
+`scripts/test-store-readiness.ps1` が意図的に失敗し、提出候補を生成しない。生成したmsixuploadは
+公開Releaseへ出さず、Partner Center提出とWACK確認だけに使う。Actions artifactも公開リポジトリの
+閲覧者が取得できる場合があるため、名前に `UNSIGNED` と `NOT-FOR-DISTRIBUTION` を付ける。
+
 ## 審査前に説明する通信
 
 - XをWebView2で表示すること
@@ -54,5 +63,6 @@ Store外でサイドロードするMSIXは署名されない。
 - Kotsume Editionという製品名がPartner Centerで予約可能か
 - 現在の `runFullTrust`、WebView2、拡張読み込みがStore認定を通るか
 - XおよびGoogle側の規約と、Storeの最新ポリシーに照らした最終的な許容範囲
+- 他の利用者が書いた投稿をGoogleへ送る翻訳について、Storeポリシー10.5.3がどのように適用されるか
 
 審査通過を事前に断定せず、実際のPartner Centerと認定結果を優先する。

@@ -1,4 +1,4 @@
-name: GitHub Release
+name: Release Candidate
 
 on:
   push:
@@ -6,19 +6,18 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
-  id-token: write
-  attestations: write
+  contents: read
 
 jobs:
-  build-test-and-release:
-    runs-on: windows-latest
+  build-test-and-stage:
+    runs-on: windows-2025
 
     steps:
       - name: Checkout the tagged source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Verify tag and release versions
         id: version
@@ -51,11 +50,17 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '8.0.424'
+
+      - name: Restore locked dependencies
+        shell: pwsh
+        run: |
+          dotnet restore XTimelineViewer.csproj --locked-mode --nologo
+          dotnet restore XTimelineViewer.Tests/XTimelineViewer.Tests.csproj --locked-mode --nologo
 
       - name: Run unit tests
         shell: pwsh
-        run: dotnet test XTimelineViewer.Tests/XTimelineViewer.Tests.csproj -c Release --nologo
+        run: dotnet test XTimelineViewer.Tests/XTimelineViewer.Tests.csproj -c Release --no-restore --nologo
 
       - name: Validate translator JavaScript
         shell: pwsh
@@ -70,7 +75,7 @@ jobs:
           dotnet publish XTimelineViewer.csproj
           -c Release -r win-x64 -p:Platform=x64 -p:EffectivePlatform=x64
           -p:WindowsPackageType=None -p:SelfContained=true
-          -o publish/x64
+          --no-restore -o publish/x64
 
       - name: Publish app (arm64)
         shell: pwsh
@@ -78,7 +83,7 @@ jobs:
           dotnet publish XTimelineViewer.csproj
           -c Release -r win-arm64 -p:Platform=arm64 -p:PlatformTarget=arm64 -p:EffectivePlatform=arm64
           -p:WindowsPackageType=None -p:SelfContained=true
-          -o publish/arm64
+          --no-restore -o publish/arm64
 
       - name: Build launchers from source
         shell: pwsh
@@ -87,6 +92,25 @@ jobs:
           ./tools/launcher/build-launcher.ps1 -Architecture arm64
           Copy-Item tools/launcher/build/x64/xtv.exe publish/x64/xtv.exe -Force
           Copy-Item tools/launcher/build/arm64/xtv.exe publish/arm64/xtv.exe -Force
+
+      - name: Collect exact license and third-party notices
+        shell: pwsh
+        run: |
+          ./scripts/collect-legal-notices.ps1 -Destination publish/x64
+          ./scripts/collect-legal-notices.ps1 -Destination publish/arm64
+
+      - name: Separate debug symbols from public payloads
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path symbols/x64, symbols/arm64 -Force | Out-Null
+          Get-ChildItem publish/x64 -Filter *.pdb -File | Move-Item -Destination symbols/x64
+          Get-ChildItem publish/arm64 -Filter *.pdb -File | Move-Item -Destination symbols/arm64
+
+      - name: Verify existing third-party signatures
+        shell: pwsh
+        run: |
+          ./scripts/verify-third-party-signatures.ps1 -Directory publish/x64
+          ./scripts/verify-third-party-signatures.ps1 -Directory publish/arm64
 
       - name: Verify first-party product metadata
         shell: pwsh
@@ -114,6 +138,13 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          $warning = @'
+          UNSIGNED RELEASE CANDIDATE - DO NOT DISTRIBUTE
+          This package has not passed SignPath signing, timestamp, final hash or attestation verification.
+          It is not an official XTimelineViewer Kotsume Edition release.
+          '@
+          $warning | Set-Content publish/x64/UNSIGNED-DO-NOT-DISTRIBUTE.txt -Encoding utf8
+          $warning | Set-Content publish/arm64/UNSIGNED-DO-NOT-DISTRIBUTE.txt -Encoding utf8
           New-Item -ItemType Directory -Path release-artifacts -Force | Out-Null
           Compress-Archive -Path publish/x64/* `
             -DestinationPath "release-artifacts/XTimelineViewer-Kotsume-$env:RELEASE_TAG-win-x64-Portable.zip"
@@ -128,7 +159,7 @@ jobs:
           path: scripts/installer.iss
           options: /DMyAppVersion=${{ steps.version.outputs.version }}
 
-      - name: Collect installer and create SHA-256 files
+      - name: Collect unsigned installer candidate
         shell: pwsh
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
@@ -137,27 +168,29 @@ jobs:
           if (-not (Test-Path $installer)) { throw "Installer was not created: $installer" }
           Copy-Item $installer release-artifacts/ -Force
 
-          Get-ChildItem release-artifacts -File | ForEach-Object {
-            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$hash  $($_.Name)" | Set-Content "$($_.FullName).sha256" -Encoding ascii -NoNewline
-          }
-
-      - name: Attest release artifacts
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
-        with:
-          subject-path: |
-            release-artifacts/*.exe
-            release-artifacts/*.zip
-
-      - name: Create or update GitHub Release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Mark candidate as unsigned and not for distribution
+        shell: pwsh
         run: |
-          tag="${{ github.ref_name }}"
-          mapfile -t files < <(find release-artifacts -maxdepth 1 -type f -print | sort)
-          if gh release view "$tag" > /dev/null 2>&1; then
-            gh release upload "$tag" "${files[@]}" --clobber
-          else
-            gh release create "$tag" "${files[@]}" --title "$tag" --generate-notes
-          fi
+          @'
+          UNSIGNED RELEASE CANDIDATE - DO NOT DISTRIBUTE
+          This artifact has not passed SignPath signing, timestamp, final hash or attestation verification.
+          It is not an official XTimelineViewer Kotsume Edition release.
+          '@ | Set-Content release-artifacts/UNSIGNED-DO-NOT-DISTRIBUTE.txt -Encoding utf8
+
+      # SignPath承認前はGitHub Releaseへ公開しない。Actions artifactは公開リポジトリの閲覧者が
+      # 取得できる場合があるため、名前と同梱文書の両方で未署名候補だと明示する。
+      - name: Upload unsigned release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: UNSIGNED-DO-NOT-DISTRIBUTE-${{ github.ref_name }}-${{ github.sha }}
+          path: release-artifacts/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload debug symbols artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: debug-symbols-${{ github.ref_name }}-${{ github.sha }}
+          path: symbols/
+          if-no-files-found: error
+          retention-days: 14

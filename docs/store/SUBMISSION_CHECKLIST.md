@@ -1,0 +1,72 @@
+# Microsoft Store 提出チェックリスト
+
+このチェックリストは、Partner CenterのIdentityを取得した後に使います。現在の
+`Package.appxmanifest` は開発用Identityであり、そのまま提出できません。
+
+## 1. アカウントと製品Identity
+
+- [ ] Partner Centerの本人確認が完了している
+- [ ] `XTimelineViewer Kotsume Edition` または正式な公開名を予約した
+- [ ] Product identityの `Name` を記録した
+- [ ] Product identityの `Publisher` を記録した
+- [ ] 公開する `Publisher display name` を確認した
+- [ ] 認証情報、回復コード、本人確認資料をリポジトリへ保存していない
+
+## 2. manifest
+
+- [ ] `Name="XTimelineViewerKotsume.Development"` をPartner Centerの値へ置き換えた
+- [ ] `Publisher="CN=Kotsume Development"` をPartner Centerの値へ置き換えた
+- [ ] アプリ版と4桁のパッケージ版を一致させた
+- [ ] x64とARM64の両方を含む提出用パッケージを生成した
+- [ ] `internetClient` が実際のHTTPS通信に必要であることを説明できる
+- [ ] `runFullTrust` がWinUI 3デスクトップ機能に必要であることを説明できる
+- [ ] `scripts/test-store-readiness.ps1` が `-AllowDevelopmentIdentity` なしで成功する
+
+## 3. プライバシー
+
+- [ ] `PRIVACY.md`を一般公開のHTTPS URLで閲覧できる
+- [ ] X、Google、GitHub、Microsoftへの通信を掲載文でも説明した
+- [ ] 翻訳が初期OFFであることを確認した
+- [ ] 同意前に翻訳通信が発生しないことを通信ログで確認した
+- [ ] 「同意設定」から同意を取り消せることを確認した
+- [ ] 取り消した後、再同意するまで翻訳通信が発生しないことを確認した
+- [ ] 他の利用者が書いた投稿をGoogleへ送る設計について、Storeポリシー10.5.3の扱いをMicrosoftへ確認した
+
+## 4. セキュリティと動作確認
+
+- [ ] 細工した `.url` がタイムラインとして追加されないことを確認した
+- [ ] X以外のオリジンからWebViewネイティブメッセージを呼べないことを確認した
+- [ ] `file:`、`javascript:`、独自URIスキームを外部起動しないことを確認した
+- [ ] MSIX版が同梱済み拡張だけを読み込むことを確認した
+- [ ] Windows 10 22H2、Windows 11、Windows 11 ARM64で実機確認した
+- [ ] WebView2 Runtimeがない環境で、分かりやすい案内または導入処理が動くことを確認した
+- [ ] Windows App Certification Kitがx64/ARM64の両方で合格した
+
+## 5. Partner Center掲載情報
+
+- [ ] 日本語・英語の説明文
+- [ ] 正確なスクリーンショット
+- [ ] アプリアイコン
+- [ ] カテゴリと年齢区分
+- [ ] プライバシーポリシーURL
+- [ ] サポートURL
+- [ ] Windows App SDKの再配布条件を満たすStoreの使用許諾条件を確認した
+- [ ] 非公式Xクライアントであり、X Corp.の提供・承認製品ではない旨
+- [ ] 翻訳時に投稿本文をGoogleへ送る旨
+- [ ] 更新経路はStoreであり、GitHub版の自己更新とは別である旨
+
+## 6. 認証担当者向けノート
+
+- [ ] 専用のテスト用Xアカウントを用意した
+- [ ] パスワードをリポジトリや提出文書へ保存していない
+- [ ] 認証担当者へ安全なPartner Center欄だけで資格情報を渡した
+- [ ] ログイン、ペイン追加、翻訳同意、同意撤回、メディア保存の確認手順を記載した
+- [ ] 多要素認証や地域制限がある場合の手順を記載した
+
+## 7. 最終提出ゲート
+
+- [ ] ソース、manifest、掲載版、パッケージ版が一致している
+- [ ] LICENSE、THIRD-PARTY-NOTICES、`licenses`フォルダーがパッケージ内にある
+- [ ] WACK結果と手動確認結果をリリース記録へ保存した
+- [ ] 既知の未解決ブロッカーが0件である
+- [ ] Partner Centerの提出内容を別の目で確認した

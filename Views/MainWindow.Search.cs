@@ -168,8 +168,17 @@ namespace XTimelineViewer.Views
                 """);
             webView.CoreWebView2.WebMessageReceived += (s, e) =>
             {
-                if (e.TryGetWebMessageAsString() == "searchCancel")
+                if (UrlHelper.IsXUrl(e.Source) && e.TryGetWebMessageAsString() == "searchCancel")
                     DispatcherQueue.TryEnqueue(() => _activeSearchDialog?.Hide());
+            };
+
+            webView.CoreWebView2.NavigationStarting += async (s, args) =>
+            {
+                if (UrlHelper.IsXUrl(args.Uri)) return;
+                args.Cancel = true;
+                if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var external) &&
+                    UrlHelper.IsSafeExternalUri(external))
+                    await LaunchUriByEdgeProfileAsync(external);
             };
 
             webView.CoreWebView2.NavigationCompleted += async (s, args) =>

@@ -195,6 +195,7 @@
   <data name="ExtSettings_OpenSettings" xml:space="preserve"><value>設定を開く</value></data>
   <data name="Extensions_InfoBar_Empty" xml:space="preserve"><value>拡張機能はインストールされていません。extensions フォルダーに展開済みの拡張機能を置くと、起動時に読み込まれます。</value></data>
   <data name="Extensions_InfoBar_Installed" xml:space="preserve"><value>extensions フォルダーに展開済みの拡張機能を置くと、起動時に読み込まれます。</value></data>
+  <data name="Extensions_InfoBar_Packaged" xml:space="preserve"><value>Microsoft Store / MSIX版では、安全性とパッケージの完全性を守るため、アプリに同梱された拡張機能だけを読み込みます。</value></data>
   <data name="Extensions_OpenFolder" xml:space="preserve"><value>extensions フォルダーを開く</value></data>
 
   <!-- Update check -->

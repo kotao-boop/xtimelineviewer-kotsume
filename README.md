@@ -23,7 +23,7 @@ X（旧 Twitter）の複数タイムラインを並列表示できる、軽量�
 各タイムラインの境界線（右端）をマウスでドラッグするだけで、横幅を直感的に伸ばしたり縮めたりできます。調整した幅は自動的に保存されます。
 
 ### 🌐 ツイート自動翻訳機能
-各タイムライン右上に自動翻訳ボタン（`🌐 翻訳: ON/OFF`）を配置。海外のツイートをタイムライン上で直接日本語に翻訳して表示します。翻訳は初期状態でOFFです。初回利用時に、投稿本文がGoogleの翻訳用エンドポイントへ送信されることを画面で確認してから有効になります。
+各タイムライン右上に自動翻訳ボタン（`🌐 自動翻訳: ON/OFF`）を配置。海外のツイートをタイムライン上で直接日本語に翻訳して表示します。翻訳は初期状態でOFFです。初回利用時に、投稿本文がGoogleの翻訳用エンドポイントへ送信されることを画面で確認してから有効になります。「同意設定」から同意をいつでも取り消せます。
 
 ### 🔒 WebView2によるXの表示
 Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラウザエンジン（WebView2）でXのWebページを表示します。ただし、本アプリはX Corp.の公式クライアントではなく、利用時にはXの規約が適用されます。任意の翻訳機能はXとは別にGoogleの翻訳用エンドポイントを利用します。詳しくは[プライバシーポリシー](PRIVACY.md)を確認してください。
@@ -47,15 +47,16 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 | 形式 | ファイル名 | 説明 |
 |---|---|---|
 | **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.1.0-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
-| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.1.0-win-x64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで即座に使える自己完結パッケージ。USBメモリ等に入れて持ち運ぶことも可能です。 |
+| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.1.0-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
 
 ---
 
 ## 動作要件
 
 - **OS**: Windows 10 バージョン 19041 以降 / Windows 11
-- **アーキテクチャ**: 64bit (x64)
-- **ランタイム**: 必要なコンポーネントはすべてアプリ本体に同梱されているため、事前の追加インストールは不要です。
+- **アーキテクチャ**: 64bit (x64) / ARM64
+- **.NET / Windows App SDK**: 自己完結パッケージに同梱
+- **Microsoft Edge WebView2 Runtime**: Windows 11には標準搭載。Windows 10で入っていない場合は、Microsoft公式の[WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)が必要
 
 ---
 
@@ -114,6 +115,7 @@ Free code signing provided by [SignPath.io](https://signpath.io/), certificate b
 ## ライセンス・クレジット
 
 - **ライセンス**: [MIT License](LICENSE)
+- **第三者ライセンス**: [Third-party software notices](THIRD-PARTY-NOTICES.md)（配布物には正確なLICENSE/NOTICE一式を同梱）
 - **原作者**: [daruyanagi](https://github.com/daruyanagi)（[Original XTimelineViewer Repository](https://github.com/daruyanagi/XTimelineViewer)）
 - **カスタマイズ & 拡張**: Kotsume Project
 - **プライバシー**: [プライバシーポリシー](PRIVACY.md)

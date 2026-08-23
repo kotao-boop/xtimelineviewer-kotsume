@@ -12,6 +12,7 @@ namespace XTimelineViewer.Tests.Services
     /// <c>_ = SomethingAsync()</c> と書くと例外を誰も観測しない。#339 はまさにこれで、
     /// InitWebViewAsync の後半 90 行が try の外にあり、失敗が完全に無言だった。
     /// </summary>
+    [Collection("AppLog")]
     public class TaskExtensionsTests : IDisposable
     {
         private readonly string _dir;

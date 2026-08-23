@@ -101,6 +101,8 @@ namespace XTimelineViewer.Views
         {
             try
             {
+                var properties = await file.GetBasicPropertiesAsync();
+                if (properties.Size > 64 * 1024) return null;
                 var lines = await FileIO.ReadLinesAsync(file);
                 return UrlHelper.ParseUrlShortcut(lines);
             }

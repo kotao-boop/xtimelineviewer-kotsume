@@ -1,0 +1,46 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  schedule:
+    - cron: '17 0 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze C#
+    runs-on: windows-2025
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout source without persisted credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          languages: csharp
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: '8.0.424'
+
+      - name: Restore locked dependencies
+        run: dotnet restore XTimelineViewer.csproj --locked-mode --nologo
+
+      - name: Build for analysis
+        run: >
+          dotnet build XTimelineViewer.csproj
+          -c Release -p:Platform=x64 -p:EffectivePlatform=x64 --no-restore --nologo
+
+      - name: Upload CodeQL results
+        uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8

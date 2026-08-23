@@ -1,0 +1,64 @@
+name: Microsoft Store Package Candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-store-candidate:
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout source without persisted credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: '8.0.424'
+
+      - name: Restore locked dependencies
+        shell: pwsh
+        run: dotnet restore XTimelineViewer.csproj --locked-mode --nologo
+
+      # 開発用Identityのままなら、ここで意図的に停止する。
+      - name: Verify Partner Center identity and version
+        shell: pwsh
+        run: ./scripts/test-store-readiness.ps1
+
+      - name: Collect exact legal notices
+        shell: pwsh
+        run: ./scripts/collect-legal-notices.ps1 -Destination artifacts/store-legal
+
+      - name: Build unsigned x64 Store upload package
+        shell: pwsh
+        run: >
+          dotnet build XTimelineViewer.csproj -c Release
+          -p:Platform=x64 -p:EffectivePlatform=x64
+          -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
+          -p:UapAppxPackageBuildMode=StoreUpload -p:AppxBundle=Never
+          -p:AppxSymbolPackageEnabled=false -p:DebugType=None -p:DebugSymbols=false
+          -p:LegalNoticesDir=artifacts/store-legal --no-restore --nologo
+
+      - name: Build unsigned ARM64 Store upload package
+        shell: pwsh
+        run: >
+          dotnet build XTimelineViewer.csproj -c Release
+          -p:Platform=arm64 -p:PlatformTarget=arm64 -p:EffectivePlatform=arm64
+          -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
+          -p:UapAppxPackageBuildMode=StoreUpload -p:AppxBundle=Never
+          -p:AppxSymbolPackageEnabled=false -p:DebugType=None -p:DebugSymbols=false
+          -p:LegalNoticesDir=artifacts/store-legal --no-restore --nologo
+
+      # Microsoft Storeが認証後に署名する。ここで公開Releaseへ出してはいけない。
+      - name: Upload Store candidate artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: UNSIGNED-STORE-CANDIDATES-NOT-FOR-DISTRIBUTION-${{ github.sha }}
+          path: AppPackages/**/*.msixupload
+          if-no-files-found: error
+          retention-days: 7
