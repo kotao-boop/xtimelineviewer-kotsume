@@ -7,9 +7,41 @@ namespace XTimelineViewer.Services
     /// <summary>URL 判定・解析の純粋ロジック（UI 非依存）。</summary>
     internal static class UrlHelper
     {
-        internal static bool IsXUrl(string url) =>
-            url.Contains("x.com",       StringComparison.OrdinalIgnoreCase) ||
-            url.Contains("twitter.com", StringComparison.OrdinalIgnoreCase);
+        /// <summary>
+        /// HTTPS の X / Twitter 本体 URL だけを許可する。
+        /// 文字列の部分一致にすると、たとえば https://example.test/?next=x.com まで
+        /// 信頼してしまうため、必ず Uri が解析したホスト名を比較する。
+        /// </summary>
+        internal static bool IsXUrl(string? url) =>
+            Uri.TryCreate(url, UriKind.Absolute, out var uri) && IsXUri(uri);
+
+        internal static bool IsXUri(Uri? uri) =>
+            uri is not null &&
+            string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
+            uri.IsDefaultPort &&
+            (string.Equals(uri.Host, "x.com", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(uri.Host, "www.x.com", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(uri.Host, "twitter.com", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(uri.Host, "www.twitter.com", StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>外部ブラウザーへ渡してよい通常の Web URL。</summary>
+        internal static bool IsSafeExternalUri(Uri? uri) =>
+            uri is not null &&
+            (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>同じ HTTPS オリジン（scheme / host / port）かを確認する。</summary>
+        internal static bool IsSameHttpsOrigin(string? candidateUrl, string? trustedUrl)
+        {
+            if (!Uri.TryCreate(candidateUrl, UriKind.Absolute, out var candidate) ||
+                !Uri.TryCreate(trustedUrl, UriKind.Absolute, out var trusted))
+                return false;
+
+            return string.Equals(candidate.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(trusted.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
+                   candidate.Port == trusted.Port &&
+                   string.Equals(candidate.Host, trusted.Host, StringComparison.OrdinalIgnoreCase);
+        }
 
         internal static bool IsOnBaseUrl(string currentUrl, string baseUrl)
         {

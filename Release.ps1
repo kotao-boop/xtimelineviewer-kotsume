@@ -3,11 +3,12 @@
     XTimelineViewer のリリース用にバージョンを更新する（+ 任意でローカル検証用 ZIP を生成）。
 
 .DESCRIPTION
-    配布は GitHub リリース（ZIP）と winget のみで、どちらも CI
-    （.github/workflows/release.yml）が v* タグの push をトリガーに自動で行う。
+    .github/workflows/release.yml は v* タグの push をトリガーに、未署名の候補を
+    GitHub Actions artifactとして一時保存する。SignPath承認・署名検証前にはGitHub Releaseへ公開しない。
     本スクリプトは CI を起動する前のバージョン更新
     （csproj / Package.appxmanifest / Inno Setup / ランチャー）を担当する。
-    Microsoft Store 配布は廃止した（#272）ため、MSIX / .msixbundle は生成しない。
+    Microsoft Store提出物はPartner CenterのIdentity取得後に別工程で生成する。
+    このスクリプトはStore提出物を生成しない。
 
 .PARAMETER Version
     新しいバージョン（例 1.9.1）。指定すると csproj と appxmanifest を更新する。
@@ -77,13 +78,16 @@ if ($WithZip) {
     # 実行中インスタンスがあるとビルドがファイルロックで失敗するため止める
     try { Stop-Process -Name XTimelineViewer -Force -ErrorAction Stop } catch {}
 
+    dotnet restore $proj --locked-mode --nologo
+    if ($LASTEXITCODE -ne 0) { throw 'locked restore 失敗' }
+
     foreach ($rid in 'win-x64', 'win-arm64') {
         $plat = if ($rid -eq 'win-x64') { 'x64' } else { 'arm64' }
         Step "ZIP 発行: $rid"
         $pubDir = Join-Path $root "publish\$rid"
         # EffectivePlatform を明示しないと、WebView2 SDK がビルドホストの RID(win-x64) を見て
         # x64 の Microsoft.Web.WebView2.Core.dll を arm64 出力に混入させ、arm64 で BadImageFormat になる（#267）。
-        dotnet publish $proj -c Release -r $rid -p:PlatformTarget=$plat -p:EffectivePlatform=$plat -p:WindowsPackageType=None -o $pubDir
+        dotnet publish $proj -c Release -r $rid -p:PlatformTarget=$plat -p:EffectivePlatform=$plat -p:WindowsPackageType=None --no-restore -o $pubDir
         if ($LASTEXITCODE -ne 0) { throw "publish 失敗: $rid" }
         # コマンドライン起動用ランチャーは CI でソースからビルドする。
         # ローカル ZIP では、同じアーキテクチャで事前ビルドされた検証用成果物だけを使う。
@@ -92,7 +96,9 @@ if ($WithZip) {
             throw "ランチャーがありません。先に tools\launcher\build-launcher.ps1 -Architecture $plat を実行してください: $launcher"
         }
         Copy-Item $launcher (Join-Path $pubDir 'xtv.exe') -Force
-        $zip = Join-Path $outDir "XTimelineViewer-$Version-$rid.zip"
+        & (Join-Path $root 'scripts\collect-legal-notices.ps1') -Destination "publish\$rid"
+        if ($LASTEXITCODE -ne 0) { throw "ライセンス収集失敗: $rid" }
+        $zip = Join-Path $outDir "XTimelineViewer-Kotsume-v$Version-$rid-Portable.zip"
         Compress-Archive -Path "$pubDir\*" -DestinationPath $zip -Force
         Write-Host "→ $zip"
     }
@@ -105,6 +111,7 @@ Write-Host @"
 次の手順（手動）:
   1. バージョン更新分をコミット & PR → main にマージ
   2. v$Version タグを push（または gh release create v$Version）
-     → CI がGitHubリリースのZIP、インストーラー、SHA-256、来歴証明を生成する
-  3. SignPath承認前の成果物は未署名。署名済みと表示しない
+     → CI が未署名のZIPとインストーラー候補を「配布禁止」と明示したActions artifactとして7日間保存する
+  3. SignPath承認、署名、署名検証が完了するまでGitHub Releaseへ公開しない
+  4. SHA-256と来歴証明は署名後の最終成果物に対して生成する
 "@ -ForegroundColor Yellow

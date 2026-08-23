@@ -1,11 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <RootNamespace>XTimelineViewer</RootNamespace>
     <Platforms>x64;arm64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and '$(Platform)' == 'arm64'">win-arm64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
     <!--
       WebView2 SDK の Common.targets は native の Microsoft.Web.WebView2.Core.dll（WinRT 実体）を
       EffectivePlatform で選ぶ。EffectivePlatform は PlatformTarget=='x64' のとき x64 に固定される一方、
@@ -26,12 +28,12 @@
     <Copyright>Copyright (c) XTimelineViewer contributors</Copyright>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <!-- MSIX: WindowsPackageType=None を削除して MSIX パッケージングを有効化 -->
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <SelfContained>true</SelfContained>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <!-- テストプロジェクトのファイルをメインビルドから除外 -->
@@ -45,7 +47,8 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260804001" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.8249" />
-    <PackageReference Include="System.Security.Permissions" Version="8.0.0" />
+    <!-- Microsoft.Windows.SDK.BuildTools.MSIX のStore containerタスクが実行時に読み込む互換依存。 -->
+    <PackageReference Include="System.Security.Permissions" Version="8.0.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -56,6 +59,20 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="PRIVACY.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LICENSE">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="THIRD-PARTY-NOTICES.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Store/MSIX候補では、復元した正確な依存ライセンス一式をパッケージへ追加する。 -->
+  <ItemGroup Condition="'$(LegalNoticesDir)' != '' and Exists('$(LegalNoticesDir)\licenses')">
+    <Content Include="$(LegalNoticesDir)\licenses\**\*">
+      <Link>licenses\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -28,7 +28,11 @@ SolidCompression=yes
 WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
+; Windows App SDKの再配布条件に従い、利用者へMicrosoftの条項を表示して同意を得る。
+; プロジェクト本体のMIT Licenseと全NOTICEはインストール先にも含まれる。
+LicenseFile={#SourceDir}\licenses\Microsoft-WindowsAppSDK-LICENSE.txt
 InfoBeforeFile=..\PRIVACY.md
+InfoAfterFile=..\THIRD-PARTY-NOTICES.md
 
 [Languages]
 Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"

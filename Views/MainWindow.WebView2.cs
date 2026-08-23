@@ -691,6 +691,8 @@ namespace XTimelineViewer.Views
             {
                 try
                 {
+                    if ((File.GetAttributes(extDir) & System.IO.FileAttributes.ReparsePoint) != 0)
+                        throw new InvalidDataException("Reparse-point extension directories are not allowed.");
                     var ext = await webView.CoreWebView2.Profile.AddBrowserExtensionAsync(extDir);
                     AddExtensionButton(ext, extDir);
                 }
@@ -1054,24 +1056,35 @@ namespace XTimelineViewer.Views
                     await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(HomeAutoLoadScript);
                 }
                 webView.CoreWebView2.WebMessageReceived += (s, e) =>
+                {
+                    // Web メッセージは Windows 側の機能を呼べるため、X 本体から届いたものだけを受理する。
+                    // cfg.Url だけを信頼すると、細工した .url から第三者オリジンを登録された場合に危険。
+                    if (!UrlHelper.IsXUrl(e.Source))
+                    {
+                        LogDebug("Rejected WebView message from an untrusted source.");
+                        return;
+                    }
                     OnWebViewMessageReceived(webView, e.TryGetWebMessageAsString());
+                };
 
                 // 外部リンクをシステム既定ブラウザーまたは指定 Edge プロファイルで開く
                 webView.CoreWebView2.NewWindowRequested += async (s, args) =>
                 {
                     args.Handled = true;
-                    await LaunchUriByEdgeProfileAsync(new Uri(args.Uri));
+                    if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var external) &&
+                        UrlHelper.IsSafeExternalUri(external))
+                        await LaunchUriByEdgeProfileAsync(external);
                 };
 
                 webView.CoreWebView2.NavigationStarting += async (s, args) =>
                 {
                     if (!Uri.TryCreate(args.Uri, UriKind.Absolute, out var nav)) return;
 
-                    if (Uri.TryCreate(cfg.Url, UriKind.Absolute, out var origin) &&
-                        !nav.Host.Equals(origin.Host, StringComparison.OrdinalIgnoreCase))
+                    if (!UrlHelper.IsSameHttpsOrigin(args.Uri, cfg.Url))
                     {
                         args.Cancel = true;
-                        await LaunchUriByEdgeProfileAsync(nav);
+                        if (UrlHelper.IsSafeExternalUri(nav))
+                            await LaunchUriByEdgeProfileAsync(nav);
                         return;
                     }
 

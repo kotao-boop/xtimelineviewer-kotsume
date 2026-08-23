@@ -3,6 +3,7 @@ obj/
 publish*/
 AppPackages/
 dist/
+artifacts/
 *.zip
 .vs/
 .claude/*

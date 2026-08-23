@@ -10,25 +10,38 @@ permissions:
 
 jobs:
   build-and-test:
-    runs-on: windows-latest
+    runs-on: windows-2025
 
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Setup .NET
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '8.0.424'
+
+      - name: Restore locked dependencies
+        run: |
+          dotnet restore XTimelineViewer.csproj --locked-mode --nologo
+          dotnet restore XTimelineViewer.Tests/XTimelineViewer.Tests.csproj --locked-mode --nologo
 
       # 本体（WinUI 3）の x64 ビルド。XAML/コンパイルのリグレッションを PR で検知する。
       - name: Build app (x64)
         run: >
           dotnet build XTimelineViewer.csproj
-          -c Release -p:Platform=x64 -p:EffectivePlatform=x64 --nologo
+          -c Release -p:Platform=x64 -p:EffectivePlatform=x64 --no-restore --nologo
+
+      - name: Build app (arm64)
+        run: >
+          dotnet build XTimelineViewer.csproj
+          -c Release -p:Platform=arm64 -p:PlatformTarget=arm64 -p:EffectivePlatform=arm64
+          --no-restore --nologo
 
       # ユニットテスト（UI 非依存の net8.0 テストプロジェクト）。
       - name: Test
-        run: dotnet test XTimelineViewer.Tests/XTimelineViewer.Tests.csproj -c Release --nologo
+        run: dotnet test XTimelineViewer.Tests/XTimelineViewer.Tests.csproj -c Release --no-restore --nologo
 
       - name: Validate translator JavaScript
         shell: pwsh
@@ -42,26 +55,47 @@ jobs:
           ./tools/launcher/build-launcher.ps1 -Architecture x64
           ./tools/launcher/build-launcher.ps1 -Architecture arm64
 
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source without persisted credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+
   # 起動スモークテスト（#346）。「壊滅的に壊れていないこと」だけを確認する。
   # 実際に exe を起動して UI Automation で触るため、ヘッドレスな runner では
   # 不安定になりうる。本体のビルド/テストを巻き込まないよう別ジョブに分け、
   # continue-on-error で失敗しても CI 全体は落とさない（結果は Actions 上で確認する）。
   ui-smoke:
-    runs-on: windows-latest
+    runs-on: windows-2025
     continue-on-error: true
 
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Setup .NET
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '8.0.424'
+
+      - name: Restore locked dependencies
+        run: dotnet restore XTimelineViewer.csproj --locked-mode --nologo
 
       # winapp CLI（UI Automation 用）。npm 配布は見つからなかったため winget から入れる。
       - name: Install winapp CLI
         run: >
           winget install --id Microsoft.WinAppCli --source winget
+          --version 0.6.1 --exact
           --accept-source-agreements --accept-package-agreements --disable-interactivity
         shell: pwsh
 
@@ -69,7 +103,7 @@ jobs:
       - name: Build app (x64)
         run: >
           dotnet build XTimelineViewer.csproj
-          -c Debug -p:Platform=x64 -p:EffectivePlatform=x64 --nologo
+          -c Debug -p:Platform=x64 -p:EffectivePlatform=x64 --no-restore --nologo
 
       - name: Run UI smoke test
         run: .\ui-smoke.ps1

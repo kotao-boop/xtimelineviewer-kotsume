@@ -34,8 +34,12 @@ Xのパスワードや本アプリの保存済みCookieを翻訳本文として�
 使用しないでください。
 
 自動翻訳は初期状態で無効です。画面右上の切替ボタンでいつでも無効にできます。個別の
-「翻訳を表示」操作も、初回同意後にのみ通信します。同意状態とON/OFF設定は、WebView2の
-ローカルストレージに保存されます。
+「翻訳を表示」操作も、初回同意後にのみ通信します。同意状態とON/OFF設定は、XのWebページから
+読み書きできない拡張機能専用のローカルストレージに保存されます。画面右上の「同意設定」から、
+外部送信への同意をいつでも取り消せます。取り消すと自動翻訳も無効になり、次回使用時に再確認します。
+
+投稿本文はHTTPSのPOST本文として送信し、URLのクエリ文字列には入れません。本アプリは翻訳結果を
+メモリー内で一時的に再利用しますが、翻訳本文や結果を設定ファイル・ログへ永続保存しません。
 
 このエンドポイントは本アプリ専用サービスではなく、仕様や利用可否が予告なく変わる可能性があります。
 Googleによるデータ処理については、Googleのプライバシーポリシーも確認してください。
@@ -64,8 +68,11 @@ Googleによるデータ処理については、Googleのプライバシーポ�
 - WebView2のプロファイルデータ、Cookie、キャッシュ
 - エラーログ（`error.log`、`error.log.1`）
 
-MSIX版では、Windowsが本アプリへ割り当てたLocalStateフォルダー以下へ保存します。エラーログは
-不具合の内容や例外メッセージを含む場合がありますが、自動送信はしません。
+MSIX版では、設定・タイムライン構成・WebView2データの主な保存先として、Windowsが本アプリへ
+割り当てたLocalStateフォルダーを使います。互換性維持のため、エラーログだけはパッケージ版でも
+`%LOCALAPPDATA%\XTimelineViewer\error.log` と `error.log.1` に保存します。ログには不具合の内容、
+処理名、例外メッセージ、応答サイズなどが含まれる場合があります。投稿本文、解析した投稿ID、
+認証Cookieを意図的に記録する処理はなく、ログを自動送信する処理もありません。
 
 ## 6. 削除方法
 
@@ -77,10 +84,10 @@ MSIX版は、Windowsのアプリ設定にあるリセットまたはアンイン
 
 本アプリから利用する第三者サービスには、それぞれの利用規約とプライバシーポリシーが適用されます。
 
-- X: `https://x.com/`
-- Google翻訳用エンドポイント: `https://translate.googleapis.com/`
-- GitHub Releases API: `https://api.github.com/`
-- Microsoft Edge WebView2 / Microsoft Store / winget
+- X: `https://x.com/` / プライバシー: `https://x.com/en/privacy`
+- Google翻訳用エンドポイント: `https://translate.googleapis.com/` / プライバシー: `https://policies.google.com/privacy`
+- GitHub Releases API: `https://api.github.com/` / プライバシー: `https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement`
+- Microsoft Edge WebView2 / Microsoft Store / winget / プライバシー: `https://privacy.microsoft.com/privacystatement`
 
 ## 8. 変更と問い合わせ
 

@@ -388,6 +388,7 @@ namespace XTimelineViewer.Views
             // WebView 内 JS からの通知を処理（#246 ESC / #247 アカウント切替）
             webView.CoreWebView2.WebMessageReceived += (s, e) =>
             {
+                if (!UrlHelper.IsXUrl(e.Source)) return;
                 switch (e.TryGetWebMessageAsString())
                 {
                     case "composeCancel":
@@ -509,9 +510,22 @@ namespace XTimelineViewer.Views
                     FocusComposeEditorDeferred(webView);
             };
 
-            webView.CoreWebView2.NavigationStarting += (s, args) =>
+            webView.CoreWebView2.NavigationStarting += async (s, args) =>
             {
-                if (_composeReadyViews.Contains(webView) && !args.Uri.Contains("/compose/post"))
+                if (!UrlHelper.IsXUrl(args.Uri))
+                {
+                    args.Cancel = true;
+                    if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var external) &&
+                        UrlHelper.IsSafeExternalUri(external))
+                        await LaunchUriByEdgeProfileAsync(external);
+                    _activeComposeDialog?.Hide();
+                    return;
+                }
+
+                if (_composeReadyViews.Contains(webView) &&
+                    Uri.TryCreate(args.Uri, UriKind.Absolute, out var destination) &&
+                    !destination.AbsolutePath.Equals("/compose/post", StringComparison.OrdinalIgnoreCase) &&
+                    !destination.AbsolutePath.StartsWith("/compose/post/", StringComparison.OrdinalIgnoreCase))
                     _activeComposeDialog?.Hide();
             };
 
@@ -535,6 +549,16 @@ namespace XTimelineViewer.Views
 
         private void OnWebViewMessageReceived(WebView2 senderWebView, string message)
         {
+            if (string.IsNullOrEmpty(message)) return;
+            if (message.StartsWith("saveFrame:", StringComparison.Ordinal))
+            {
+                if (message.Length > MaxFrameBase64Chars + 512) return;
+            }
+            else if (message.Length > 64 * 1024)
+            {
+                return;
+            }
+
             if (message.StartsWith("homeAutoLoad:"))
             {
                 var status = message["homeAutoLoad:".Length..];
@@ -572,7 +596,8 @@ namespace XTimelineViewer.Views
             }
 
             if (message.StartsWith("openTimestamp:") &&
-                Uri.TryCreate(message[14..], UriKind.Absolute, out var timestampUri))
+                Uri.TryCreate(message[14..], UriKind.Absolute, out var timestampUri) &&
+                UrlHelper.IsXUri(timestampUri))
             {
                 LaunchUriByEdgeProfileAsync(timestampUri).FireAndForget(nameof(LaunchUriByEdgeProfileAsync));
                 return;
@@ -582,7 +607,7 @@ namespace XTimelineViewer.Views
             {
                 // 形式: saveFrame:<handle>|<status>|<base64>
                 var parts = message["saveFrame:".Length..].Split('|', 3);
-                if (parts.Length == 3)
+                if (parts.Length == 3 && parts[2].Length <= MaxFrameBase64Chars)
                     SaveVideoFrameAsync(senderWebView, parts[0], parts[1], parts[2]).FireAndForget(nameof(SaveVideoFrameAsync));
                 return;
             }
@@ -624,7 +649,9 @@ namespace XTimelineViewer.Views
 
             if (message.StartsWith("openFolder:"))  // #308: トーストの「フォルダーを開く」リンク
             {
-                var dir = MediaDir(isVideo: message["openFolder:".Length..] == "videos");
+                var requestedFolder = message["openFolder:".Length..];
+                if (requestedFolder is not ("pictures" or "videos")) return;
+                var dir = MediaDir(isVideo: requestedFolder == "videos");
                 try
                 {
                     Directory.CreateDirectory(dir);
@@ -688,12 +715,22 @@ namespace XTimelineViewer.Views
 
         // 動画の現在フレーム（base64 PNG）を Pictures\XTimelineViewer に保存する（#299・試験機能）。
         // ファイル名は <handle>_<statusId>_<保存時刻> で元ポスト（x.com/handle/status/statusId）を辿れる。
+        private const int MaxFrameBase64Chars = 32 * 1024 * 1024;
+        private const int MaxFrameBytes = 24 * 1024 * 1024;
+
         private async Task SaveVideoFrameAsync(WebView2 senderWebView, string handle, string status, string base64Png)
         {
             string? savedName = null;
             try
             {
+                if (base64Png.Length > MaxFrameBase64Chars)
+                    throw new InvalidDataException("Frame image exceeds the allowed encoded size.");
+
                 var bytes = Convert.FromBase64String(base64Png);
+                if (bytes.Length > MaxFrameBytes || bytes.Length < 8 ||
+                    bytes[0] != 0x89 || bytes[1] != 0x50 || bytes[2] != 0x4E || bytes[3] != 0x47 ||
+                    bytes[4] != 0x0D || bytes[5] != 0x0A || bytes[6] != 0x1A || bytes[7] != 0x0A)
+                    throw new InvalidDataException("Frame data is not an allowed PNG image.");
                 var dir = MediaDir(isVideo: false);  // フレームは PNG 画像 → Pictures
                 Directory.CreateDirectory(dir);
                 // 保存時刻はミリ秒まで付けて同一秒内の連続保存でも衝突しないようにする。
@@ -759,24 +796,16 @@ namespace XTimelineViewer.Views
                     return list;
                 });
                 foreach (var (id, url) in pairs) _videoMp4ByStatus[id] = url;
-                // 診断: 応答に video_info / mp4変種 が含まれるか（パーサ漏れか、そもそも含まれないかの判別）。
-                bool hasVI = false, hasMp4 = false; string snip = "";
+                // 診断には件数と形式の有無だけを残す。投稿本文・URL・投稿IDはログへ書かない。
+                bool hasVI = false, hasMp4 = false;
                 try
                 {
                     var text = System.Text.Encoding.UTF8.GetString(bytes);
                     hasVI = text.Contains("video_info");
                     hasMp4 = text.Contains("video/mp4");
-                    if (hasVI && pairs.Count == 0)
-                    {
-                        var idx = text.IndexOf("video_info", StringComparison.Ordinal);
-                        var from = Math.Max(0, idx - 40);
-                        snip = text.Substring(from, Math.Min(320, text.Length - from)).Replace("\n", " ").Replace("\r", "");
-                    }
                 }
                 catch { }
-                LogDebug($"gql {op} bytes={bytes.Length} hasVI={hasVI} hasMp4={hasMp4} videos={pairs.Count} mapTotal={_videoMp4ByStatus.Count}"
-                       + (pairs.Count > 0 ? " ids=" + string.Join(",", pairs.Select(p => p.id).Take(5)) : "")
-                       + (snip != "" ? " SNIP=" + snip : ""));
+                LogDebug($"gql {op} bytes={bytes.Length} hasVI={hasVI} hasMp4={hasMp4} videos={pairs.Count} mapTotal={_videoMp4ByStatus.Count}");
             }
             catch (Exception ex)
             {
@@ -851,11 +880,17 @@ namespace XTimelineViewer.Views
             WebView2 senderWebView, string handle, string status, string url, string ext, string okPrefix)
         {
             string? savedName = null;
+            string? partialPath = null;
             try
             {
+                if (ext is not ("jpg" or "mp4"))
+                    throw new InvalidDataException("Unsupported media file type.");
+
                 if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
                     (uri.Scheme == Uri.UriSchemeHttps) &&
-                    (uri.Host == "video.twimg.com" || uri.Host.EndsWith(".twimg.com")))
+                    uri.IsDefaultPort &&
+                    (uri.Host.Equals("video.twimg.com", StringComparison.OrdinalIgnoreCase) ||
+                     uri.Host.EndsWith(".twimg.com", StringComparison.OrdinalIgnoreCase)))
                 {
                     var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, uri);
                     req.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0");
@@ -865,17 +900,31 @@ namespace XTimelineViewer.Views
                     resp.EnsureSuccessStatusCode();
 
                     var total = resp.Content.Headers.ContentLength;
-                    byte[] bytes;
+                    const long maxMediaBytes = 1024L * 1024 * 1024;
+                    if (total is > maxMediaBytes)
+                        throw new InvalidDataException("Media file exceeds the 1 GiB safety limit.");
+
+                    var dir = MediaDir(isVideo: ext == "mp4");  // 動画/GIF(mp4)→Videos, 画像(jpg)→Pictures
+                    Directory.CreateDirectory(dir);
+                    var name = $"{SanitizeNamePart(handle, "unknown")}_{SanitizeNamePart(status, "noid")}"
+                             + $"_{DateTime.Now:yyyyMMdd_HHmmss_fff}.{ext}";
+                    var finalPath = Path.Combine(dir, name);
+                    partialPath = finalPath + ".partial";
+
                     using (var src = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                    using (var buf = new MemoryStream())
+                    using (var output = new FileStream(
+                        partialPath, FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                        bufferSize: 81920, useAsync: true))
                     {
                         var chunk = new byte[81920];
                         long readTotal = 0;
                         int lastPct = -1, n;
                         while ((n = await src.ReadAsync(chunk).ConfigureAwait(false)) > 0)
                         {
-                            buf.Write(chunk, 0, n);
                             readTotal += n;
+                            if (readTotal > maxMediaBytes)
+                                throw new InvalidDataException("Media file exceeds the 1 GiB safety limit.");
+                            await output.WriteAsync(chunk.AsMemory(0, n)).ConfigureAwait(false);
                             if (total is long tot && tot > 0)
                             {
                                 int pct = (int)(readTotal * 100 / tot);
@@ -886,19 +935,19 @@ namespace XTimelineViewer.Views
                                 }
                             }
                         }
-                        bytes = buf.ToArray();
                     }
 
-                    var dir = MediaDir(isVideo: ext == "mp4");  // 動画/GIF(mp4)→Videos, 画像(jpg)→Pictures
-                    Directory.CreateDirectory(dir);
-                    var name = $"{SanitizeNamePart(handle, "unknown")}_{SanitizeNamePart(status, "noid")}"
-                             + $"_{DateTime.Now:yyyyMMdd_HHmmss_fff}.{ext}";
-                    await File.WriteAllBytesAsync(Path.Combine(dir, name), bytes).ConfigureAwait(false);
+                    File.Move(partialPath, finalPath);
+                    partialPath = null;
                     savedName = name;
                 }
             }
             catch (Exception ex)
             {
+                if (partialPath is not null)
+                {
+                    try { File.Delete(partialPath); } catch { }
+                }
                 LogError($"DownloadMedia({okPrefix})", ex);
             }
 
@@ -918,7 +967,7 @@ namespace XTimelineViewer.Views
             if (string.IsNullOrWhiteSpace(value)) return fallback;
             foreach (var c in Path.GetInvalidFileNameChars())
                 value = value.Replace(c, '_');
-            return value;
+            return value.Length <= 80 ? value : value[..80];
         }
 
         // WebView2 コンテンツに実際のキーボードフォーカスを確実に当てる（#251）。

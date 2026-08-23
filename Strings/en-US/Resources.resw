@@ -195,6 +195,7 @@
   <data name="ExtSettings_OpenSettings" xml:space="preserve"><value>Open Settings</value></data>
   <data name="Extensions_InfoBar_Empty" xml:space="preserve"><value>No extensions are installed. Place an unpacked extension in the extensions folder to load it at startup.</value></data>
   <data name="Extensions_InfoBar_Installed" xml:space="preserve"><value>Place an unpacked extension in the extensions folder to load it at startup.</value></data>
+  <data name="Extensions_InfoBar_Packaged" xml:space="preserve"><value>Microsoft Store and MSIX builds load only extensions bundled with the app to protect package integrity and safety.</value></data>
   <data name="Extensions_OpenFolder" xml:space="preserve"><value>Open extensions folder</value></data>
 
   <!-- Update check -->

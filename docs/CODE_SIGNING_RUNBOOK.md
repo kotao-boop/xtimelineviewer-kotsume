@@ -9,7 +9,8 @@
 - READMEの署名状態、コード署名ポリシー、担当者、プライバシーポリシーを公開済みの差分として準備した。
 - .NET本体とネイティブランチャーは、同じ製品名・製品バージョンを持つ。
 - ネイティブランチャーはGitHub Actionsでソースからビルドし、コミット済みEXEを利用しない。
-- GitHub ReleaseにはSHA-256ファイルとGitHub Artifact Attestationを付与する構成にした。
+- SignPath承認前のタグは、未署名候補を「配布禁止」と明示したGitHub Actions artifactへ7日間だけ保存し、Releaseへ公開しない。公開リポジトリのActions artifactは閲覧者が取得できる場合があるため、非公開とは表現しない。
+- SHA-256とGitHub Artifact Attestationは、署名検証に合格した最終成果物にだけ付与する。
 
 SignPathの承認と実際の署名完了までは、成果物を「署名済み」と表示してはならない。
 
@@ -133,12 +134,15 @@ SignPath GitHub Appを対象リポジトリへインストールし、SignPath�
 
 1. タグがmain上のコミットを指すことと、タグ・csproj・ランチャーの版数一致を検証する。
 2. ユニットテスト、JavaScript構文検査、x64/arm64ビルドを実行する。
-3. `XTimelineViewer.exe` と各アーキテクチャの `xtv.exe` をSignPathへ送る。
+3. `XTimelineViewer.exe`、`XTimelineViewer.dll` と各アーキテクチャの `xtv.exe` をSignPathへ送る。
 4. 署名済みx64ツリーからInno Setupインストーラーを作る。
 5. 外側のSetup.exeをSignPathへ送る。
-6. 全ての第一者EXEについて署名、証明書チェーン、タイムスタンプを検証する。
+6. 全ての第一者EXE/DLLについて署名、証明書チェーン、タイムスタンプを検証する。
 7. SHA-256とGitHub Artifact Attestationを生成する。
 8. 署名検証が全件成功した場合だけGitHub Releaseへ公開する。
+
+公開ノートは `docs/RELEASE_NOTES_TEMPLATE.md` を使用し、署名状態、SHA-256、attestation、
+プライバシー変更、既知の問題をリリースごとに明記する。
 
 Inno Setup内部のファイルをSignPathが直接深い署名の対象にできるかは、Artifact Configuration作成時に
 SignPathへ確認する。確認できない場合は、上記の二段階方式を使う。
@@ -148,6 +152,7 @@ SignPathへ確認する。確認できない場合は、上記の二段階方式
 ### SignPathで署名する第一者ファイル
 
 - `XTimelineViewer.exe`
+- `XTimelineViewer.dll`（実際のマネージドアプリコード）
 - `xtv.exe`（x64）
 - `xtv.exe`（arm64）
 - `XTimelineViewer-Kotsume-vX.Y.Z-Setup.exe`
@@ -166,8 +171,10 @@ Artifact Configurationでは、ファイル名のワイルドカードだけで�
 ```powershell
 $files = @(
   'publish\x64\XTimelineViewer.exe',
+  'publish\x64\XTimelineViewer.dll',
   'publish\x64\xtv.exe',
   'publish\arm64\XTimelineViewer.exe',
+  'publish\arm64\XTimelineViewer.dll',
   'publish\arm64\xtv.exe',
   'dist\XTimelineViewer-Kotsume-v2.1.0-Setup.exe'
 )

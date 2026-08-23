@@ -77,7 +77,10 @@ namespace XTimelineViewer.Views
                 Windows.Storage.ApplicationData.Current.LocalFolder.Path, "extensions");
             if (Directory.Exists(sourceDir))
             {
-                // 新しい拡張機能があれば上書きコピー
+                // Store/MSIX版は、利用者が追加した動的コードを読み込まない。
+                // 毎起動時にパッケージ内の既知の拡張だけでミラーを作り直し、古い/不明なファイルを残さない。
+                if (Directory.Exists(localDir)) Directory.Delete(localDir, recursive: true);
+                Directory.CreateDirectory(localDir);
                 foreach (var src in Directory.GetDirectories(sourceDir))
                 {
                     var dst = Path.Combine(localDir, Path.GetFileName(src));
@@ -91,9 +94,15 @@ namespace XTimelineViewer.Views
         {
             Directory.CreateDirectory(dst);
             foreach (var file in Directory.GetFiles(src))
+            {
+                if ((File.GetAttributes(file) & System.IO.FileAttributes.ReparsePoint) != 0) continue;
                 File.Copy(file, Path.Combine(dst, Path.GetFileName(file)), overwrite: true);
+            }
             foreach (var dir in Directory.GetDirectories(src))
+            {
+                if ((File.GetAttributes(dir) & System.IO.FileAttributes.ReparsePoint) != 0) continue;
                 CopyDirectory(dir, Path.Combine(dst, Path.GetFileName(dir)));
+            }
         }
 
         private AppSettings _appSettings = new();
@@ -411,6 +420,13 @@ namespace XTimelineViewer.Views
         /// </summary>
         private async Task LaunchUriByEdgeProfileAsync(Uri uri)
         {
+            // WebView から渡される URI で file: / javascript: / 独自プロトコルを起動しない。
+            if (!UrlHelper.IsSafeExternalUri(uri))
+            {
+                LogDebug($"Blocked non-web external URI: {uri.Scheme}");
+                return;
+            }
+
             if (_appSettings.ExternalBrowser == "edge" &&
                 (uri.Scheme == "http" || uri.Scheme == "https"))
             {

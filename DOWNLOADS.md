@@ -7,8 +7,9 @@ Download the latest Windows packages from the
 
 ## Code-signing status
 
-The current v2.1.0 release is **not code-signed**. Verify the release version and the published SHA-256 value
-before running a downloaded file. Do not treat an unsigned package as an approved SignPath artifact.
+The current v2.1.0 release is **not code-signed** and does not include a separately published SHA-256 file or
+GitHub Artifact Attestation. Do not treat it as an approved SignPath artifact. New public releases are paused
+until the SignPath eligibility review, signing workflow, signature verification and final provenance checks are complete.
 
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate by
 [SignPath Foundation](https://signpath.org/).
@@ -21,7 +22,10 @@ has been signed successfully. The status of each release must also be stated in 
 | Package | Purpose |
 |---|---|
 | `XTimelineViewer-Kotsume-vX.Y.Z-Setup.exe` | Windows installer |
-| `XTimelineViewer-Kotsume-vX.Y.Z-x64.zip` | Portable package for x64 Windows |
-| `XTimelineViewer-Kotsume-vX.Y.Z-arm64.zip` | Portable package for arm64 Windows |
+| `XTimelineViewer-Kotsume-vX.Y.Z-win-x64-Portable.zip` | Portable package for x64 Windows |
+| `XTimelineViewer-Kotsume-vX.Y.Z-win-arm64-Portable.zip` | Portable package for arm64 Windows |
+
+Every future package must include `LICENSE`, `THIRD-PARTY-NOTICES.md` and the generated `licenses` directory.
+SHA-256 files and GitHub Artifact Attestations are generated only after all required signatures have been verified.
 
 See the [privacy policy](PRIVACY.md) before using the optional translation feature.

@@ -31,11 +31,16 @@ namespace XTimelineViewer.Views.Settings
 
             var extensions = _parent?.Extensions ?? [];
 
-            // 状態 InfoBar（#241）。拡張の有無にかかわらず常時表示し、フォルダーを開くボタンを添える。
-            ExtensionsInfoBar.Message = extensions.Count == 0
-                ? R.Get("Extensions_InfoBar_Empty")
-                : R.Get("Extensions_InfoBar_Installed");
+            // MSIX版はStoreのパッケージ完全性を守るため、同梱済み拡張だけを読み込む。
+            ExtensionsInfoBar.Message = PackageContext.IsPackaged
+                ? R.Get("Extensions_InfoBar_Packaged")
+                : extensions.Count == 0
+                    ? R.Get("Extensions_InfoBar_Empty")
+                    : R.Get("Extensions_InfoBar_Installed");
             OpenExtensionsFolderBtn.Content = R.Get("Extensions_OpenFolder");
+            OpenExtensionsFolderBtn.Visibility = PackageContext.IsPackaged
+                ? Visibility.Collapsed
+                : Visibility.Visible;
 
             foreach (var ext in extensions)
             {

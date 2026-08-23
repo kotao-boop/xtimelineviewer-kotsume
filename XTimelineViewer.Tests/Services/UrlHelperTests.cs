@@ -11,10 +11,37 @@ public class UrlHelperTests
     [InlineData("https://x.com/home",           true)]
     [InlineData("https://twitter.com/home",     true)]
     [InlineData("https://X.COM/home",           true)]
+    [InlineData("https://www.x.com/home",       true)]
     [InlineData("https://example.com/",         false)]
     [InlineData("https://nitter.net/home",      false)]
+    [InlineData("https://example.com/?next=x.com", false)]
+    [InlineData("https://x.com.example.com/home",  false)]
+    [InlineData("https://notx.com/home",            false)]
+    [InlineData("http://x.com/home",                false)]
+    [InlineData("https://x.com:444/home",           false)]
+    [InlineData("javascript:alert('x.com')",        false)]
+    [InlineData("not-a-url",                        false)]
     public void IsXUrl_Works(string url, bool expected)
         => Assert.Equal(expected, UrlHelper.IsXUrl(url));
+
+    [Theory]
+    [InlineData("https://x.com/home", "https://x.com/search?q=a", true)]
+    [InlineData("https://X.com/home", "https://x.com/search", true)]
+    [InlineData("https://x.com/home", "https://twitter.com/home", false)]
+    [InlineData("https://x.com/home", "http://x.com/home", false)]
+    [InlineData("https://x.com/home", "https://x.com:444/home", false)]
+    [InlineData("https://x.com/home", "not-a-url", false)]
+    public void IsSameHttpsOrigin_Works(string trusted, string candidate, bool expected)
+        => Assert.Equal(expected, UrlHelper.IsSameHttpsOrigin(candidate, trusted));
+
+    [Theory]
+    [InlineData("https://example.com/", true)]
+    [InlineData("http://example.com/", true)]
+    [InlineData("mailto:test@example.com", false)]
+    [InlineData("file:///C:/Windows/System32/calc.exe", false)]
+    [InlineData("javascript:alert(1)", false)]
+    public void IsSafeExternalUri_AllowsOnlyWebSchemes(string value, bool expected)
+        => Assert.Equal(expected, UrlHelper.IsSafeExternalUri(new Uri(value)));
 
     // ── IsOnBaseUrl ───────────────────────────────────────────────────────────
 

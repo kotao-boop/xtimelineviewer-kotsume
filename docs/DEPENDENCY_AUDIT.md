@@ -13,8 +13,8 @@
 - 翻訳拡張: `extensions/xtv-translator/`
 - 派生元: `daruyanagi/XTimelineViewer`（MIT、Git履歴とREADMEで表示）
 
-第一者の署名対象は、公開ソースからGitHub Actions内で生成した `XTimelineViewer.exe`、`xtv.exe`、
-Setup.exeに限定する。
+第一者の署名対象は、公開ソースからGitHub Actions内で生成した `XTimelineViewer.exe`、
+実際のマネージドアプリコードを含む `XTimelineViewer.dll`、`xtv.exe`、Setup.exeに限定する。
 
 ## NuGet依存関係の確認結果
 
@@ -24,7 +24,7 @@ Setup.exeに限定する。
 |---|---|---|
 | CommunityToolkit.Mvvm / Common | MIT | 公開OSS依存。生成された第一者アセンブリ以外を再署名しない |
 | CommunityToolkit.WinUI.* | MIT | 公開OSS依存。第三者DLLをプロジェクト証明書で再署名しない |
-| System.Security.Permissions | MIT | .NET OSS依存 |
+| System.Security.Permissions | MIT | MSIX Store containerビルドタスクの互換依存。第一者証明書で再署名しない |
 | System.Numerics.Tensors | MIT | .NET OSS依存 |
 | System.Windows.Extensions | MIT | .NET OSS依存 |
 | Microsoft.Web.WebView2 SDK | パッケージ内LICENSE.txt（BSD 3-Clause相当の条件文） | WebView2/Edgeの第三者・System Libraryとして扱う |
@@ -47,3 +47,10 @@ Setup.exeに限定する。
 - Inno Setup EXEの内部ファイルを深い署名対象として扱えるか
 
 これらは推測で「適合」とせず、SignPath申請またはArtifact Configuration作成時に確認する。
+
+## 配布するライセンス文書
+
+`scripts/collect-legal-notices.ps1` は、ロック済みの `project.assets.json` に含まれる各NuGetパッケージから
+LICENSE/NOTICEを収集し、.NET RuntimeのLICENSEとThirdPartyNoticesも `licenses` フォルダーへコピーする。
+ポータブルZIPとインストーラーには、プロジェクトの `LICENSE`、`THIRD-PARTY-NOTICES.md`、生成した
+`licenses` フォルダーを必ず含める。
