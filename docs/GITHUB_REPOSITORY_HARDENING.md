@@ -62,15 +62,24 @@ SignPath Foundationから承認を得た後に `release-signing` Environmentを�
 
 ## 5. 公開ゲート
 
-SignPath承認前の `release.yml` は、未署名候補を「配布禁止」と明示したActions artifactとして7日間だけ
-保存し、GitHub Releaseを作りません。公開リポジトリではActions artifactも閲覧者が取得できる場合が
-あるため、正式な配布物と誤認できない名前と警告文書を付けます。公開処理を追加できるのは、次をすべて
-満たした後です。
+### 未署名リリース
+
+SignPath承認前でも、未署名であることを利用者へ明確に伝え、次をすべて満たした成果物は公開できます。
+
+- [ ] main上の版数一致、単体テスト、JavaScript検査、x64/ARM64ビルドが成功した
+- [ ] 第一者ファイルの製品情報と、第三者ファイルの既存署名を確認した
+- [ ] `LICENSE`、`THIRD-PARTY-NOTICES.md`、正確な`licenses`フォルダーを同梱した
+- [ ] Windowsで「不明な発行元」やSmartScreenの警告が出る可能性を目立つ場所に書いた
+- [ ] 最終成果物からSHA-256を生成して、その場でもう一度照合した
+- [ ] 最終成果物にGitHub Artifact Attestationを付けた
+- [ ] SHA-256と来歴証明がコード署名や安全性の保証そのものではないと説明した
+- [ ] 手動実行で公開直前までの全工程を試験した
+- [ ] タグ実行だけがGitHub Releaseを新規作成し、`--clobber`上書きを使わない
+
+### SignPath署名済みリリースで追加するゲート
 
 - [ ] SignPathの適格性確認が完了した
 - [ ] `XTimelineViewer.exe`、`XTimelineViewer.dll`、x64/ARM64の`xtv.exe`が署名対象になった
 - [ ] インストーラー内部と外側の署名方法が確定した
 - [ ] `scripts/verify-release-signatures.ps1`が全件成功した
-- [ ] 署名後の成果物からSHA-256を生成した
-- [ ] 署名後の成果物にGitHub Artifact Attestationを付けた
-- [ ] GitHub Releaseは新規作成だけを許し、公開済み資産の`--clobber`上書きを使わない
+- [ ] 署名検証後の最終成果物からSHA-256とGitHub Artifact Attestationを生成した

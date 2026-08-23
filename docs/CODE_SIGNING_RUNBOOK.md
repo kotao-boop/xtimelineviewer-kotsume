@@ -4,13 +4,17 @@
 
 ## 現在の状態
 
-- 公開中のv2.1.0は未署名。
+- 公開中のv2.2.0は未署名。Windowsの警告が出る可能性をREADME、ダウンロード案内、リリースノートで明記する。
 - SignPath Foundationへの申請準備中。
 - READMEの署名状態、コード署名ポリシー、担当者、プライバシーポリシーを公開済みの差分として準備した。
 - .NET本体とネイティブランチャーは、同じ製品名・製品バージョンを持つ。
 - ネイティブランチャーはGitHub Actionsでソースからビルドし、コミット済みEXEを利用しない。
-- SignPath承認前のタグは、未署名候補を「配布禁止」と明示したGitHub Actions artifactへ7日間だけ保存し、Releaseへ公開しない。公開リポジトリのActions artifactは閲覧者が取得できる場合があるため、非公開とは表現しない。
-- SHA-256とGitHub Artifact Attestationは、署名検証に合格した最終成果物にだけ付与する。
+- SignPath承認前でも、利用者が未署名だと明確に分かり、テスト、最終SHA-256、GitHub Artifact Attestation、
+  ライセンス同梱の確認に合格した成果物はGitHub Releaseへ公開できる。
+- 手動実行では公開直前までの全工程を試験し、タグ実行だけがReleaseを新規作成する。公開済みReleaseや資産を
+  `--clobber`で上書きしない。
+- SHA-256とGitHub Artifact Attestationは、署名の有無にかかわらず、すべての適用対象ゲートに合格した
+  最終成果物にだけ付与する。これらをコード署名や安全性の保証として説明しない。
 
 SignPathの承認と実際の署名完了までは、成果物を「署名済み」と表示してはならない。
 
@@ -130,7 +134,7 @@ Kotsume Editionを署名対象として受け入れ可能か、申請時に明�
 SignPath GitHub Appを対象リポジトリへインストールし、SignPath側でGitHub.comをTrusted Build Systemとして
 関連付ける。APIトークンは署名要求の送信に必要な最小権限だけを持たせる。
 
-## 推奨する署名順序
+## 推奨する署名済みリリースの順序
 
 1. タグがmain上のコミットを指すことと、タグ・csproj・ランチャーの版数一致を検証する。
 2. ユニットテスト、JavaScript構文検査、x64/arm64ビルドを実行する。
@@ -140,6 +144,10 @@ SignPath GitHub Appを対象リポジトリへインストールし、SignPath�
 6. 全ての第一者EXE/DLLについて署名、証明書チェーン、タイムスタンプを検証する。
 7. SHA-256とGitHub Artifact Attestationを生成する。
 8. 署名検証が全件成功した場合だけGitHub Releaseへ公開する。
+
+未署名リリースでは手順3から6を「成功」と見せかけず、署名なしと明記する。その代わり、テスト、
+第三者の既存署名、第一者メタデータ、ライセンス、最終SHA-256、Artifact Attestationを確認する。
+未署名リリースの公開可否と、将来のSignPath署名申請の可否は別の判断として記録する。
 
 公開ノートは `docs/RELEASE_NOTES_TEMPLATE.md` を使用し、署名状態、SHA-256、attestation、
 プライバシー変更、既知の問題をリリースごとに明記する。
@@ -176,7 +184,7 @@ $files = @(
   'publish\arm64\XTimelineViewer.exe',
   'publish\arm64\XTimelineViewer.dll',
   'publish\arm64\xtv.exe',
-  'dist\XTimelineViewer-Kotsume-v2.1.0-Setup.exe'
+  'dist\XTimelineViewer-Kotsume-vX.Y.Z-Setup.exe'
 )
 
 foreach ($file in $files) {

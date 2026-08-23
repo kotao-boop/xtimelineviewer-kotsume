@@ -42,12 +42,12 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 [ダウンロード案内](DOWNLOADS.md)から、お好みの形式を確認してご利用いただけます。
 
 > [!WARNING]
-> 現在公開中のv2.1.0は未署名です。署名済みと誤認しないよう、Windowsのファイルプロパティで確認してください。SignPath Foundationへ無料コード署名を申請するための準備を進めています。
+> v2.2.0は正式なGitHubリリースですが、コード署名はありません。Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
 
 | 形式 | ファイル名 | 説明 |
 |---|---|---|
-| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.1.0-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
-| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.1.0-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
+| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.2.0-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
+| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.2.0-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
 
 ---
 
@@ -99,7 +99,7 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 
 ## Code signing policy
 
-**Status:** Application preparation in progress. The current v2.1.0 release is not code-signed.
+**Status:** Application preparation in progress. The current v2.2.0 release is not code-signed.
 
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 
@@ -107,7 +107,7 @@ Free code signing provided by [SignPath.io](https://signpath.io/), certificate b
 - **Approvers:** [@kotao-boop](https://github.com/kotao-boop)
 - **Privacy policy:** [PRIVACY.md](PRIVACY.md)
 - **Source and build configuration:** this public repository and [GitHub Actions workflows](.github/workflows/)
-- **Release approval:** every production signing request requires an explicit human approval. Unsigned artifacts must not be described as signed.
+- **Release approval:** every production signing request requires an explicit human approval. An unsigned release may be published only when its unsigned status is prominent and its final files have SHA-256 checksums and GitHub Artifact Attestations. Unsigned artifacts must never be described as signed.
 - **Third-party binaries:** only binaries built from this project's public source are submitted for this project's signature. Existing signatures on third-party and system components are preserved and verified instead of being replaced.
 
 ---
