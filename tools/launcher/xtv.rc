@@ -1,5 +1,44 @@
+#include <windows.h>
+
+// Release.ps1 がリリース時に更新する。
+#define XTV_VERSION_COMMA 2,1,0,0
+#define XTV_VERSION_STRING "2.1.0"
+
 // xtv.exe のアイコンリソース（#270）
 // 本体アプリと同じアイコン（リポジトリの Assets\AppIcon.ico）を埋め込む。
 // ID 1（最小の数値 ID）にすることで、エクスプローラー等がこれをアプリアイコンとして表示する。
 // パスは .rc からの相対（tools\launcher → リポジトリルート）。
 1 ICON "../../Assets/AppIcon.ico"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION XTV_VERSION_COMMA
+ PRODUCTVERSION XTV_VERSION_COMMA
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_APP
+ FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "Kotsume Project\0"
+            VALUE "FileDescription", "XTimelineViewer Kotsume command-line launcher\0"
+            VALUE "FileVersion", XTV_VERSION_STRING ".0\0"
+            VALUE "InternalName", "xtv\0"
+            VALUE "LegalCopyright", "Copyright (c) XTimelineViewer contributors\0"
+            VALUE "OriginalFilename", "xtv.exe\0"
+            VALUE "ProductName", "XTimelineViewer Kotsume Edition\0"
+            VALUE "ProductVersion", XTV_VERSION_STRING "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END

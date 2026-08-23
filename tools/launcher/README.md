@@ -21,26 +21,26 @@ symlink 越しに解決**して、隣にある `XTimelineViewer.exe` を**正し
 - Store(MSIX) 版は `Package.appxmanifest` の `appExecutionAlias`（#262）で対応済みのため、
   このランチャーは不要。
 
-## ビルド（一度だけ。成果物 `xtv.exe` はリポジトリにコミットし、CI では再ビルドしない）
+## ビルド（リリースごとに公開ソースから実行）
 
-VS の x64 ネイティブツール環境で:
+Visual Studio C++ Build Tools があるPowerShellで:
 
-```bat
-call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
-rc /nologo /fo xtv.res xtv.rc
-cl /nologo /utf-8 /O1 /MT /EHsc /DUNICODE /D_UNICODE xtv.cpp xtv.res /Fe:xtv.exe /link /SUBSYSTEM:WINDOWS Shell32.lib
+```powershell
+.\build-launcher.ps1 -Architecture x64
+.\build-launcher.ps1 -Architecture arm64
 ```
 
+- 成果物：`build\x64\xtv.exe` / `build\arm64\xtv.exe`
+- CIも同じスクリプトを使い、コミット済みバイナリには依存しない。
+- `xtv.rc` の製品バージョンは `Release.ps1 -Version x.y.z` が更新する。
 - `rc`：`xtv.rc`（`../../Assets/AppIcon.ico` を参照）からアイコンリソース `xtv.res` を生成し、exe に埋め込む（#270）。エクスプローラー／タスクバーで本体と同じアイコンが出る。
 - `/MT`：CRT を静的リンク＝VC ランタイム DLL に非依存。
 - `/SUBSYSTEM:WINDOWS`：コンソール窓を出さない。
 - `/utf-8`：日本語コメントを含むソースを正しく読ませる。
 - 依存は `SHELL32.dll` / `KERNEL32.dll`（いずれも OS 標準）のみ。
-- 中間生成物 `xtv.res` / `xtv.obj` はコミットしない（成果物は `xtv.exe` のみ）。
+- 中間生成物と `xtv.exe` はコミットしない。GitHub Actionsの各リリース実行で生成する。
 
 ## アーキテクチャ
 
-現状コミットしている `xtv.exe` は **x64** です。arm64 Windows では x64 エミュレーションで
-動作します（ランチャーは極小のため実害なし。本体アプリは arm64 ネイティブ ZIP のまま）。
-arm64 ネイティブ版が必要になったら、VS の「arm64 ビルドツール」を入れて
-`vcvarsamd64_arm64.bat` でクロスビルドする。
+x64 ZIPにはx64ランチャー、arm64 ZIPにはarm64ランチャーを入れる。GitHub-hosted Windows Runnerの
+Visual Studio Build Toolsを使い、x64ホストからそれぞれをビルドする。

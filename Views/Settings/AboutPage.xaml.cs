@@ -39,7 +39,7 @@ namespace XTimelineViewer.Views.Settings
             var edgeVersion = _parent?.EdgeVersion ?? R.Get("Version_Unknown");
             var versionInfoText = $"XTimelineViewer (xTV) {versionWithChannel}\r\n{edgeChannel} {edgeVersion}";
 
-            var repoUrl = "https://github.com/daruyanagi/XTimelineViewer";
+            var repoUrl = "https://github.com/kotao-boop/xtimelineviewer-kotsume";
             var fallbackUrl = repoUrl + "/releases/latest";
 
             // ── 1. アプリ情報ヘッダー ────────────────────────────────────────
@@ -66,6 +66,11 @@ namespace XTimelineViewer.Views.Settings
                 },
             };
             RootPanel.Children.Add(licenseCard);
+
+            RootPanel.Children.Add(BuildLinkCard(
+                R.Get("About_Privacy"),
+                R.Get("About_PrivacyDescription"),
+                "https://github.com/kotao-boop/xtimelineviewer-kotsume/blob/main/PRIVACY.md"));
 
             // ── 4. 利用しているコンポーネント ────────────────────────────────
             BuildComponentsExpander(edgeChannel, edgeVersion);
@@ -152,7 +157,7 @@ namespace XTimelineViewer.Views.Settings
             // ZIP 版は winget を持たないことがあるが、GitHub Releases で確認できるので表示する (#328)。
             if (PackageContext.IsPackaged) return;
 
-            // winget 版なら winget upgrade に委譲でき、それ以外はリリースページへ誘導する。
+            // Kotsume Editionのwingetパッケージはまだないため、常にリリースページへ誘導する。
             bool useWinget = PackageContext.Channel == InstallChannel.Winget && _parent.HasWinget;
 
             var settings = _parent.Settings;

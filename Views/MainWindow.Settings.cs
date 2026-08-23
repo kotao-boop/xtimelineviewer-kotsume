@@ -106,20 +106,12 @@ namespace XTimelineViewer.Views
                           ?? R.Get("Version_Unknown");
             }
             settingsWin.EdgeVersion = edgeVer;
-            settingsWin.HasWinget = !PackageContext.IsPackaged && FindWinget() is not null;
+            // Kotsume Editionのwingetパッケージが公開されるまでは、派生元を誤更新しない。
+            settingsWin.HasWinget = false;
             settingsWin.FetchLatestVersionAsync = FetchLatestVersionAsync;
             settingsWin.SaveSettingsOnly = SaveSettings;
             settingsWin.UpdateMenuBadge = UpdateMenuUpdateBadge;
-            settingsWin.ExitAndRunWingetUpdate = () =>
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName        = "cmd.exe",
-                    Arguments       = "/c timeout /t 2 /nobreak > nul && winget upgrade daruyanagi.XTimelineViewer",
-                    UseShellExecute = true,
-                });
-                Application.Current.Exit();
-            };
+            settingsWin.ExitAndRunWingetUpdate = null;
 
             // 親ウィンドウのテーマを引き継ぐ
             var theme = ((FrameworkElement)Content).RequestedTheme;

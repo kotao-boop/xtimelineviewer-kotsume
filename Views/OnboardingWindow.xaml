@@ -29,6 +29,25 @@
                        HorizontalAlignment="Center"
                        MaxWidth="380"
                        TextWrapping="Wrap" TextAlignment="Center"/>
+            <Border MaxWidth="400"
+                    Padding="16"
+                    CornerRadius="12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Name="PrivacyNoticeTitle"
+                               FontSize="14" FontWeight="SemiBold"
+                               TextWrapping="Wrap"/>
+                    <TextBlock x:Name="PrivacyNoticeBody"
+                               FontSize="12" Opacity="0.8"
+                               TextWrapping="Wrap"/>
+                    <HyperlinkButton x:Name="PrivacyPolicyLink"
+                                     Padding="0,4"
+                                     HorizontalAlignment="Left"
+                                     NavigateUri="https://github.com/kotao-boop/xtimelineviewer-kotsume/blob/main/PRIVACY.md"/>
+                </StackPanel>
+            </Border>
         </StackPanel>
 
         <!-- Step 2: Login (ProfileLoginControl) -->

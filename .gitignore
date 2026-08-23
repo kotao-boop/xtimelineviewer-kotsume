@@ -19,3 +19,6 @@ x_timeline_viewer.png
 # UI テスト成果物（実行のたびに生成される）
 test-screenshots/
 test-results.json
+
+# ネイティブランチャーのビルド成果物
+tools/launcher/build/

@@ -13,10 +13,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: '8.0.x'
 
@@ -30,6 +30,18 @@ jobs:
       - name: Test
         run: dotnet test XTimelineViewer.Tests/XTimelineViewer.Tests.csproj -c Release --nologo
 
+      - name: Validate translator JavaScript
+        shell: pwsh
+        run: |
+          node --check extensions/xtv-translator/content.js
+          node --check extensions/xtv-translator/background.js
+
+      - name: Build native launchers from source
+        shell: pwsh
+        run: |
+          ./tools/launcher/build-launcher.ps1 -Architecture x64
+          ./tools/launcher/build-launcher.ps1 -Architecture arm64
+
   # 起動スモークテスト（#346）。「壊滅的に壊れていないこと」だけを確認する。
   # 実際に exe を起動して UI Automation で触るため、ヘッドレスな runner では
   # 不安定になりうる。本体のビルド/テストを巻き込まないよう別ジョブに分け、
@@ -39,10 +51,10 @@ jobs:
     continue-on-error: true
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: '8.0.x'
 
@@ -66,7 +78,7 @@ jobs:
       # 失敗時の切り分け用にスクリーンショットを残す。
       - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ui-smoke-screenshots
           path: test-screenshots/

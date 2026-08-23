@@ -163,6 +163,11 @@
   <!-- Onboarding (#4) -->
   <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Welcome to XTimelineViewer</value></data>
   <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>Display multiple X timelines side by side. Let's start by signing in to your X account and creating a profile.</value></data>
+  <data name="Onboarding_PrivacyTitle" xml:space="preserve"><value>Network and data use</value></data>
+  <data name="Onboarding_PrivacyBody" xml:space="preserve"><value>X is displayed directly through Edge WebView2. Translation is off by default. If enabled, post text is sent to a Google translation endpoint. The developer does not operate a collection server or usage telemetry.</value></data>
+  <data name="Onboarding_PrivacyLink" xml:space="preserve"><value>Read the privacy policy</value></data>
+  <data name="About_Privacy" xml:space="preserve"><value>Privacy policy</value></data>
+  <data name="About_PrivacyDescription" xml:space="preserve"><value>Review external communication, translation, and locally stored data</value></data>
   <data name="Onboarding_LoginTitle" xml:space="preserve"><value>Sign in to X</value></data>
   <data name="Onboarding_StartBtn" xml:space="preserve"><value>Get Started</value></data>
   <data name="Onboarding_DoneBtn" xml:space="preserve"><value>Done</value></data>

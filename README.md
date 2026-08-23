@@ -23,10 +23,10 @@ X（旧 Twitter）の複数タイムラインを並列表示できる、軽量�
 各タイムラインの境界線（右端）をマウスでドラッグするだけで、横幅を直感的に伸ばしたり縮めたりできます。調整した幅は自動的に保存されます。
 
 ### 🌐 ツイート自動翻訳機能
-各タイムライン右上に自動翻訳ボタン（`🌐 翻訳: ON/OFF`）を配置。海外のツイートをタイムライン上で直接日本語に翻訳して表示します。
+各タイムライン右上に自動翻訳ボタン（`🌐 翻訳: ON/OFF`）を配置。海外のツイートをタイムライン上で直接日本語に翻訳して表示します。翻訳は初期状態でOFFです。初回利用時に、投稿本文がGoogleの翻訳用エンドポイントへ送信されることを画面で確認してから有効になります。
 
-### 🔒 アカウント停止リスクの極めて低い安心設計
-非公式な API や不正なデータ収集（スクレイピング）は一切使用していません。Microsoft Edge のブラウザエンジン（WebView2）を通じて正規のログイン画面を表示しているため、通常のブラウザ利用と全く同等の安全性で利用できます。
+### 🔒 WebView2によるXの表示
+Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラウザエンジン（WebView2）でXのWebページを表示します。ただし、本アプリはX Corp.の公式クライアントではなく、利用時にはXの規約が適用されます。任意の翻訳機能はXとは別にGoogleの翻訳用エンドポイントを利用します。詳しくは[プライバシーポリシー](PRIVACY.md)を確認してください。
 
 ### ⚡ その他の充実した機能
 - **マルチアカウント対応**: アカウントごとに異なるプロファイル（Cookie）で独立管理
@@ -39,7 +39,10 @@ X（旧 Twitter）の複数タイムラインを並列表示できる、軽量�
 
 ## ダウンロードとインストール
 
-[Releases](https://github.com/kotao-boop/xtimelineviewer-kotsume/releases) ページより、お好みの形式をダウンロードしてご利用いただけます。
+[ダウンロード案内](DOWNLOADS.md)から、お好みの形式を確認してご利用いただけます。
+
+> [!WARNING]
+> 現在公開中のv2.1.0は未署名です。署名済みと誤認しないよう、Windowsのファイルプロパティで確認してください。SignPath Foundationへ無料コード署名を申請するための準備を進めています。
 
 | 形式 | ファイル名 | 説明 |
 |---|---|---|
@@ -93,6 +96,19 @@ X（旧 Twitter）の複数タイムラインを並列表示できる、軽量�
 - X Corp. および Twitter との提携、承認、スポンサーシップは一切受けていません。
 - 「X」および「Twitter」は X Corp. の商標または登録商標です。
 
+## Code signing policy
+
+**Status:** Application preparation in progress. The current v2.1.0 release is not code-signed.
+
+Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+
+- **Committers and reviewers:** [@kotao-boop](https://github.com/kotao-boop)
+- **Approvers:** [@kotao-boop](https://github.com/kotao-boop)
+- **Privacy policy:** [PRIVACY.md](PRIVACY.md)
+- **Source and build configuration:** this public repository and [GitHub Actions workflows](.github/workflows/)
+- **Release approval:** every production signing request requires an explicit human approval. Unsigned artifacts must not be described as signed.
+- **Third-party binaries:** only binaries built from this project's public source are submitted for this project's signature. Existing signatures on third-party and system components are preserved and verified instead of being replaced.
+
 ---
 
 ## ライセンス・クレジット
@@ -100,4 +116,4 @@ X（旧 Twitter）の複数タイムラインを並列表示できる、軽量�
 - **ライセンス**: [MIT License](LICENSE)
 - **原作者**: [daruyanagi](https://github.com/daruyanagi)（[Original XTimelineViewer Repository](https://github.com/daruyanagi/XTimelineViewer)）
 - **カスタマイズ & 拡張**: Kotsume Project
-- **コード署名**: Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/)
+- **プライバシー**: [プライバシーポリシー](PRIVACY.md)

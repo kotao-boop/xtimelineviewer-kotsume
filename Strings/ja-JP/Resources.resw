@@ -163,6 +163,11 @@
   <!-- Onboarding (#4) -->
   <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>XTimelineViewer へようこそ</value></data>
   <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>X のタイムラインを並べて表示するアプリです。まず X アカウントにログインしてプロファイルを作成しましょう。</value></data>
+  <data name="Onboarding_PrivacyTitle" xml:space="preserve"><value>通信とデータについて</value></data>
+  <data name="Onboarding_PrivacyBody" xml:space="preserve"><value>X は Edge WebView2 で直接表示します。翻訳は初期状態でOFFで、有効にすると投稿本文を Google の翻訳用エンドポイントへ送信します。開発者の収集サーバーや利用状況テレメトリはありません。</value></data>
+  <data name="Onboarding_PrivacyLink" xml:space="preserve"><value>プライバシーポリシーを読む</value></data>
+  <data name="About_Privacy" xml:space="preserve"><value>プライバシーポリシー</value></data>
+  <data name="About_PrivacyDescription" xml:space="preserve"><value>外部通信、翻訳、ローカル保存データの説明を確認します</value></data>
   <data name="Onboarding_LoginTitle" xml:space="preserve"><value>X にサインイン</value></data>
   <data name="Onboarding_StartBtn" xml:space="preserve"><value>始める</value></data>
   <data name="Onboarding_DoneBtn" xml:space="preserve"><value>完了</value></data>

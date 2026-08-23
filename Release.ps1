@@ -6,7 +6,7 @@
     配布は GitHub リリース（ZIP）と winget のみで、どちらも CI
     （.github/workflows/release.yml）が v* タグの push をトリガーに自動で行う。
     本スクリプトは CI を起動する前のバージョン更新
-    （csproj / Package.appxmanifest）を担当する。
+    （csproj / Package.appxmanifest / Inno Setup / ランチャー）を担当する。
     Microsoft Store 配布は廃止した（#272）ため、MSIX / .msixbundle は生成しない。
 
 .PARAMETER Version
@@ -32,6 +32,8 @@ $ErrorActionPreference = 'Stop'
 $root    = $PSScriptRoot
 $proj    = Join-Path $root 'XTimelineViewer.csproj'
 $manifest= Join-Path $root 'Package.appxmanifest'
+$installer = Join-Path $root 'scripts\installer.iss'
+$launcherResource = Join-Path $root 'tools\launcher\xtv.rc'
 $outDir  = Join-Path $root 'publish\release'
 
 function Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
@@ -40,13 +42,28 @@ function Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
 Step 'バージョン'
 if ($Version) {
     if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Version は x.y.z 形式で指定してください: $Version" }
-    (Get-Content $proj -Raw) -replace '<Version>[\d.]+</Version>', "<Version>$Version</Version>" |
+    $version4 = "$Version.0"
+    (Get-Content $proj -Raw) `
+        -replace '<Version>[\d.]+</Version>', "<Version>$Version</Version>" `
+        -replace '<AssemblyVersion>[\d.]+</AssemblyVersion>', "<AssemblyVersion>$version4</AssemblyVersion>" `
+        -replace '<FileVersion>[\d.]+</FileVersion>', "<FileVersion>$version4</FileVersion>" `
+        -replace '<InformationalVersion>[\d.]+</InformationalVersion>', "<InformationalVersion>$Version</InformationalVersion>" |
         Set-Content $proj -Encoding utf8 -NoNewline
     # Identity の Version のみを置換する。-creplace（大文字小文字を区別）で XML 宣言の
     # 小文字 version="1.0" を除外し、ProcessorArchitecture への先読みで MinVersion 等を除外する。
     (Get-Content $manifest -Raw) -creplace 'Version="[\d.]+"(?=\s+ProcessorArchitecture)', "Version=`"$Version.0`"" |
         Set-Content $manifest -Encoding utf8 -NoNewline
-    Write-Host "csproj / appxmanifest を $Version に更新しました"
+    (Get-Content $installer -Raw) -replace '#define MyAppVersion "[\d.]+"', "#define MyAppVersion `"$Version`"" |
+        Set-Content $installer -Encoding utf8 -NoNewline
+
+    $parts = $Version.Split('.')
+    $versionComma = "$($parts[0]),$($parts[1]),$($parts[2]),0"
+    (Get-Content $launcherResource -Raw) `
+        -replace '#define XTV_VERSION_COMMA [\d,]+', "#define XTV_VERSION_COMMA $versionComma" `
+        -replace '#define XTV_VERSION_STRING "[\d.]+"', "#define XTV_VERSION_STRING `"$Version`"" |
+        Set-Content $launcherResource -Encoding utf8 -NoNewline
+
+    Write-Host "csproj / appxmanifest / installer / launcher を $Version に更新しました"
 } else {
     if ((Get-Content $proj -Raw) -match '<Version>([\d.]+)</Version>') { $Version = $Matches[1] }
     else { throw 'csproj から Version を読み取れませんでした' }
@@ -68,8 +85,13 @@ if ($WithZip) {
         # x64 の Microsoft.Web.WebView2.Core.dll を arm64 出力に混入させ、arm64 で BadImageFormat になる（#267）。
         dotnet publish $proj -c Release -r $rid -p:PlatformTarget=$plat -p:EffectivePlatform=$plat -p:WindowsPackageType=None -o $pubDir
         if ($LASTEXITCODE -ne 0) { throw "publish 失敗: $rid" }
-        # コマンドライン起動用ランチャーを同梱（#264。CI の release.yml と揃える）
-        Copy-Item (Join-Path $root 'tools\launcher\xtv.exe') (Join-Path $pubDir 'xtv.exe') -Force
+        # コマンドライン起動用ランチャーは CI でソースからビルドする。
+        # ローカル ZIP では、同じアーキテクチャで事前ビルドされた検証用成果物だけを使う。
+        $launcher = Join-Path $root "tools\launcher\build\$plat\xtv.exe"
+        if (-not (Test-Path $launcher)) {
+            throw "ランチャーがありません。先に tools\launcher\build-launcher.ps1 -Architecture $plat を実行してください: $launcher"
+        }
+        Copy-Item $launcher (Join-Path $pubDir 'xtv.exe') -Force
         $zip = Join-Path $outDir "XTimelineViewer-$Version-$rid.zip"
         Compress-Archive -Path "$pubDir\*" -DestinationPath $zip -Force
         Write-Host "→ $zip"
@@ -83,5 +105,6 @@ Write-Host @"
 次の手順（手動）:
   1. バージョン更新分をコミット & PR → main にマージ
   2. v$Version タグを push（または gh release create v$Version）
-     → CI が GitHub リリースの ZIP と winget 公開を自動で行う
+     → CI がGitHubリリースのZIP、インストーラー、SHA-256、来歴証明を生成する
+  3. SignPath承認前の成果物は未署名。署名済みと表示しない
 "@ -ForegroundColor Yellow

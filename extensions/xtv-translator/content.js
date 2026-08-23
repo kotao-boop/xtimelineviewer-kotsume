@@ -5,9 +5,68 @@
     if (window._xtvTranslatorLoaded) return;
     window._xtvTranslatorLoaded = true;
 
-    // 設定管理（既定値: 自動翻訳 ON）
-    let autoTranslateEnabled = localStorage.getItem('xtv_auto_translate') !== 'false';
+    // 設定管理。翻訳本文は外部サービスへ送信されるため、既定値は OFF。
+    // 旧版で ON だった場合も、明示的な同意記録がなければ OFF に戻す。
+    const translationConsentKey = 'xtv_translation_external_consent_v1';
+    const hasTranslationConsent = () => localStorage.getItem(translationConsentKey) === 'true';
+    let autoTranslateEnabled = hasTranslationConsent()
+        && localStorage.getItem('xtv_auto_translate') === 'true';
+    if (!hasTranslationConsent()) {
+        localStorage.setItem('xtv_auto_translate', 'false');
+    }
     const translationCache = new Map();
+    let pendingConsent = null;
+
+    // 外部送信の同意を、X側のUIと混同しない独立したモーダルで取得する。
+    function requestTranslationConsent() {
+        if (hasTranslationConsent()) return Promise.resolve(true);
+        if (pendingConsent) return pendingConsent;
+
+        pendingConsent = new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'xtv-consent-overlay';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.setAttribute('aria-labelledby', 'xtv-consent-title');
+            overlay.innerHTML = `
+                <div class="xtv-consent-card">
+                    <div class="xtv-consent-brand">XTimelineViewer Kotsume Edition</div>
+                    <h2 id="xtv-consent-title">翻訳時の外部送信について</h2>
+                    <p>翻訳する投稿本文を、Google の翻訳用エンドポイントへ送信します。投稿に個人情報や秘密情報が含まれる場合は翻訳しないでください。</p>
+                    <p class="xtv-consent-note">自動翻訳はいつでも右上のボタンからOFFにできます。この確認はXではなく、本アプリが表示しています。</p>
+                    <a class="xtv-consent-link" href="https://github.com/kotao-boop/xtimelineviewer-kotsume/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">プライバシーポリシーを読む</a>
+                    <div class="xtv-consent-actions">
+                        <button type="button" class="xtv-consent-cancel">今回は使わない</button>
+                        <button type="button" class="xtv-consent-accept">同意して翻訳する</button>
+                    </div>
+                </div>
+            `;
+
+            const finish = (accepted) => {
+                if (accepted) {
+                    localStorage.setItem(translationConsentKey, 'true');
+                }
+                overlay.remove();
+                pendingConsent = null;
+                resolve(accepted);
+            };
+
+            overlay.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (event.target === overlay) finish(false);
+            });
+            overlay.querySelector('.xtv-consent-cancel').addEventListener('click', () => finish(false));
+            overlay.querySelector('.xtv-consent-accept').addEventListener('click', () => finish(true));
+            overlay.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') finish(false);
+            });
+
+            (document.body || document.documentElement).appendChild(overlay);
+            overlay.querySelector('.xtv-consent-accept').focus();
+        });
+
+        return pendingConsent;
+    }
 
     // 日本語が含まれているか（ひらがな・カタカナの検知）
     function containsJapanese(text) {
@@ -164,6 +223,7 @@
         btn.innerHTML = '🌐 翻訳を表示';
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
+            if (!await requestTranslationConsent()) return;
             btn.remove();
             await applyTranslation(tweetArticle, tweetTextEl, rawText);
         });
@@ -205,7 +265,8 @@
 
         const toggleBtn = document.getElementById('xtv-trans-toggle');
         if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
+            toggleBtn.addEventListener('click', async () => {
+                if (!autoTranslateEnabled && !await requestTranslationConsent()) return;
                 autoTranslateEnabled = !autoTranslateEnabled;
                 localStorage.setItem('xtv_auto_translate', autoTranslateEnabled ? 'true' : 'false');
                 toggleBtn.textContent = `🌐 自動翻訳: ${autoTranslateEnabled ? 'ON' : 'OFF'}`;

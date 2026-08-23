@@ -27,6 +27,9 @@ namespace XTimelineViewer.Views
             // Step 1 テキスト
             WelcomeTitle.Text = R.Get("Onboarding_WelcomeTitle");
             WelcomeBody.Text  = R.Get("Onboarding_WelcomeBody");
+            PrivacyNoticeTitle.Text = R.Get("Onboarding_PrivacyTitle");
+            PrivacyNoticeBody.Text = R.Get("Onboarding_PrivacyBody");
+            PrivacyPolicyLink.Content = R.Get("Onboarding_PrivacyLink");
             SkipBtn.Content   = R.Get("Button_Skip");
             PrimaryBtn.Content = R.Get("Onboarding_StartBtn");
 

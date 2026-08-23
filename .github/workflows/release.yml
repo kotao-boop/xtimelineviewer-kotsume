@@ -7,54 +7,147 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
-  release:
+  build-test-and-release:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout the tagged source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag and release versions
+        id: version
+        shell: pwsh
+        run: |
+          git fetch origin main --no-tags
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw "Release tags must point to a commit contained in main."
+          }
+
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Release tag must use vMAJOR.MINOR.PATCH: $env:GITHUB_REF_NAME"
+          }
+
+          [xml]$project = Get-Content XTimelineViewer.csproj -Raw
+          $projectVersion = $project.Project.PropertyGroup.Version | Select-Object -First 1
+          if ($projectVersion -ne $version) {
+            throw "Tag version $version does not match XTimelineViewer.csproj version $projectVersion."
+          }
+
+          $launcherResource = Get-Content tools/launcher/xtv.rc -Raw
+          if ($launcherResource -notmatch "XTV_VERSION_STRING `"$([regex]::Escape($version))`"") {
+            throw "Launcher version does not match tag version $version."
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: '8.0.x'
 
-      # EffectivePlatform を明示しないと、WebView2 SDK がビルドホストの RID(win-x64) を見て
-      # x64 の Microsoft.Web.WebView2.Core.dll を arm64 出力に混入させ、arm64 で BadImageFormat になる。
-      - name: Build x64
+      - name: Run unit tests
+        shell: pwsh
+        run: dotnet test XTimelineViewer.Tests/XTimelineViewer.Tests.csproj -c Release --nologo
+
+      - name: Validate translator JavaScript
+        shell: pwsh
+        run: |
+          node --check extensions/xtv-translator/content.js
+          node --check extensions/xtv-translator/background.js
+
+      # EffectivePlatformを明示し、WebView2のネイティブDLLを対象RIDと一致させる。
+      - name: Publish app (x64)
+        shell: pwsh
         run: >
           dotnet publish XTimelineViewer.csproj
           -c Release -r win-x64 -p:Platform=x64 -p:EffectivePlatform=x64
           -p:WindowsPackageType=None -p:SelfContained=true
           -o publish/x64
 
-      - name: Build arm64
+      - name: Publish app (arm64)
+        shell: pwsh
         run: >
           dotnet publish XTimelineViewer.csproj
           -c Release -r win-arm64 -p:Platform=arm64 -p:PlatformTarget=arm64 -p:EffectivePlatform=arm64
           -p:WindowsPackageType=None -p:SelfContained=true
           -o publish/arm64
 
-      - name: Add launcher (xtv.exe)
+      - name: Build launchers from source
         shell: pwsh
         run: |
-          # コマンドライン起動用の小さなネイティブランチャーを各 ZIP に同梱する（#264）。
-          # ビルド済みの成果物をコミットしてあるためここでは再ビルドしない。
-          Copy-Item tools/launcher/xtv.exe publish/x64/xtv.exe   -Force
-          Copy-Item tools/launcher/xtv.exe publish/arm64/xtv.exe -Force
+          ./tools/launcher/build-launcher.ps1 -Architecture x64
+          ./tools/launcher/build-launcher.ps1 -Architecture arm64
+          Copy-Item tools/launcher/build/x64/xtv.exe publish/x64/xtv.exe -Force
+          Copy-Item tools/launcher/build/arm64/xtv.exe publish/arm64/xtv.exe -Force
 
-      - name: Create ZIP archives
+      - name: Verify first-party product metadata
         shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          $tag = "${{ github.ref_name }}"
-          Compress-Archive -Path publish/x64/*   -DestinationPath "XTimelineViewer-Kotsume-$tag-win-x64-Portable.zip"
-          Compress-Archive -Path publish/arm64/* -DestinationPath "XTimelineViewer-Kotsume-$tag-win-arm64-Portable.zip"
+          $expected = 'XTimelineViewer Kotsume Edition'
+          foreach ($path in @(
+            'publish/x64/XTimelineViewer.exe',
+            'publish/x64/xtv.exe',
+            'publish/arm64/XTimelineViewer.exe',
+            'publish/arm64/xtv.exe'
+          )) {
+            $info = (Get-Item $path).VersionInfo
+            if ($info.ProductName -ne $expected) {
+              throw "$path has unexpected ProductName: $($info.ProductName)"
+            }
+            if (-not $info.ProductVersion.StartsWith($env:RELEASE_VERSION)) {
+              throw "$path has unexpected ProductVersion: $($info.ProductVersion)"
+            }
+          }
 
-      - name: Setup Inno Setup
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      - name: Create portable ZIP archives
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          New-Item -ItemType Directory -Path release-artifacts -Force | Out-Null
+          Compress-Archive -Path publish/x64/* `
+            -DestinationPath "release-artifacts/XTimelineViewer-Kotsume-$env:RELEASE_TAG-win-x64-Portable.zip"
+          Compress-Archive -Path publish/arm64/* `
+            -DestinationPath "release-artifacts/XTimelineViewer-Kotsume-$env:RELEASE_TAG-win-arm64-Portable.zip"
+
+      # 現在は未署名。SignPath承認後は、署名済みx64ツリーを入力にしてインストーラーを作り、
+      # Setup.exe自体も署名してから次のハッシュ・来歴証明・公開へ進める。
+      - name: Build Inno Setup installer
+        uses: Minionguyjpro/Inno-Setup-Action@ec985ef724d1fb4a05bfbc1a8e49930dc76d2b0c # v1.2.9
         with:
           path: scripts/installer.iss
+          options: /DMyAppVersion=${{ steps.version.outputs.version }}
+
+      - name: Collect installer and create SHA-256 files
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $installer = "dist/XTimelineViewer-Kotsume-v$env:RELEASE_VERSION-Setup.exe"
+          if (-not (Test-Path $installer)) { throw "Installer was not created: $installer" }
+          Copy-Item $installer release-artifacts/ -Force
+
+          Get-ChildItem release-artifacts -File | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)" | Set-Content "$($_.FullName).sha256" -Encoding ascii -NoNewline
+          }
+
+      - name: Attest release artifacts
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: |
+            release-artifacts/*.exe
+            release-artifacts/*.zip
 
       - name: Create or update GitHub Release
         shell: bash
@@ -62,13 +155,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${{ github.ref_name }}"
-          files=(
-            "XTimelineViewer-Kotsume-${tag}-win-x64-Portable.zip"
-            "XTimelineViewer-Kotsume-${tag}-win-arm64-Portable.zip"
-          )
-          if [ -f "dist/XTimelineViewer-Kotsume-v2.1.0-Setup.exe" ]; then
-            files+=("dist/XTimelineViewer-Kotsume-v2.1.0-Setup.exe")
-          fi
+          mapfile -t files < <(find release-artifacts -maxdepth 1 -type f -print | sort)
           if gh release view "$tag" > /dev/null 2>&1; then
             gh release upload "$tag" "${files[@]}" --clobber
           else

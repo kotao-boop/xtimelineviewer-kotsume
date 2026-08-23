@@ -1,10 +1,14 @@
 ; Inno Setup Script for XTimelineViewer Kotsume Edition
 #define MyAppName "XTimelineViewer Kotsume Edition"
+#ifndef MyAppVersion
 #define MyAppVersion "2.1.0"
+#endif
 #define MyAppPublisher "Kotsume Project"
 #define MyAppURL "https://github.com/kotao-boop/xtimelineviewer-kotsume"
 #define MyAppExeName "XTimelineViewer.exe"
-#define SourceDir "..\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64"
+#ifndef SourceDir
+#define SourceDir "..\publish\x64"
+#endif
 
 [Setup]
 AppId={{D6F9E134-8A8C-4C9D-9F0A-3C2B1D8E7F6A}
@@ -16,7 +20,7 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
-OutputBaseFilename=XTimelineViewer-Kotsume-v2.1.0-Setup
+OutputBaseFilename=XTimelineViewer-Kotsume-v{#MyAppVersion}-Setup
 OutputDir=..\dist
 SetupIconFile=..\Assets\AppIcon.ico
 Compression=lzma2/ultra64
@@ -24,6 +28,7 @@ SolidCompression=yes
 WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
+InfoBeforeFile=..\PRIVACY.md
 
 [Languages]
 Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
