@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Xml.Linq;
 using Xunit;
 
 namespace XTimelineViewer.Tests
@@ -24,6 +25,22 @@ namespace XTimelineViewer.Tests
         }
 
         private static string Read(string relative) => File.ReadAllText(FindRepoPath(relative));
+
+        [Fact]
+        public void ProductVersion_IsConsistentAcrossReleaseInputs()
+        {
+            var project = XDocument.Parse(Read("XTimelineViewer.csproj"));
+            var version = project.Root?.Element("PropertyGroup")?.Element("Version")?.Value;
+            Assert.False(string.IsNullOrWhiteSpace(version));
+
+            var manifest = XDocument.Parse(Read("Package.appxmanifest"));
+            var manifestNamespace = manifest.Root!.Name.Namespace;
+            var packageVersion = manifest.Root.Element(manifestNamespace + "Identity")?.Attribute("Version")?.Value;
+
+            Assert.Equal($"{version}.0", packageVersion);
+            Assert.Contains($"XTV_VERSION_STRING \"{version}\"", Read("tools/launcher/xtv.rc"));
+            Assert.Contains($"MyAppVersion \"{version}\"", Read("scripts/installer.iss"));
+        }
 
         [Fact]
         public void Translation_IsOffUntilExternalTransferConsent()
