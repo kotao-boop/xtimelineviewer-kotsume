@@ -6,7 +6,7 @@ using Xunit;
 namespace XTimelineViewer.Tests
 {
     /// <summary>
-    /// コード署名申請に必要な安全条件が、将来の変更で静かに後退しないようにする。
+    /// 未署名公開と将来のコード署名に必要な安全条件が、将来の変更で静かに後退しないようにする。
     /// 実際の証明書検証は署名導入後のリリースCIで行う。
     /// </summary>
     public class ReleaseIntegritySourceTests
@@ -78,22 +78,45 @@ namespace XTimelineViewer.Tests
         }
 
         [Fact]
-        public void UnsignedReleaseCandidates_AreNotPublished()
+        public void UnsignedReleases_ArePublishedOnlyWithWarningsChecksumsAndProvenance()
         {
             var workflow = Read(".github/workflows/release.yml");
+            var normalized = workflow.Replace("\r\n", "\n");
 
-            Assert.Contains("permissions:\n  contents: read", workflow.Replace("\r\n", "\n"));
-            Assert.Contains("UNSIGNED-DO-NOT-DISTRIBUTE-", workflow);
-            Assert.Contains("UNSIGNED-DO-NOT-DISTRIBUTE.txt", workflow);
-            Assert.DoesNotContain("gh release create", workflow);
-            Assert.DoesNotContain("gh release upload", workflow);
+            Assert.Contains("permissions:\n  contents: read", normalized);
+            Assert.Contains("contents: read\n      id-token: write\n      attestations: write", normalized);
+            Assert.Contains("publish_release:", workflow);
+            Assert.Contains("permissions:\n      contents: write", normalized);
+            Assert.Contains("workflow_dispatch:", workflow);
+            Assert.Contains("UNSIGNED-RELEASE.txt", workflow);
+            Assert.Contains("SHA256SUMS.txt", workflow);
+            Assert.Contains("actions/attest-build-provenance@", workflow);
+            Assert.Contains("subject-checksums:", workflow);
+            Assert.Contains("gh release create", workflow);
+            Assert.Contains("--verify-tag", workflow);
+            Assert.Contains("--notes-file", workflow);
+            Assert.Contains("if: github.ref_type == 'tag'", workflow);
+            Assert.Contains("actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c", workflow);
             Assert.DoesNotContain("--clobber", workflow);
             Assert.Contains("collect-legal-notices.ps1", workflow);
             Assert.Contains("verify-third-party-signatures.ps1", workflow);
             Assert.True(
                 workflow.IndexOf("Separate debug symbols", StringComparison.Ordinal) <
-                workflow.IndexOf("Build Inno Setup installer", StringComparison.Ordinal),
-                "PDB files must be removed before the installer and portable ZIP are built.");
+                workflow.IndexOf("Create unsigned release notice and portable ZIP archives", StringComparison.Ordinal),
+                "PDB files must be removed before portable ZIPs are built.");
+            Assert.True(
+                workflow.IndexOf("Build Inno Setup installer", StringComparison.Ordinal) <
+                workflow.IndexOf("Generate and verify SHA-256 checksums", StringComparison.Ordinal),
+                "Checksums must be generated after every package is final.");
+            Assert.True(
+                workflow.IndexOf("Generate and verify SHA-256 checksums", StringComparison.Ordinal) <
+                workflow.IndexOf("Attest release artifacts", StringComparison.Ordinal),
+                "Provenance must use the final checksum list.");
+            Assert.True(
+                workflow.IndexOf("Attest release artifacts", StringComparison.Ordinal) <
+                workflow.IndexOf("Create new GitHub Release without overwriting", StringComparison.Ordinal),
+                "A release must not be published before provenance is created.");
+            Assert.True(File.Exists(FindRepoPath("docs/releases/v2.2.0.md")));
         }
 
         [Fact]
@@ -171,9 +194,10 @@ namespace XTimelineViewer.Tests
         {
             var readme = Read("README.md");
 
-            Assert.Contains("現在公開中のv2.1.0は未署名", readme);
+            Assert.Contains("v2.2.0は正式なGitHubリリースですが、コード署名はありません", readme);
             Assert.Contains("## Code signing policy", readme);
             Assert.Contains("Application preparation in progress", readme);
+            Assert.Contains("SHA256SUMS.txt", readme);
         }
 
         [Fact]

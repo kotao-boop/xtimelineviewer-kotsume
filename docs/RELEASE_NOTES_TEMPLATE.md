@@ -16,8 +16,10 @@ Free code signing provided by [SignPath.io](https://signpath.io/), certificate b
 - `XTimelineViewer-Kotsume-vX.Y.Z-win-x64-Portable.zip`
 - `XTimelineViewer-Kotsume-vX.Y.Z-win-arm64-Portable.zip`
 
-各成果物の隣にある `.sha256` は、署名完了後の最終ファイルから生成します。GitHub Artifact Attestationも
-同じ最終ファイルを対象にします。署名前のハッシュを掲載しないでください。
+`SHA256SUMS.txt`は、署名の有無を明記した後、すべての適用対象ゲートに合格した最終ファイルから生成します。
+GitHub Artifact Attestationも同じ最終ファイルを対象にします。署名済みリリースでは署名後、未署名
+リリースでは未署名警告の同梱後に生成します。SHA-256と来歴証明をコード署名や安全性の保証そのものとして
+説明しないでください。
 
 ## プライバシーと通信の変更
 
@@ -41,8 +43,8 @@ Free code signing provided by [SignPath.io](https://signpath.io/), certificate b
 
 - ソースコミット: `[40文字SHA]`
 - CI実行: `[Actions URL]`
-- SignPath signing request: `[承認済みの場合だけURL]`
+- SignPath signing request: `[承認済みの場合だけURL。未署名なら「対象外」と記入]`
 - x64/ARM64ビルド: `[成功/失敗]`
 - 単体テスト: `[件数と結果]`
-- Authenticode検証: `[成功/未実施]`
+- Authenticode検証: `[成功/未署名を確認]`
 - WACK: `[Store提出時だけ結果]`

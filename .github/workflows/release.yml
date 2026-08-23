@@ -1,19 +1,33 @@
-name: Release Candidate
+name: Release
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to test without publishing (MAJOR.MINOR.PATCH)'
+        required: true
+        default: '2.2.0'
 
 permissions:
   contents: read
 
 jobs:
-  build-test-and-stage:
+  build_test_and_stage:
+    name: Build, test, attest and stage
     runs-on: windows-2025
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    outputs:
+      release-tag: ${{ steps.version.outputs.tag }}
+      release-version: ${{ steps.version.outputs.version }}
 
     steps:
-      - name: Checkout the tagged source
+      - name: Checkout source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
@@ -22,16 +36,26 @@ jobs:
       - name: Verify tag and release versions
         id: version
         shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          git fetch origin main --no-tags
-          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
-          if ($LASTEXITCODE -ne 0) {
-            throw "Release tags must point to a commit contained in main."
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $releaseTag = $env:GITHUB_REF_NAME
+            git fetch origin main --no-tags
+            git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+            if ($LASTEXITCODE -ne 0) {
+              throw "Release tags must point to a commit contained in main."
+            }
+          } else {
+            if ($env:GITHUB_REF_NAME -ne 'main') {
+              throw "Manual release tests must run from main."
+            }
+            $releaseTag = "v$env:INPUT_VERSION"
           }
 
-          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          $version = $releaseTag -replace '^v', ''
           if ($version -notmatch '^\d+\.\d+\.\d+$') {
-            throw "Release tag must use vMAJOR.MINOR.PATCH: $env:GITHUB_REF_NAME"
+            throw "Release version must use MAJOR.MINOR.PATCH: $releaseTag"
           }
 
           [xml]$project = Get-Content XTimelineViewer.csproj -Raw
@@ -46,6 +70,7 @@ jobs:
           }
 
           "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$releaseTag" >> $env:GITHUB_OUTPUT
 
       - name: Setup .NET
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
@@ -133,33 +158,43 @@ jobs:
             }
           }
 
-      - name: Create portable ZIP archives
+      - name: Create unsigned release notice and portable ZIP archives
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
           $warning = @'
-          UNSIGNED RELEASE CANDIDATE - DO NOT DISTRIBUTE
-          This package has not passed SignPath signing, timestamp, final hash or attestation verification.
-          It is not an official XTimelineViewer Kotsume Edition release.
+          IMPORTANT: THIS BUILD IS NOT CODE-SIGNED / 重要: このビルドは未署名です
+
+          Windows may show "Unknown publisher" or a Microsoft Defender SmartScreen warning.
+          Windowsで「不明な発行元」またはSmartScreenの警告が表示される場合があります。
+
+          When downloaded from this project's official GitHub Release, verify the package with
+          SHA256SUMS.txt and the GitHub Artifact Attestation before running it.
+          公式GitHub Releaseから取得し、実行前にSHA256SUMS.txtとGitHub Artifact Attestationを確認してください。
+
+          SHA-256 and Artifact Attestation help verify the exact workflow-built file, but they do
+          not replace Authenticode code signing and do not by themselves prove that software is safe.
+          SHA-256と来歴証明はファイル確認の助けですが、コード署名の代わりではなく、ソフトの安全性そのものを保証しません。
           '@
-          $warning | Set-Content publish/x64/UNSIGNED-DO-NOT-DISTRIBUTE.txt -Encoding utf8
-          $warning | Set-Content publish/arm64/UNSIGNED-DO-NOT-DISTRIBUTE.txt -Encoding utf8
           New-Item -ItemType Directory -Path release-artifacts -Force | Out-Null
+          $warning | Set-Content release-artifacts/UNSIGNED-RELEASE.txt -Encoding utf8
+          Copy-Item release-artifacts/UNSIGNED-RELEASE.txt publish/x64/UNSIGNED-RELEASE.txt
+          Copy-Item release-artifacts/UNSIGNED-RELEASE.txt publish/arm64/UNSIGNED-RELEASE.txt
           Compress-Archive -Path publish/x64/* `
             -DestinationPath "release-artifacts/XTimelineViewer-Kotsume-$env:RELEASE_TAG-win-x64-Portable.zip"
           Compress-Archive -Path publish/arm64/* `
             -DestinationPath "release-artifacts/XTimelineViewer-Kotsume-$env:RELEASE_TAG-win-arm64-Portable.zip"
 
       # 現在は未署名。SignPath承認後は、署名済みx64ツリーを入力にしてインストーラーを作り、
-      # Setup.exe自体も署名してから次のハッシュ・来歴証明・公開へ進める。
+      # Setup.exe自体も署名してから同じハッシュ・来歴証明・公開ゲートへ進める。
       - name: Build Inno Setup installer
         uses: Minionguyjpro/Inno-Setup-Action@ec985ef724d1fb4a05bfbc1a8e49930dc76d2b0c # v1.2.9
         with:
           path: scripts/installer.iss
           options: /DMyAppVersion=${{ steps.version.outputs.version }}
 
-      - name: Collect unsigned installer candidate
+      - name: Collect unsigned installer
         shell: pwsh
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
@@ -168,24 +203,42 @@ jobs:
           if (-not (Test-Path $installer)) { throw "Installer was not created: $installer" }
           Copy-Item $installer release-artifacts/ -Force
 
-      - name: Mark candidate as unsigned and not for distribution
+      - name: Generate and verify SHA-256 checksums
         shell: pwsh
         run: |
-          @'
-          UNSIGNED RELEASE CANDIDATE - DO NOT DISTRIBUTE
-          This artifact has not passed SignPath signing, timestamp, final hash or attestation verification.
-          It is not an official XTimelineViewer Kotsume Edition release.
-          '@ | Set-Content release-artifacts/UNSIGNED-DO-NOT-DISTRIBUTE.txt -Encoding utf8
+          $directory = (Resolve-Path release-artifacts).Path
+          $files = Get-ChildItem $directory -File |
+            Where-Object Name -ne 'SHA256SUMS.txt' |
+            Sort-Object Name
+          if ($files.Count -ne 4) {
+            throw "Expected three packages and one unsigned notice, found $($files.Count) files."
+          }
 
-      # SignPath承認前はGitHub Releaseへ公開しない。Actions artifactは公開リポジトリの閲覧者が
-      # 取得できる場合があるため、名前と同梱文書の両方で未署名候補だと明示する。
-      - name: Upload unsigned release candidate
+          $lines = foreach ($file in $files) {
+            $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($file.Name)"
+          }
+          $checksumPath = Join-Path $directory 'SHA256SUMS.txt'
+          [IO.File]::WriteAllLines($checksumPath, $lines, [Text.UTF8Encoding]::new($false))
+
+          foreach ($line in Get-Content $checksumPath) {
+            if ($line -notmatch '^([0-9a-f]{64})  (.+)$') { throw "Invalid checksum line: $line" }
+            $actual = (Get-FileHash -LiteralPath (Join-Path $directory $Matches[2]) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $Matches[1]) { throw "Checksum verification failed: $($Matches[2])" }
+          }
+
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: release-artifacts/SHA256SUMS.txt
+
+      - name: Upload verified unsigned release artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: UNSIGNED-DO-NOT-DISTRIBUTE-${{ github.ref_name }}-${{ github.sha }}
+          name: unsigned-release-${{ steps.version.outputs.tag }}-${{ github.sha }}
           path: release-artifacts/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 30
 
       - name: Upload debug symbols artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -194,3 +247,47 @@ jobs:
           path: symbols/
           if-no-files-found: error
           retention-days: 14
+
+  # ビルド側にはReleaseの書き込み権限を渡さない。手動実行ではこのjob自体を開始しない。
+  publish_release:
+    name: Publish new GitHub Release
+    if: github.ref_type == 'tag'
+    needs: build_test_and_stage
+    runs-on: windows-2025
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release notes
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Download verified release artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: unsigned-release-${{ needs.build_test_and_stage.outputs.release-tag }}-${{ github.sha }}
+          path: release-artifacts
+
+      # タグ実行だけがReleaseを新規作成する。既存Releaseや資産は上書きしない。
+      - name: Create new GitHub Release without overwriting
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.build_test_and_stage.outputs.release-tag }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh release view $env:RELEASE_TAG --repo $env:REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            throw "Release already exists and will not be overwritten: $env:RELEASE_TAG"
+          }
+
+          $notes = "docs/releases/$env:RELEASE_TAG.md"
+          if (-not (Test-Path $notes)) { throw "Release notes not found: $notes" }
+          $assets = Get-ChildItem release-artifacts -File | Sort-Object Name | ForEach-Object FullName
+          gh release create $env:RELEASE_TAG @assets `
+            --repo $env:REPOSITORY `
+            --verify-tag `
+            --title "XTimelineViewer Kotsume Edition $env:RELEASE_TAG (Unsigned)" `
+            --notes-file $notes `
+            --latest
+          if ($LASTEXITCODE -ne 0) { throw "GitHub Release creation failed." }
