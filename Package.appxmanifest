@@ -6,13 +6,10 @@
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   IgnorableNamespaces="uap uap5 rescap">
 
-  <!--
-    開発用Identity。Microsoft Storeへ提出してはいけない。
-    Partner Centerで製品名を予約した後、Product identityに表示されたName/Publisherへ置き換える。
-  -->
+  <!-- Microsoft Partner Centerで発行されたXTimelineViewer Kotsume Editionの正式なIdentity。 -->
   <Identity
-    Name="XTimelineViewerKotsume.Development"
-    Publisher="CN=Kotsume Development"
+    Name="A470ACCD.XTimelineViewerKotsumeEdition"
+    Publisher="CN=C5C81B3B-7437-40C6-8063-CFDF8AAF44EC"
     Version="2.3.0.0"
     ProcessorArchitecture="neutral" />
 

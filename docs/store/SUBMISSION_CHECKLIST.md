@@ -1,26 +1,26 @@
 # Microsoft Store 提出チェックリスト
 
-このチェックリストは、Partner CenterのIdentityを取得した後に使います。現在の
-`Package.appxmanifest` は開発用Identityであり、そのまま提出できません。
+このチェックリストは、Partner Centerへの提出前に使います。製品名の予約と正式なIdentityの
+`Package.appxmanifest`への反映は完了しています。
 
 ## 1. アカウントと製品Identity
 
-- [ ] Partner Centerの本人確認が完了している
-- [ ] `XTimelineViewer Kotsume Edition` または正式な公開名を予約した
-- [ ] Product identityの `Name` を記録した
-- [ ] Product identityの `Publisher` を記録した
-- [ ] 公開する `Publisher display name` を確認した
-- [ ] 認証情報、回復コード、本人確認資料をリポジトリへ保存していない
+- [x] Partner Centerの本人確認が完了している
+- [x] `XTimelineViewer Kotsume Edition` を予約した
+- [x] Product identityの `Name` を記録した
+- [x] Product identityの `Publisher` を記録した
+- [x] 公開する `Publisher display name` が `Kotsume Project` であることを確認した
+- [x] 認証情報、回復コード、本人確認資料をリポジトリへ保存していない
 
 ## 2. manifest
 
-- [ ] `Name="XTimelineViewerKotsume.Development"` をPartner Centerの値へ置き換えた
-- [ ] `Publisher="CN=Kotsume Development"` をPartner Centerの値へ置き換えた
-- [ ] アプリ版と4桁のパッケージ版を一致させた
-- [ ] x64とARM64の両方を含む提出用パッケージを生成した
+- [x] `Name` をPartner Centerの正式な値へ置き換えた
+- [x] `Publisher` をPartner Centerの正式な値へ置き換えた
+- [x] アプリ版と4桁のパッケージ版を一致させた
+- [x] x64とARM64の提出用パッケージをローカルで生成した
 - [ ] `internetClient` が実際のHTTPS通信に必要であることを説明できる
 - [ ] `runFullTrust` がWinUI 3デスクトップ機能に必要であることを説明できる
-- [ ] `scripts/test-store-readiness.ps1` が `-AllowDevelopmentIdentity` なしで成功する
+- [x] `scripts/test-store-readiness.ps1` が `-AllowDevelopmentIdentity` なしで成功する
 
 ## 3. プライバシー
 

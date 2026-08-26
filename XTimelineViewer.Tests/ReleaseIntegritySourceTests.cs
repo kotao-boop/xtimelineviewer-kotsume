@@ -150,15 +150,18 @@ namespace XTimelineViewer.Tests
         }
 
         [Fact]
-        public void StoreManifest_DoesNotReuseUpstreamIdentity()
+        public void StoreManifest_UsesReservedKotsumeProductIdentity()
         {
             var manifest = Read("Package.appxmanifest");
 
             Assert.DoesNotContain("4275.XTimelineViewer", manifest);
             Assert.DoesNotContain("B73FDB0C-06E5-4824-9E7F-3AF969921DF4", manifest);
             Assert.DoesNotContain("だるやなぎ", manifest);
-            Assert.Contains("XTimelineViewerKotsume.Development", manifest);
-            Assert.Contains("Microsoft Storeへ提出してはいけない", manifest);
+            Assert.DoesNotContain("XTimelineViewerKotsume.Development", manifest);
+            Assert.DoesNotContain("CN=Kotsume Development", manifest);
+            Assert.Contains("Name=\"A470ACCD.XTimelineViewerKotsumeEdition\"", manifest);
+            Assert.Contains("Publisher=\"CN=C5C81B3B-7437-40C6-8063-CFDF8AAF44EC\"", manifest);
+            Assert.Contains("<PublisherDisplayName>Kotsume Project</PublisherDisplayName>", manifest);
         }
 
         [Fact]
