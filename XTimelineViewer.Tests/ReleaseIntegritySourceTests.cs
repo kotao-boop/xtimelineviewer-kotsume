@@ -26,6 +26,13 @@ namespace XTimelineViewer.Tests
 
         private static string Read(string relative) => File.ReadAllText(FindRepoPath(relative));
 
+        private static string CurrentVersion()
+        {
+            var project = XDocument.Parse(Read("XTimelineViewer.csproj"));
+            return project.Root?.Element("PropertyGroup")?.Element("Version")?.Value
+                ?? throw new InvalidDataException("XTimelineViewer.csprojにVersionがありません");
+        }
+
         [Fact]
         public void ProductVersion_IsConsistentAcrossReleaseInputs()
         {
@@ -116,7 +123,7 @@ namespace XTimelineViewer.Tests
                 workflow.IndexOf("Attest release artifacts", StringComparison.Ordinal) <
                 workflow.IndexOf("Create new GitHub Release without overwriting", StringComparison.Ordinal),
                 "A release must not be published before provenance is created.");
-            Assert.True(File.Exists(FindRepoPath("docs/releases/v2.2.0.md")));
+            Assert.True(File.Exists(FindRepoPath($"docs/releases/v{CurrentVersion()}.md")));
         }
 
         [Fact]
@@ -194,7 +201,7 @@ namespace XTimelineViewer.Tests
         {
             var readme = Read("README.md");
 
-            Assert.Contains("v2.2.0は正式なGitHubリリースですが、コード署名はありません", readme);
+            Assert.Contains($"v{CurrentVersion()}は正式なGitHubリリースですが、コード署名はありません", readme);
             Assert.Contains("## Code signing policy", readme);
             Assert.Contains("Application preparation in progress", readme);
             Assert.Contains("SHA256SUMS.txt", readme);
