@@ -12,13 +12,14 @@ namespace XTimelineViewer.Views
         // 生成は ShowModal 経由のみ。呼び出し元に関わらずモーダルを型で保証する (#157)。
         private event EventHandler<ProfileConfig>? ProfileCreated;
 
-        private AddProfileWindow()
+        private AddProfileWindow(ProfileConfig? existingProfile = null)
         {
             this.InitializeComponent();
+            if (existingProfile is not null) LoginControl.UseExistingProfile(existingProfile);
             AppWindow.Resize(new SizeInt32(500, 700));
-            Title = R.Get("AddProfile_Title");
+            Title = R.Get(existingProfile is null ? "AddProfile_Title" : "Profile_Relogin");
             CancelBtn.Content = R.Get("Button_Cancel");
-            CreateBtn.Content = R.Get("AddProfile_CreateBtn");
+            CreateBtn.Content = R.Get(existingProfile is null ? "AddProfile_CreateBtn" : "Profile_SaveLogin");
 
             // ログイン検出で作成ボタンを表示する。実処理は共通コントロールが担う (#157)。
             LoginControl.LoginDetected += _ => CreateBtn.Visibility = Visibility.Visible;
@@ -40,11 +41,22 @@ namespace XTimelineViewer.Views
             WindowModal.RunModal(owner, win);
         }
 
+        public static void ShowReloginModal(Window owner, ProfileConfig profile, Action<ProfileConfig> onUpdated)
+        {
+            var win = new AddProfileWindow(profile);
+            var theme = ((FrameworkElement)owner.Content).ActualTheme;
+            ((FrameworkElement)win.Content).RequestedTheme = theme;
+            MainWindow.ApplyTitleBarTheme(win, theme);
+            win.ProfileCreated += (_, updated) => onUpdated(updated);
+            WindowModal.RunModal(owner, win);
+        }
+
         private void CreateBtn_Click(object sender, RoutedEventArgs e)
         {
             var profile = LoginControl.BuildProfile();
             if (profile is null) return;
             Debug.WriteLine($"[Profile] Created: Id={profile.Id}, Name={profile.Name}");
+            LoginControl.CloseWebView();
             ProfileCreated?.Invoke(this, profile);
             Close();
         }
@@ -52,6 +64,7 @@ namespace XTimelineViewer.Views
         private void CancelBtn_Click(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine($"[Profile] Cancelled: Id={LoginControl.ProfileId} (will be cleaned up on next launch)");
+            LoginControl.CloseWebView();
             Close();
         }
     }

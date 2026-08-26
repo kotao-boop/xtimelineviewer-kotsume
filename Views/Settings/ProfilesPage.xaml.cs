@@ -67,9 +67,7 @@ namespace XTimelineViewer.Views.Settings
             var expander = new CommunityToolkit.WinUI.Controls.SettingsExpander
             {
                 Header      = profile.Name,
-                Description = profile.Id == "default"
-                    ? R.Get("Profiles_DefaultDescription")
-                    : profile.Id,
+                Description = BuildProfileDescription(profile),
                 HeaderIcon  = badgeIcon,
             };
 
@@ -183,6 +181,30 @@ namespace XTimelineViewer.Views.Settings
             expander.Items.Add(badgeTextCard);
             expander.Items.Add(primaryCard);
 
+            var reloginBtn = new Button
+            {
+                Content = R.Get("Profile_Relogin"),
+                HorizontalAlignment = HorizontalAlignment.Left,
+            };
+            reloginBtn.Click += (_, _) =>
+            {
+                if (_parent is null) return;
+                AddProfileWindow.ShowReloginModal(_parent, profile, updated =>
+                {
+                    profile.Name = updated.Name;
+                    profile.ScreenName = updated.ScreenName;
+                    _parent.ProfilesModified?.Invoke();
+                    _parent.ProfileSessionRefreshed?.Invoke(profile.Id);
+                    PopulateUI();
+                });
+            };
+            expander.Items.Add(new CommunityToolkit.WinUI.Controls.SettingsCard
+            {
+                Header = R.Get("Profile_Relogin"),
+                Description = R.Get("Profile_ReloginDescription"),
+                Content = reloginBtn,
+            });
+
             // ── 削除ボタン（Expander 内の末尾に配置 #178） ──
             var deleteBtn = new Button
             {
@@ -219,6 +241,15 @@ namespace XTimelineViewer.Views.Settings
             expander.Items.Add(deleteCard);
 
             return expander;
+        }
+
+        private string BuildProfileDescription(ProfileConfig profile)
+        {
+            var handle = string.IsNullOrWhiteSpace(profile.ScreenName)
+                ? R.Get("Profiles_HandleUnknown")
+                : $"@{profile.ScreenName}";
+            var count = _parent?.GetTimelineCount?.Invoke(profile.Id) ?? 0;
+            return $"{handle} · {R.Get("Profiles_StatusConfigured")} · {string.Format(R.Get("Profiles_TimelineCount"), count)}";
         }
 
         /// <summary>default プロファイル用の簡素なカード（展開なし・編集不可）。</summary>

@@ -137,7 +137,8 @@ namespace XTimelineViewer.Views
         private void AddListsTimelineItem_Click(object _, RoutedEventArgs __)
         {
             // URL を組み立てる名前付きプロファイルを決める（AddTimeline の既定割り当てと同じ）
-            var profile = _profiles.FirstOrDefault(p => p.Id != "default");
+            var profile = _profiles.FirstOrDefault(p => p.Id == SelectedToolbarProfileId)
+                ?? _profiles.FirstOrDefault(p => p.Id != "default");
             if (profile is null) return;
 
             // 初期 URL はキャッシュ済みハンドルの推測。実ハンドルはペイン読み込み時に
@@ -157,6 +158,7 @@ namespace XTimelineViewer.Views
         private TimelineConfig CreateDefaultConfig(string url) => new()
         {
             Url            = url,
+            ProfileId      = SelectedToolbarProfileId ?? "default",
             HideSidebar    = _appSettings.DefaultHideSidebar,
             HideCompose    = _appSettings.DefaultHideCompose,
             HideListHeader = _appSettings.DefaultHideListHeader,
@@ -199,15 +201,28 @@ namespace XTimelineViewer.Views
                 _appSettings.LayoutMode = mode;
                 SaveSettings();
                 ApplyLayoutMode(mode);
+                UpdateLayoutSuggestion();
             }
+        }
+
+        private void UpdateLayoutMenuState()
+        {
+            var mode = _appSettings.LayoutMode ?? "Classic";
+            LayoutClassicItem.IsChecked = mode == "Classic";
+            LayoutGrid2x2Item.IsChecked = mode == "Grid2x2";
+            LayoutGrid2x3Item.IsChecked = mode == "Grid2x3";
+            LayoutVerticalSplitItem.IsChecked = mode == "VerticalSplit";
+            LayoutFocusItem.IsChecked = mode == "Focus";
         }
 
         private void ApplyLayoutMode(string? mode = null)
         {
             mode ??= _appSettings.LayoutMode ?? "Classic";
 
-            var panes = GetAllPanes();
+            var panes = Panes.ToList();
             if (panes.Count == 0) return;
+            var visiblePanes = panes.Where(p => p.Config.IsVisible).ToList();
+            UpdateLayoutMenuState();
 
             if (mode == "Classic")
             {
@@ -221,6 +236,7 @@ namespace XTimelineViewer.Views
                 TimelinePanel.Children.Clear();
                 foreach (var pane in panes)
                 {
+                    pane.Visibility = pane.Config.IsVisible ? Visibility.Visible : Visibility.Collapsed;
                     pane.Width = double.IsNaN(pane.Config.Width) || pane.Config.Width <= 0 ? 350 : pane.Config.Width;
                     pane.HorizontalAlignment = HorizontalAlignment.Left;
                     pane.VerticalAlignment = VerticalAlignment.Stretch;
@@ -244,9 +260,15 @@ namespace XTimelineViewer.Views
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    for (int i = 0; i < panes.Count; i++)
+                    foreach (var hidden in panes.Where(p => !p.Config.IsVisible))
                     {
-                        var p = panes[i];
+                        hidden.Visibility = Visibility.Collapsed;
+                        TimelineGrid.Children.Add(hidden);
+                    }
+                    for (int i = 0; i < visiblePanes.Count; i++)
+                    {
+                        var p = visiblePanes[i];
+                        p.Visibility = Visibility.Visible;
                         p.Width = double.NaN;
                         p.HorizontalAlignment = HorizontalAlignment.Stretch;
                         p.VerticalAlignment = VerticalAlignment.Stretch;
@@ -265,9 +287,15 @@ namespace XTimelineViewer.Views
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    for (int i = 0; i < panes.Count; i++)
+                    foreach (var hidden in panes.Where(p => !p.Config.IsVisible))
                     {
-                        var p = panes[i];
+                        hidden.Visibility = Visibility.Collapsed;
+                        TimelineGrid.Children.Add(hidden);
+                    }
+                    for (int i = 0; i < visiblePanes.Count; i++)
+                    {
+                        var p = visiblePanes[i];
+                        p.Visibility = Visibility.Visible;
                         p.Width = double.NaN;
                         p.HorizontalAlignment = HorizontalAlignment.Stretch;
                         p.VerticalAlignment = VerticalAlignment.Stretch;
@@ -284,9 +312,15 @@ namespace XTimelineViewer.Views
                     TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    for (int i = 0; i < panes.Count; i++)
+                    foreach (var hidden in panes.Where(p => !p.Config.IsVisible))
                     {
-                        var p = panes[i];
+                        hidden.Visibility = Visibility.Collapsed;
+                        TimelineGrid.Children.Add(hidden);
+                    }
+                    for (int i = 0; i < visiblePanes.Count; i++)
+                    {
+                        var p = visiblePanes[i];
+                        p.Visibility = Visibility.Visible;
                         p.Width = double.NaN;
                         p.HorizontalAlignment = HorizontalAlignment.Stretch;
                         p.VerticalAlignment = VerticalAlignment.Stretch;
@@ -303,9 +337,15 @@ namespace XTimelineViewer.Views
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.4, GridUnitType.Star) });
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    for (int i = 0; i < panes.Count; i++)
+                    foreach (var hidden in panes.Where(p => !p.Config.IsVisible))
                     {
-                        var p = panes[i];
+                        hidden.Visibility = Visibility.Collapsed;
+                        TimelineGrid.Children.Add(hidden);
+                    }
+                    for (int i = 0; i < visiblePanes.Count; i++)
+                    {
+                        var p = visiblePanes[i];
+                        p.Visibility = Visibility.Visible;
                         p.Width = double.NaN;
                         p.HorizontalAlignment = HorizontalAlignment.Stretch;
                         p.VerticalAlignment = VerticalAlignment.Stretch;
@@ -335,8 +375,13 @@ namespace XTimelineViewer.Views
         private void RefreshTimelineNumbers()
         {
             int n = 1;
-            foreach (var pane in GetAllPanes())
+            foreach (var pane in Panes)
             {
+                if (!pane.Config.IsVisible)
+                {
+                    pane.SetNumber(null);
+                    continue;
+                }
                 pane.SetNumber(n <= 9 ? n : null);
                 n++;
             }
@@ -345,7 +390,7 @@ namespace XTimelineViewer.Views
         // Ctrl+数字 で、表示順 oneBased 番目のタイムラインをアクティブ化する。
         private void FocusTimelineByIndex(int oneBased)
         {
-            var panes = GetAllPanes();
+            var panes = Panes.Where(p => p.Config.IsVisible).ToList();
             int i = oneBased - 1;
             if (i < 0 || i >= panes.Count) return;
             {
@@ -357,7 +402,7 @@ namespace XTimelineViewer.Views
         // Ctrl+←/→（WebView2 非フォーカス時）。現在アクティブなペインを基準に隣へ移動する。
         private void FocusAdjacentFromActive(int direction)
         {
-            var panes = GetAllPanes();
+            var panes = Panes.Where(p => p.Config.IsVisible).ToList();
             if (panes.Count == 0) return;
 
             int cur = _focusedPane is null ? -1 : panes.IndexOf(_focusedPane);
@@ -373,18 +418,9 @@ namespace XTimelineViewer.Views
         // to には「取り除く前のインデックス」を渡す（ドラッグ先ペインの位置）。
         private void MovePaneTo(TimelinePane pane, int to)
         {
-            int from = TimelinePanel.Children.IndexOf(pane);
+            int from = _configs.IndexOf(pane.Config);
             if (from < 0 || to < 0 || from == to) return;
-
-            TimelinePanel.Children.RemoveAt(from);
-            TimelinePanel.Children.Insert(to, pane);
-
-            var cfg = _configs[from];
-            _configs.RemoveAt(from);
-            _configs.Insert(to, cfg);
-
-            RefreshTimelineNumbers();  // 並び替え後に番号を振り直す（#225）
-            SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
+            MoveConfig(from, to);
 
             // 視覚ツリーへの再挿入後、WebView2 の Win32 HWND を再アンカーさせる
             pane.Visibility = Visibility.Collapsed;
@@ -396,12 +432,12 @@ namespace XTimelineViewer.Views
         // 再挿入でフォーカスが外れるので、連続して押せるよう戻しておく。
         private void MovePaneAdjacent(TimelinePane pane, int direction)
         {
-            int from = TimelinePanel.Children.IndexOf(pane);
-            if (from < 0) return;
-            int to = from + direction;
-            if (to < 0 || to >= TimelinePanel.Children.Count) return;
-
-            MovePaneTo(pane, to);
+            var visible = Panes.Where(p => p.Config.IsVisible).ToList();
+            int visibleFrom = visible.IndexOf(pane);
+            if (visibleFrom < 0) return;
+            int visibleTo = visibleFrom + direction;
+            if (visibleTo < 0 || visibleTo >= visible.Count) return;
+            MovePaneTo(pane, _configs.IndexOf(visible[visibleTo].Config));
 
             pane.SetFocus();
             pane.StartBringIntoView();  // 視界外なら横スクロールして表示（#231）
@@ -435,6 +471,7 @@ namespace XTimelineViewer.Views
             // 列番号などの定数が複数箇所に手書きされ、片方だけ直す事故が
             // 繰り返し起きていたので TimelinePane.xaml へ移した（#345）。
             var pane       = new TimelinePane(cfg);
+            pane.Visibility = cfg.IsVisible ? Visibility.Visible : Visibility.Collapsed;
             var headerGrid = pane.Header;
             ApplyProfileBadge(pane);
 
@@ -497,12 +534,23 @@ namespace XTimelineViewer.Views
 
             pane.SettingsButton.Click += async (s, e2) => await ShowPaneSettingsDialogAsync(pane);
 
+            pane.RetryRequested += p =>
+            {
+                p.ShowLoadingState();
+                p.WebView.Source = new Uri(p.Config.Url);
+            };
+            pane.OpenInBrowserRequested += p =>
+                LaunchUriByEdgeProfileAsync(new Uri(p.Config.Url)).FireAndForget(nameof(LaunchUriByEdgeProfileAsync));
+
+            pane.ShowLoadingState();
+
             InitWebViewAsync(pane.WebView, cfg).FireAndForget(nameof(InitWebViewAsync));
 
             if (_appSettings.LayoutMode != "Classic")
             {
                 ApplyLayoutMode(_appSettings.LayoutMode);
             }
+            UpdateLayoutSuggestion();
         }
 
         // ⚙ でプロファイルを切り替えると WebView2 を作り直すので、
@@ -543,6 +591,14 @@ namespace XTimelineViewer.Views
                 SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
                 Width                   = 160,
                 HorizontalAlignment     = HorizontalAlignment.Left,
+            };
+
+            var nameBox = new TextBox
+            {
+                Header = R.Get("Timeline_Name"),
+                Text = cfg.Name,
+                MaxLength = 80,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
             };
 
             var hideSidebarToggle = new ToggleSwitch
@@ -651,6 +707,14 @@ namespace XTimelineViewer.Views
             // ラベルは別立ての TextBlock ではなく各コントロールの Header に持たせる。
             // コード生成でも UI Automation 上の関連付けが成立する（#344）。
             panel.Children.Add(profileBox);
+            panel.Children.Add(nameBox);
+            panel.Children.Add(new TextBlock
+            {
+                Text = R.Get("Timeline_NameDescription"),
+                FontSize = 12,
+                Opacity = 0.65,
+                TextWrapping = TextWrapping.Wrap,
+            });
             panel.Children.Add(widthBox);
             panel.Children.Add(hideSidebarToggle);
             panel.Children.Add(hideComposeToggle);
@@ -681,32 +745,15 @@ namespace XTimelineViewer.Views
 
             if (shouldDelete)
             {
-                if (_enlargedPane == pane) RestorePaneSize();  // 拡大中のペイン削除に備える（#287）
-                CleanupWebView(pane.WebView);
-                if (_hardReloadUiUpdaters.Count == 0)
-                {
-                    _hardReloadUiTimer?.Stop();
-                    _hardReloadUiTimer = null;
-                }
-                _configs.Remove(cfg);
-                // ペイン単位の状態は TimelinePane の中にあるので、
-                // コレクションから外せば一緒に消える（#345）。
-                if (_focusedPane == pane)
-                {
-                    _focusedPane = null;
-                    RefreshPaneThemes();
-                }
-                await SaveTimelinesAsync();
-
-                TimelinePanel.Children.Remove(pane);
-                RefreshTimelineNumbers();  // 削除後に番号を振り直す（#225）
-                ViewModel.HasTimelines = TimelinePanel.Children.Count > 0;
+                await ConfirmAndRemoveTimelineAsync(pane);
             }
             else if (result == ContentDialogResult.Primary)
             {
                 // ベース URL の変更を反映 (#189)。プロファイル再生成より前に cfg.Url を
                 // 更新しておき、再生成時は新しいベース URL へ遷移させる。
                 bool baseUrlChanged = stagedBaseUrl is not null && stagedBaseUrl != cfg.Url;
+                cfg.Name = nameBox.Text.Trim();
+                pane.UpdateUrlHeader();
                 if (baseUrlChanged)
                 {
                     cfg.Url = stagedBaseUrl!;
@@ -764,6 +811,48 @@ namespace XTimelineViewer.Views
                 StartHardReloadTimer(pane.WebView, cfg);
                 await SaveTimelinesAsync();
             }
+        }
+
+        private async Task<bool> ConfirmAndRemoveTimelineAsync(TimelinePane pane)
+        {
+            var name = TimelineLabelHelper.GetFriendlyName(pane.Config, R.Get);
+            var confirm = new ContentDialog
+            {
+                Title = R.Get("Timeline_DeleteConfirmTitle"),
+                Content = string.Format(R.Get("Timeline_DeleteConfirmBody"), name),
+                PrimaryButtonText = R.Get("Timeline_DeleteConfirm"),
+                CloseButtonText = R.Get("Button_Cancel"),
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = Content.XamlRoot,
+            };
+            if (await ShowDialogAsync(confirm) != ContentDialogResult.Primary) return false;
+
+            await RemoveTimelineAsync(pane);
+            return true;
+        }
+
+        private async Task RemoveTimelineAsync(TimelinePane pane)
+        {
+            if (_enlargedPane == pane) RestorePaneSize();
+            CleanupWebView(pane.WebView);
+            _configs.Remove(pane.Config);
+            if (_focusedPane == pane) _focusedPane = null;
+
+            TimelinePanel.Children.Remove(pane);
+            TimelineGrid.Children.Remove(pane);
+
+            if (_hardReloadUiUpdaters.Count == 0)
+            {
+                _hardReloadUiTimer?.Stop();
+                _hardReloadUiTimer = null;
+            }
+
+            await SaveTimelinesAsync();
+            ViewModel.HasTimelines = _configs.Count > 0;
+            RefreshTimelineNumbers();
+            RefreshPaneThemes();
+            if (_configs.Count > 0) ApplyLayoutMode();
+            UpdateLayoutSuggestion();
         }
 
     }

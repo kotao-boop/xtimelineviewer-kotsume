@@ -44,6 +44,8 @@ namespace XTimelineViewer.Tests
             { "Ctrl+N",     "=== 'n'",            new[] { "Key=\"N\"" } },
             { "Ctrl+F",     "=== 'f'",            new[] { "Key=\"F\"" } },
             { "F3",         "=== 'F3'",           new[] { "Key=\"F3\"" } },
+            { "Ctrl+K",     "=== 'k'",            new[] { "Key=\"K\"" } },
+            { "F1",         "=== 'F1'",           new[] { "Key=\"F1\"" } },
             { "Ctrl+1-9",   ">= '1' && k <= '9'", new[] { "Key=\"Number1\"", "Key=\"Number9\"" } },
         };
 

@@ -23,6 +23,7 @@ namespace XTimelineViewer.Views
         {
             this.InitializeComponent();
             AppWindow.Resize(new SizeInt32(520, 680));
+            Title = R.Get("App_Title");
 
             // Step 1 テキスト
             WelcomeTitle.Text = R.Get("Onboarding_WelcomeTitle");
@@ -31,7 +32,9 @@ namespace XTimelineViewer.Views
             PrivacyNoticeBody.Text = R.Get("Onboarding_PrivacyBody");
             PrivacyPolicyLink.Content = R.Get("Onboarding_PrivacyLink");
             SkipBtn.Content   = R.Get("Button_Skip");
+            BackBtn.Content   = R.Get("Button_Back");
             PrimaryBtn.Content = R.Get("Onboarding_StartBtn");
+            UpdateProgress();
 
             // Step 2: ログイン検出で作成ボタンを有効化
             LoginControl.LoginDetected += _ =>
@@ -76,8 +79,22 @@ namespace XTimelineViewer.Views
 
         private void SkipBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (_appSettings is not null) _appSettings.OnboardingCompleted = true;
             Close();
-            Microsoft.UI.Xaml.Application.Current.Exit();
+        }
+
+        private void BackBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentStep != Step.Login) return;
+            _currentStep = Step.Welcome;
+            LoginControl.Visibility = Visibility.Collapsed;
+            WelcomeStep.Visibility = Visibility.Visible;
+            BackBtn.Visibility = Visibility.Collapsed;
+            SkipBtn.Content = R.Get("Button_Skip");
+            PrimaryBtn.Content = R.Get("Onboarding_StartBtn");
+            PrimaryBtn.IsEnabled = true;
+            Title = R.Get("App_Title");
+            UpdateProgress();
         }
 
         private void GoToLogin()
@@ -91,6 +108,8 @@ namespace XTimelineViewer.Views
             PrimaryBtn.Content   = R.Get("Onboarding_DoneBtn");
             PrimaryBtn.IsEnabled = false; // ログイン検出まで無効
             SkipBtn.Content      = R.Get("Button_Skip");
+            BackBtn.Visibility   = Visibility.Visible;
+            UpdateProgress();
 
             LoginControl.InitializeAsync().FireAndForget("LoginControl.InitializeAsync");
         }
@@ -109,6 +128,7 @@ namespace XTimelineViewer.Views
         private void GoToComplete(string profileName)
         {
             _currentStep = Step.Complete;
+            if (_appSettings is not null) _appSettings.OnboardingCompleted = true;
 
             // WebView2 env を解放し、ウィンドウを閉じた後に MainWindow が
             // 同じプロファイルの env を新規作成できるようにする
@@ -152,6 +172,19 @@ namespace XTimelineViewer.Views
             PrimaryBtn.Content   = R.Get("Button_Close");
             PrimaryBtn.IsEnabled = true;
             SkipBtn.Visibility   = Visibility.Collapsed;
+            BackBtn.Visibility   = Visibility.Collapsed;
+            UpdateProgress();
+        }
+
+        private void UpdateProgress()
+        {
+            StepProgress.Value = (int)_currentStep + 1;
+            ProgressText.Text = _currentStep switch
+            {
+                Step.Welcome => R.Get("Onboarding_Progress1"),
+                Step.Login => R.Get("Onboarding_Progress2"),
+                _ => R.Get("Onboarding_Progress3"),
+            };
         }
 
         private void SidebarToggle_Toggled(object sender, RoutedEventArgs e)

@@ -1,8 +1,7 @@
 <Window
     x:Class="XTimelineViewer.Views.SettingsWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Settings">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <NavigationView x:Name="NavView"
@@ -11,6 +10,13 @@
                         PaneDisplayMode="Left"
                         OpenPaneLength="200"
                         SelectionChanged="NavView_SelectionChanged">
+            <NavigationView.AutoSuggestBox>
+                <AutoSuggestBox x:Name="SettingsSearchBox"
+                                QueryIcon="Find"
+                                TextChanged="SettingsSearchBox_TextChanged"
+                                SuggestionChosen="SettingsSearchBox_SuggestionChosen"
+                                QuerySubmitted="SettingsSearchBox_QuerySubmitted"/>
+            </NavigationView.AutoSuggestBox>
             <NavigationView.MenuItems>
                 <NavigationViewItem x:Name="NavGeneral" Tag="General">
                     <NavigationViewItem.Icon>

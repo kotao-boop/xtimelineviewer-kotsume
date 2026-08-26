@@ -22,7 +22,7 @@ namespace XTimelineViewer.Views
             if (_enlargedPane == pane) return;
 
             _enlargedPane = pane;
-            foreach (var p in TimelinePanel.Children.OfType<TimelinePane>())
+            foreach (var p in Panes)
                 p.Visibility = p == pane ? Visibility.Visible : Visibility.Collapsed;
 
             UpdateEnlargedPaneWidth();
@@ -36,7 +36,7 @@ namespace XTimelineViewer.Views
             var pane = _enlargedPane;
             _enlargedPane = null;
 
-            foreach (var p in TimelinePanel.Children.OfType<TimelinePane>())
+            foreach (var p in Panes)
                 p.Visibility = Visibility.Visible;
 
             pane.Width = pane.Config.Width;

@@ -37,6 +37,7 @@ namespace XTimelineViewer.Views
         private static readonly string SaveFilePath      = GetDataFilePath("timelines.json");
         private static readonly string SettingsFilePath  = GetDataFilePath("settings.json");
         private static readonly string ProfilesFilePath  = GetDataFilePath("profiles.json");
+        private static readonly string WorkspacesFilePath = GetDataFilePath("workspaces.json");
 
         // 終了時に一度だけ保存してから閉じ直すためのフラグ（#338）
         private bool _closeHandled;
@@ -112,7 +113,20 @@ namespace XTimelineViewer.Views
         /// 表示順のペイン一覧。以前は_webViews や _autoLoadIndicators を
         /// 「全ペインの代用」にして列挙していた（#345）。
         /// </summary>
-        private IEnumerable<TimelinePane> Panes => TimelinePanel.Children.OfType<TimelinePane>();
+        private IEnumerable<TimelinePane> Panes
+        {
+            get
+            {
+                var existing = GetAllPanes();
+                var ordered = _configs
+                    .Select(config => existing.FirstOrDefault(p => ReferenceEquals(p.Config, config)))
+                    .Where(p => p is not null)
+                    .Cast<TimelinePane>()
+                    .ToList();
+                ordered.AddRange(existing.Where(p => !ordered.Contains(p)));
+                return ordered;
+            }
+        }
 
         /// <summary>WebView2 からそのペインを引く。ペインは多くても数枚なので線形探索で十分。</summary>
         private TimelinePane? PaneOf(WebView2 webView) => Panes.FirstOrDefault(p => p.WebView == webView);
@@ -206,6 +220,7 @@ namespace XTimelineViewer.Views
                         if (k === 'ArrowUp')    { e.preventDefault(); navigatePosts(-1); return; }
                         if (k === 'ArrowDown')  { e.preventDefault(); navigatePosts(1);  return; }
                         if (k === 'f')          { e.preventDefault(); window.chrome.webview.postMessage('focusSearch'); return; }
+                        if (k === 'k')          { e.preventDefault(); window.chrome.webview.postMessage('commandPalette'); return; }
                         if (k >= '1' && k <= '9') { e.preventDefault(); window.chrome.webview.postMessage('focusIndex:' + k); return; } // #225
 
                         if (k === 'r' && ni)    { e.preventDefault(); actOnPost('retweet',  'unretweet');      return; }
@@ -220,6 +235,7 @@ namespace XTimelineViewer.Views
                     }
                     if (!c && !s && !a) {
                         if (k === 'F3')              { e.preventDefault(); window.chrome.webview.postMessage('focusSearch'); return; } // #228
+                        if (k === 'F1')              { e.preventDefault(); window.chrome.webview.postMessage('showShortcuts'); return; }
                         if (k === 'Home'      && ni) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
                         if (k === 'End'       && ni) { window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }); return; }
                         if (k === 'F5')              { e.preventDefault(); location.reload(); return; }
@@ -329,7 +345,7 @@ namespace XTimelineViewer.Views
             }
             var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
             if (File.Exists(iconPath)) AppWindow.SetIcon(iconPath);
-            Title = "XTimelineViewer (xTV)";
+            Title = R.Get("App_Title");
             RefreshUIText();
             HookContrastThemeChanges();  // コントラストテーマの切り替えに追従（#341）
             // 終了時の保存は Closing 側で行う（#338）。
@@ -363,6 +379,7 @@ namespace XTimelineViewer.Views
             ((FrameworkElement)Content).ActualThemeChanged += (s, e) => ApplyThemeToWebViews();
             LoadSettings();
             LoadProfiles();
+            LoadWorkspaces();
             CleanupOrphanedProfiles();
             ApplySavedTheme();
             UpdateMenuUpdateBadge();
@@ -375,12 +392,40 @@ namespace XTimelineViewer.Views
         private void RefreshUIText()
         {
             PostLabel.Text        = R.Get("PostLabel.Text");
-            DropHintTitle.Text    = R.Get("DropHintTitle.Text");
-            DropHintSubtitle.Text = R.Get("DropHintSubtitle.Text");
+            Title                 = R.Get("App_Title");
+            DropHintTitle.Text    = R.Get("Empty_WelcomeTitle");
+            DropHintSubtitle.Text = R.Get("Empty_WelcomeBody");
+            EmptyAddProfileBtn.Content = R.Get("Empty_AddProfile");
+            EmptyAddTimelineBtn.Content = R.Get("Empty_AddTimeline");
+            EmptyDisabledHint.Text = R.Get("Empty_DisabledHint");
+            EmptyDisabledHint.Visibility = ViewModel.HasNamedProfiles ? Visibility.Collapsed : Visibility.Visible;
+            EmptyQuickAddLabel.Text = R.Get("Empty_QuickAdd");
+            EmptyDropHintText.Text = R.Get("Empty_DropHint");
+            EmptyQuickHomeBtn.Content = R.Get("Timeline_Home");
+            EmptyQuickNotificationsBtn.Content = R.Get("Timeline_Notifications");
+            EmptyQuickBookmarksBtn.Content = R.Get("Timeline_Bookmarks");
+            EmptyQuickListsBtn.Content = R.Get("Timeline_Lists");
+            EmptyAddHomeItem.Text = R.Get("Timeline_Home");
+            EmptyAddNotificationsItem.Text = R.Get("Timeline_Notifications");
+            EmptyAddBookmarksItem.Text = R.Get("Timeline_Bookmarks");
+            EmptyAddListsItem.Text = R.Get("Timeline_Lists");
+            AddTimelineToolbarLabel.Text = R.Get("Toolbar_AddTimeline");
+            ToolTipService.SetToolTip(AddTimelineToolbarBtn, R.Get("Toolbar_AddTimelineTooltip"));
+            AutomationProperties.SetName(AddTimelineToolbarBtn, R.Get("Toolbar_AddTimelineTooltip"));
+            ToolTipService.SetToolTip(ToolbarProfileCombo, R.Get("Toolbar_Profile"));
+            AutomationProperties.SetName(ToolbarProfileCombo, R.Get("Toolbar_Profile"));
             ToolTipService.SetToolTip(PostBtn,    R.Get("PostBtn_Tooltip"));
             ToolTipService.SetToolTip(AppMenuBtn, R.Get("AppMenu_Tooltip"));
             AutomationProperties.SetName(PostBtn,    R.Get("PostBtn_Tooltip"));
             AutomationProperties.SetName(AppMenuBtn, R.Get("AppMenu_Tooltip"));
+            LayoutClassicItem.Text = R.Get("Layout_Classic");
+            LayoutGrid2x2Item.Text = R.Get("Layout_Grid2x2");
+            LayoutGrid2x3Item.Text = R.Get("Layout_Grid2x3");
+            LayoutVerticalSplitItem.Text = R.Get("Layout_VerticalSplit");
+            LayoutFocusItem.Text = R.Get("Layout_Focus");
+            ToolTipService.SetToolTip(LayoutBtn, R.Get("Layout_Tooltip"));
+            AutomationProperties.SetName(LayoutBtn, R.Get("Layout_Tooltip"));
+            UpdateLayoutMenuState();
             ThemeSubMenu.Text       = R.Get("Menu_Theme");
             ThemeSystemItem.Text    = R.Get("Theme_System");
             ThemeLightItem.Text     = R.Get("Theme_Light");
@@ -394,6 +439,14 @@ namespace XTimelineViewer.Views
             AddNotificationsTimelineItem.Text = R.Get("Timeline_Notifications");
             AddBookmarksTimelineItem.Text     = R.Get("Timeline_Bookmarks");
             AddListsTimelineItem.Text         = R.Get("Timeline_Lists");
+            ToolbarAddHomeItem.Text           = R.Get("Timeline_Home");
+            ToolbarAddNotificationsItem.Text  = R.Get("Timeline_Notifications");
+            ToolbarAddBookmarksItem.Text      = R.Get("Timeline_Bookmarks");
+            ToolbarAddListsItem.Text          = R.Get("Timeline_Lists");
+            TimelineManagerMenuItem.Text      = R.Get("Menu_TimelineManager");
+            WorkspacesMenuItem.Text           = R.Get("Menu_Workspaces");
+            CommandPaletteMenuItem.Text       = R.Get("Menu_CommandPalette");
+            ShortcutsMenuItem.Text            = R.Get("Menu_Shortcuts");
             // アイコンは既存ペインと同じく URL 種別から導出して一貫性を保つ
             AddHomeIcon.Glyph          = UrlHelper.GetTimelineGlyph(HomeTimelineUrl);
             AddNotificationsIcon.Glyph = UrlHelper.GetTimelineGlyph(NotificationsTimelineUrl);
@@ -404,6 +457,12 @@ namespace XTimelineViewer.Views
             SearchBox.PlaceholderText = R.Get("Search_Placeholder");
             ToolTipService.SetToolTip(SearchBox, R.Get("Search_Tooltip"));
             AutomationProperties.SetName(SearchBox, R.Get("Search_Tooltip"));
+            SearchPanelTitle.Text = R.Get("Search_PanelTitle");
+            SearchPanelHint.Text = R.Get("Search_PanelHint");
+            SearchPinBtn.Content = R.Get("Search_AddBtn");
+            ToolTipService.SetToolTip(SearchCloseBtn, R.Get("Button_Close"));
+            RefreshToolbarProfiles();
+            foreach (var pane in Panes) pane.RefreshLocalizedText();
         }
 
         private async Task<ContentDialogResult> ShowDialogAsync(ContentDialog dlg)

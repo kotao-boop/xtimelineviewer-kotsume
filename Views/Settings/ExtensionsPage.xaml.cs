@@ -29,6 +29,9 @@ namespace XTimelineViewer.Views.Settings
         {
             PageTitle.Text = R.Get("Nav_Extensions");
 
+            while (RootPanel.Children.Count > 2)
+                RootPanel.Children.RemoveAt(RootPanel.Children.Count - 1);
+
             var extensions = _parent?.Extensions ?? [];
 
             // MSIX版はStoreのパッケージ完全性を守るため、同梱済み拡張だけを読み込む。
@@ -61,7 +64,7 @@ namespace XTimelineViewer.Views.Settings
             var card = new CommunityToolkit.WinUI.Controls.SettingsCard
             {
                 Header      = ext.Name,
-                Description = Path.GetFileName(ext.DirectoryPath),
+                Description = $"{(PackageContext.IsPackaged ? R.Get("Extensions_Bundled") : R.Get("Extensions_UserAdded"))}\n{R.Get("Extensions_SiteAccess")}\n{R.Get("Extensions_Capability")}",
                 // 右端のリンクアイコンと「設定を開く」ボタンの機能が重複していたため、
                 // 明示的なボタンを残してカード自体のクリック化は廃止
             };

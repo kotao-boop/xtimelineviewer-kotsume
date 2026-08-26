@@ -17,10 +17,12 @@ namespace XTimelineViewer.Views.Controls
     /// </summary>
     public sealed partial class ProfileLoginControl : UserControl
     {
-        private readonly string _profileId = Guid.NewGuid().ToString("N");
+        private string _profileId = Guid.NewGuid().ToString("N");
+        private string? _existingName;
 
         // ログイン時に検出した X のスクリーンネーム。Name はユーザーが編集できるため別に保持する。
         private string? _detectedScreenName;
+        private bool _initialized;
 
         /// <summary>このコントロールが扱う新規プロファイルの ID。</summary>
         public string ProfileId => _profileId;
@@ -31,6 +33,14 @@ namespace XTimelineViewer.Views.Controls
         /// </summary>
         public event Action<string?>? LoginDetected;
 
+        public void UseExistingProfile(ProfileConfig profile)
+        {
+            if (_initialized) throw new InvalidOperationException("The profile must be selected before sign-in starts.");
+            _profileId = profile.Id;
+            _existingName = profile.Name;
+            _detectedScreenName = profile.ScreenName;
+        }
+
         public ProfileLoginControl()
         {
             this.InitializeComponent();
@@ -38,6 +48,7 @@ namespace XTimelineViewer.Views.Controls
             ProfileNameBox.PlaceholderText = R.Get("AddProfile_FallbackLabel");
             AutomationProperties.SetName(ProfileNameBox, R.Get("AddProfile_FallbackLabel"));
             AutomationProperties.SetName(LoginWebView, R.Get("AddProfile_LoginHint"));
+            ManualCheckBtn.Content = R.Get("Onboarding_CheckLogin");
         }
 
         /// <summary>
@@ -46,11 +57,17 @@ namespace XTimelineViewer.Views.Controls
         /// </summary>
         public async Task InitializeAsync()
         {
+            if (_initialized)
+            {
+                LoginWebView.Source = new Uri("https://x.com/i/flow/login");
+                return;
+            }
             var folder = Path.Combine(ProfileService.GetProfilesDataDir(), _profileId);
             Directory.CreateDirectory(folder);
-            var options = new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = false };
+            var options = new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = true };
             var env = await CoreWebView2Environment.CreateWithOptionsAsync("", folder, options);
             await LoginWebView.EnsureCoreWebView2Async(env);
+            _initialized = true;
 
             LoginWebView.CoreWebView2.Profile.PreferredColorScheme = this.ActualTheme switch
             {
@@ -58,8 +75,6 @@ namespace XTimelineViewer.Views.Controls
                 ElementTheme.Dark  => CoreWebView2PreferredColorScheme.Dark,
                 _                  => CoreWebView2PreferredColorScheme.Auto,
             };
-
-            LoginWebView.Source = new Uri("https://x.com/i/flow/login");
 
             LoginWebView.CoreWebView2.NavigationCompleted += async (s, e) =>
             {
@@ -72,6 +87,8 @@ namespace XTimelineViewer.Views.Controls
                 ShowConfirmPhase(screenName);
                 LoginDetected?.Invoke(screenName);
             };
+
+            LoginWebView.Source = new Uri("https://x.com/i/flow/login");
         }
 
         private async Task<string?> TryGetScreenNameAsync()
@@ -89,12 +106,18 @@ namespace XTimelineViewer.Views.Controls
             if (screenName is not null)
             {
                 DetectedText.Text = string.Format(R.Get("AddProfile_Detected"), $"@{screenName}");
-                ProfileNameBox.Text = screenName;
+                ProfileNameBox.Text = _existingName ?? screenName;
             }
             else
             {
                 DetectedText.Text = "";
             }
+        }
+
+        private void ManualCheckBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (LoginWebView.CoreWebView2 is null) return;
+            LoginWebView.Source = new Uri("https://x.com/home");
         }
 
         /// <summary>WebView2 を明示的に閉じて環境を解放する。</summary>

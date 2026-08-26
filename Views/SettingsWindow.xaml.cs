@@ -51,6 +51,9 @@ namespace XTimelineViewer.Views
         /// <summary>プロファイル変更後の保存コールバック。</summary>
         internal Action? ProfilesModified { get; set; }
 
+        /// <summary>同じプロファイルでサインインし直した後、該当タイムラインを再読み込みする。</summary>
+        internal Action<string>? ProfileSessionRefreshed { get; set; }
+
         /// <summary>プロファイル削除コールバック。</summary>
         internal Func<string, Task>? DeleteProfileAsync { get; set; }
 
@@ -135,12 +138,14 @@ namespace XTimelineViewer.Views
             NavExtensions.Content  = R.Get("Nav_Extensions");
             NavProfiles.Content    = R.Get("Nav_Profiles");
             NavAbout.Content       = R.Get("Nav_About");
+            SettingsSearchBox.PlaceholderText = R.Get("Settings_SearchPlaceholder");
         }
 
         /// <summary>指定タグのナビゲーション項目を選択する。</summary>
         internal void SelectPage(string tag)
         {
-            foreach (var item in NavView.MenuItems.OfType<NavigationViewItem>())
+            foreach (var item in NavView.MenuItems.OfType<NavigationViewItem>()
+                         .Concat(NavView.FooterMenuItems.OfType<NavigationViewItem>()))
             {
                 if (item.Tag?.ToString() == tag)
                 {
@@ -169,6 +174,51 @@ namespace XTimelineViewer.Views
 
             if (pageType is not null)
                 ContentFrame.Navigate(pageType, this);
+        }
+
+        private sealed record SettingsSearchResult(string Display, string PageTag, string Keywords)
+        {
+            public override string ToString() => Display;
+        }
+
+        private List<SettingsSearchResult> BuildSettingsSearchIndex() =>
+        [
+            new(R.Get("Settings_DefaultTimeline"), "General", "timeline sidebar compose list default タイムライン サイドバー 投稿 リスト 既定"),
+            new(R.Get("Settings_HomeAutoLoad"), "General", "home auto refresh interval ホーム 自動更新 間隔"),
+            new(R.Get("Settings_ExternalBrowser"), "General", "browser edge link external ブラウザー Edge リンク 外部"),
+            new(R.Get("Settings_Theme"), "UserInterface", "theme light dark appearance テーマ ライト ダーク 表示"),
+            new(R.Get("Settings_Language"), "UserInterface", "language japanese english 言語 日本語 英語"),
+            new(R.Get("Settings_ExportFolder"), "Data", "data folder export backup データ フォルダー エクスポート バックアップ"),
+            new(R.Get("Settings_SavedQueries"), "Data", "search query history 検索 クエリ 履歴"),
+            new(R.Get("Nav_Profiles"), "Profiles", "profile account login badge primary プロファイル アカウント ログイン バッジ"),
+            new(R.Get("Nav_Extensions"), "Extensions", "extension permission site 拡張機能 権限 サイト"),
+            new(R.Get("Nav_Experimental"), "Experimental", "experimental media preload 試験 メディア プリロード"),
+            new(R.Get("Nav_About"), "About", "version update license privacy about バージョン 更新 ライセンス プライバシー"),
+        ];
+
+        private void SettingsSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
+            var query = sender.Text.Trim();
+            sender.ItemsSource = query.Length == 0
+                ? null
+                : BuildSettingsSearchIndex().Where(r =>
+                    r.Display.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+                    || r.Keywords.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        private void SettingsSearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            if (args.SelectedItem is SettingsSearchResult result) sender.Text = result.Display;
+        }
+
+        private void SettingsSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            var selected = args.ChosenSuggestion as SettingsSearchResult;
+            selected ??= BuildSettingsSearchIndex().FirstOrDefault(r =>
+                r.Display.Contains(args.QueryText ?? sender.Text, StringComparison.CurrentCultureIgnoreCase)
+                || r.Keywords.Contains(args.QueryText ?? sender.Text, StringComparison.OrdinalIgnoreCase));
+            if (selected is not null) SelectPage(selected.PageTag);
         }
     }
 }

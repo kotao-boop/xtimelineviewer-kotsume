@@ -2,8 +2,7 @@
     x:Class="XTimelineViewer.Views.AddProfileWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="using:XTimelineViewer.Views.Controls"
-    Title="Add Profile">
+    xmlns:controls="using:XTimelineViewer.Views.Controls">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Padding="0">
         <Grid.RowDefinitions>

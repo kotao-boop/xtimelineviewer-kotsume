@@ -10,11 +10,17 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <TextBlock x:Name="LoginHintText"
-                       Grid.Row="0"
-                       Margin="16,12"
-                       FontSize="14"
-                       Opacity="0.7"/>
+            <Grid Grid.Row="0" Padding="16,8" ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="LoginHintText"
+                           VerticalAlignment="Center"
+                           FontSize="14"
+                           Opacity="0.7"/>
+                <Button x:Name="ManualCheckBtn" Grid.Column="1" Click="ManualCheckBtn_Click"/>
+            </Grid>
             <WebView2 x:Name="LoginWebView"
                       Grid.Row="1"
                       xmlns="using:Microsoft.UI.Xaml.Controls"/>
