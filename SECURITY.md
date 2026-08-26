@@ -6,8 +6,8 @@
 
 | バージョン | サポート状況 |
 | ------- | ---------- |
-| 2.2.x   | :white_check_mark: |
-| < 2.2.0 | :x: |
+| 2.3.x   | :white_check_mark: |
+| < 2.3.0 | :x: |
 
 ## 脆弱性の報告
 
@@ -26,7 +26,7 @@
 本プロジェクトの第一者実行ファイルは、GitHub-hosted Windows Runner上で公開ソースからビルドします。
 第三者・Microsoft製バイナリを本プロジェクトの証明書で再署名しません。
 
-現在公開中のv2.2.0は未署名です。最終成果物にはSHA-256とGitHub Artifact Attestationを付けていますが、
+現在公開中のv2.3.0は未署名です。最終成果物にはSHA-256とGitHub Artifact Attestationを付けていますが、
 これらはコード署名や安全性の保証そのものではありません。SignPath Foundationへの申請準備と署名
 パイプラインの設計は[コード署名ランブック](docs/CODE_SIGNING_RUNBOOK.md)を参照してください。承認前または
 署名検証に失敗した成果物を「署名済み」と表示してはなりません。

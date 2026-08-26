@@ -1,8 +1,8 @@
 #include <windows.h>
 
 // Release.ps1 がリリース時に更新する。
-#define XTV_VERSION_COMMA 2,2,0,0
-#define XTV_VERSION_STRING "2.2.0"
+#define XTV_VERSION_COMMA 2,3,0,0
+#define XTV_VERSION_STRING "2.3.0"
 
 // xtv.exe のアイコンリソース（#270）
 // 本体アプリと同じアイコン（リポジトリの Assets\AppIcon.ico）を埋め込む。

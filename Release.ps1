@@ -3,8 +3,9 @@
     XTimelineViewer のリリース用にバージョンを更新する（+ 任意でローカル検証用 ZIP を生成）。
 
 .DESCRIPTION
-    .github/workflows/release.yml は v* タグの push をトリガーに、未署名の候補を
-    GitHub Actions artifactとして一時保存する。SignPath承認・署名検証前にはGitHub Releaseへ公開しない。
+    .github/workflows/release.yml は v* タグの push をトリガーに、テスト済みの未署名成果物を生成し、
+    未署名であることの明示、SHA-256、GitHub Artifact Attestationを付けてGitHub Releaseへ公開する。
+    SignPath承認後は、同じ公開ゲートへ署名とタイムスタンプの検証を追加する。
     本スクリプトは CI を起動する前のバージョン更新
     （csproj / Package.appxmanifest / Inno Setup / ランチャー）を担当する。
     Microsoft Store提出物はPartner CenterのIdentity取得後に別工程で生成する。
@@ -110,8 +111,8 @@ if ($WithZip) {
 Write-Host @"
 次の手順（手動）:
   1. バージョン更新分をコミット & PR → main にマージ
-  2. v$Version タグを push（または gh release create v$Version）
-     → CI が未署名のZIPとインストーラー候補を「配布禁止」と明示したActions artifactとして7日間保存する
-  3. SignPath承認、署名、署名検証が完了するまでGitHub Releaseへ公開しない
-  4. SHA-256と来歴証明は署名後の最終成果物に対して生成する
+  2. mainでRelease workflowを手動実行し、公開なしで全工程を検証する
+  3. main上のコミットへ v$Version タグを付けてpushする
+     → CIが未署名のZIPとインストーラーを生成し、注意書き、SHA-256、来歴証明とともにReleaseを公開する
+  4. SignPath承認後の版では、第一者バイナリとインストーラーの署名・タイムスタンプ検証を公開ゲートへ追加する
 "@ -ForegroundColor Yellow

@@ -7,7 +7,7 @@ Download the latest Windows packages from the
 
 ## Code-signing status
 
-The current v2.2.0 release is **not code-signed**. Windows may therefore show an "Unknown publisher" or
+The current v2.3.0 release is **not code-signed**. Windows may therefore show an "Unknown publisher" or
 Microsoft Defender SmartScreen warning. The release includes `SHA256SUMS.txt` and GitHub Artifact Attestations
 for its final packages. These help verify that a file is the exact file produced by the repository's release
 workflow; they do not replace Authenticode code signing and do not by themselves prove that software is safe.
@@ -16,7 +16,7 @@ Free code signing provided by [SignPath.io](https://signpath.io/), certificate b
 [SignPath Foundation](https://signpath.org/).
 
 The project is preparing an application to SignPath Foundation. Each release states its own signing status.
-Do not treat v2.2.0 as an approved or signed SignPath artifact.
+Do not treat v2.3.0 as an approved or signed SignPath artifact.
 
 ## Package formats
 
