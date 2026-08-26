@@ -36,6 +36,8 @@
     <Compile Include="..\Services\EdgeService.cs"    Link="Services\EdgeService.cs" />
     <Compile Include="..\Services\UrlHelper.cs"      Link="Services\UrlHelper.cs" />
     <Compile Include="..\Services\SearchQueryHelper.cs" Link="Services\SearchQueryHelper.cs" />
+    <Compile Include="..\Services\TimelineLabelHelper.cs" Link="Services\TimelineLabelHelper.cs" />
+    <Compile Include="..\Services\WorkspaceStore.cs" Link="Services\WorkspaceStore.cs" />
     <Compile Include="..\ViewModels\SettingsViewModel.cs" Link="ViewModels\SettingsViewModel.cs" />
   </ItemGroup>
 

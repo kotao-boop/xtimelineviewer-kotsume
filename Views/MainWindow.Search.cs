@@ -46,12 +46,12 @@ namespace XTimelineViewer.Views
         {
             if (args.ChosenSuggestion is string chosen)
             {
-                OpenSearchDialogAsync(chosen).FireAndForget(nameof(OpenSearchDialogAsync));
+                OpenSearchPanelAsync(chosen).FireAndForget(nameof(OpenSearchPanelAsync));
                 return;
             }
             var query = (args.QueryText ?? sender.Text)?.Trim();
             if (string.IsNullOrEmpty(query)) return;
-            OpenSearchDialogAsync(query).FireAndForget(nameof(OpenSearchDialogAsync));
+            OpenSearchPanelAsync(query).FireAndForget(nameof(OpenSearchPanelAsync));
         }
 
         private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
@@ -77,6 +77,68 @@ namespace XTimelineViewer.Views
         }
 
         private ContentDialog? _activeSearchDialog;  // 現在開いている検索ダイアログ（ESC クローズ用 #317）
+        private WebView2? _searchPanelWebView;
+
+        private async Task OpenSearchPanelAsync(string input)
+        {
+            CloseSearchPanel();
+
+            var initialUrl = input.StartsWith("/search?", StringComparison.OrdinalIgnoreCase)
+                ? "https://x.com" + input
+                : SearchQueryHelper.BuildSearchUrl(input);
+            var profileId = SelectedToolbarProfileId ?? ResolveComposeProfileId();
+            var webView = new WebView2
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+            };
+            _searchPanelWebView = webView;
+            SearchWebViewHost.Children.Insert(0, webView);
+            SearchProgressRing.IsActive = true;
+            SearchProgressRing.Visibility = Visibility.Visible;
+            SearchSidePanel.Visibility = Visibility.Visible;
+
+            try
+            {
+                await InitSearchWebView(webView, profileId);
+                webView.CoreWebView2.NavigationCompleted += (_, args) =>
+                {
+                    SearchProgressRing.IsActive = false;
+                    SearchProgressRing.Visibility = Visibility.Collapsed;
+                };
+                webView.Source = new Uri(initialUrl);
+            }
+            catch (Exception ex)
+            {
+                SearchProgressRing.IsActive = false;
+                LogError($"OpenSearchPanelAsync (url={initialUrl})", ex);
+            }
+            SearchBox.Text = "";
+        }
+
+        private void SearchPinBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var currentUrl = _searchPanelWebView?.Source?.ToString();
+            if (currentUrl is null || SearchQueryHelper.ExtractQueryFromUrl(currentUrl) is null) return;
+
+            var cfg = CreateDefaultConfig(currentUrl);
+            if (SelectedToolbarProfileId is { } profileId) cfg.ProfileId = profileId;
+            AddTimeline(cfg);
+            var searchPath = SearchQueryHelper.ExtractSearchPath(currentUrl);
+            if (searchPath is not null) AddSavedSearchQuery(searchPath);
+        }
+
+        private void SearchCloseBtn_Click(object sender, RoutedEventArgs e) => CloseSearchPanel();
+
+        private void CloseSearchPanel()
+        {
+            SearchSidePanel.Visibility = Visibility.Collapsed;
+            SearchProgressRing.IsActive = false;
+            if (_searchPanelWebView is null) return;
+            SearchWebViewHost.Children.Remove(_searchPanelWebView);
+            try { _searchPanelWebView.Close(); } catch { }
+            _searchPanelWebView = null;
+        }
 
         private async Task OpenSearchDialogAsync(string input, bool showAddButton = true)
         {
@@ -169,7 +231,11 @@ namespace XTimelineViewer.Views
             webView.CoreWebView2.WebMessageReceived += (s, e) =>
             {
                 if (UrlHelper.IsXUrl(e.Source) && e.TryGetWebMessageAsString() == "searchCancel")
-                    DispatcherQueue.TryEnqueue(() => _activeSearchDialog?.Hide());
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (_activeSearchDialog is not null) _activeSearchDialog.Hide();
+                        else CloseSearchPanel();
+                    });
             };
 
             webView.CoreWebView2.NavigationStarting += async (s, args) =>

@@ -66,6 +66,14 @@ namespace XTimelineViewer.Views
             settingsWin.BadgeColors = ProfileBadgeColors;
             settingsWin.GetTimelineCount = profileId => _configs.Count(c => c.ProfileId == profileId);
             settingsWin.ProfilesModified = () => { SaveProfiles(); RefreshAllProfileBadges(); };
+            settingsWin.ProfileSessionRefreshed = profileId =>
+            {
+                foreach (var pane in Panes.Where(p => p.Config.ProfileId == profileId))
+                {
+                    pane.ShowLoadingState();
+                    pane.WebView.Source = new Uri(pane.Config.Url);
+                }
+            };
             settingsWin.DeleteProfileAsync = async profileId =>
             {
                 RemoveTimelinesForProfile(profileId);
@@ -148,7 +156,7 @@ namespace XTimelineViewer.Views
                 // ホーム自動更新（#207）の ON/OFF・間隔を各ホームペインへ即時反映し、インジケーターも更新
                 // 以前は _autoLoadIndicators を「ホームペイン集合」の代用にし、
                 // そこから型で WebView2 を探していた（#345）。
-                foreach (var pane in TimelinePanel.Children.OfType<TimelinePane>())
+                foreach (var pane in Panes)
                 {
                     if (pane.WebView.CoreWebView2 is not null)
                         ApplyHomeAutoLoadAsync(pane.WebView).FireAndForget(nameof(ApplyHomeAutoLoadAsync));

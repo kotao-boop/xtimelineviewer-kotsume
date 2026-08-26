@@ -62,12 +62,16 @@
                                FontWeight="SemiBold"/>
                 </Border>
 
-                <TextBlock x:Name="UrlLabel"
-                           Grid.Column="3"
-                           FontSize="12"
-                           TextTrimming="CharacterEllipsis"
-                           VerticalAlignment="Center"
-                           Opacity="0.8"/>
+                <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                    <TextBlock x:Name="TitleLabel"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="UrlLabel"
+                               FontSize="10"
+                               TextTrimming="CharacterEllipsis"
+                               Opacity="0.55"/>
+                </StackPanel>
 
                 <StackPanel Grid.Column="4"
                             Orientation="Horizontal"
@@ -87,7 +91,7 @@
                             Height="26"
                             Padding="0"
                             AutomationProperties.AutomationId="PaneSettingsBtn">
-                        <FontIcon Glyph="&#xE713;"
+                        <FontIcon Glyph="&#xE712;"
                                   FontFamily="Segoe Fluent Icons"
                                   FontSize="14"/>
                     </Button>
@@ -98,6 +102,26 @@
                                Grid.Row="1"
                                VerticalAlignment="Stretch"
                                HorizontalAlignment="Stretch"/>
+
+            <Border x:Name="NavigationStateOverlay"
+                    Grid.Row="1"
+                    Visibility="Collapsed"
+                    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                    Canvas.ZIndex="20">
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="12"
+                            MaxWidth="300"
+                            Padding="24">
+                    <ProgressRing x:Name="NavigationProgress" Width="28" Height="28" IsActive="False"/>
+                    <TextBlock x:Name="NavigationStateTitle" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="NavigationStateHint" FontSize="12" Opacity="0.7" TextAlignment="Center" TextWrapping="Wrap"/>
+                    <StackPanel x:Name="NavigationActions" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                        <Button x:Name="StatusRetryBtn" Click="StatusRetryBtn_Click"/>
+                        <Button x:Name="StatusBrowserBtn" Click="StatusBrowserBtn_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </Grid>
 
         <!-- 右端のドラッグリサイズ用スプリッターハンドル -->

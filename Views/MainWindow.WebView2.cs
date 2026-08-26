@@ -999,6 +999,7 @@ namespace XTimelineViewer.Views
             catch (Exception ex)
             {
                 LogError($"InitWebViewAsync (url={cfg.Url})", ex);
+                PaneOf(webView)?.ShowErrorState();
 
                 // XamlRoot が準備できていない場合があるので、ループで待機する
                 for (int i = 0; i < 20 && Content.XamlRoot is null; i++)
@@ -1088,12 +1089,19 @@ namespace XTimelineViewer.Views
                         return;
                     }
 
+                    PaneOf(webView)?.ShowLoadingState();
                 };
 
                 webView.CoreWebView2.NavigationCompleted += async (s, args) =>
                 {
                     if (args.IsSuccess)
                     {
+                        var current = webView.CoreWebView2.Source;
+                        var signInRequired = current.Contains("/i/flow/login", StringComparison.OrdinalIgnoreCase)
+                            || current.EndsWith("/login", StringComparison.OrdinalIgnoreCase);
+                        if (signInRequired) PaneOf(webView)?.ShowErrorState(signInRequired: true);
+                        else PaneOf(webView)?.HideNavigationState();
+
                         await ApplyHideSidebarAsync(webView, cfg.HideSidebar);
                         await ApplyHideComposeAsync(webView, EffectiveHideCompose(cfg, webView.CoreWebView2.Source));
                         await ApplyHideListHeaderAsync(webView, cfg.HideListHeader);
@@ -1108,6 +1116,10 @@ namespace XTimelineViewer.Views
 
                         // リスト一覧はアクティブアカウントのハンドルでライブ解決する（委任アカウント対応 #211）
                         await EnsureListsUrlAsync(webView, cfg);
+                    }
+                    else
+                    {
+                        PaneOf(webView)?.ShowErrorState();
                     }
                 };
 
@@ -1125,6 +1137,7 @@ namespace XTimelineViewer.Views
             catch (Exception ex)
             {
                 LogError($"InitWebViewAsync/post-init (url={cfg.Url})", ex);
+                PaneOf(webView)?.ShowErrorState();
             }
         }
     }

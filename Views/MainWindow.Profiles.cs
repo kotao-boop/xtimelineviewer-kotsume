@@ -20,31 +20,25 @@ namespace XTimelineViewer.Views
             // 以前は Border ごと作り直して列 2 へ入れ直していたため、
             // 列番号が生成側とこちらの 2 か所に手書きされていた（#337 / #341）。
             // 器は TimelinePane.xaml に固定され、ここは中身を更新するだけで済む。
-            foreach (var pane in TimelinePanel.Children.OfType<TimelinePane>())
+            foreach (var pane in Panes)
                 ApplyProfileBadge(pane);
         }
 
 
         private void RemoveTimelinesForProfile(string profileId)
         {
-            var indices = new List<int>();
-            for (int i = 0; i < _configs.Count; i++)
-                if (_configs[i].ProfileId == profileId)
-                    indices.Add(i);
-
-            for (int i = indices.Count - 1; i >= 0; i--)
+            var panes = Panes.Where(p => p.Config.ProfileId == profileId).ToList();
+            foreach (var pane in panes)
             {
-                var idx = indices[i];
-                if (idx >= TimelinePanel.Children.Count) continue;
-                var pane = (TimelinePane)TimelinePanel.Children[idx];
                 if (_enlargedPane == pane) RestorePaneSize();  // 拡大中のペイン削除に備える（#287）
                 CleanupWebView(pane.WebView);
                 if (_focusedPane == pane)
                     _focusedPane = null;
                 // ⚙ ダイアログからの削除（MainWindow.Timeline.cs）と同じ後始末を行うこと。
                 // 以前は抜けているものがあり、消えたペインへの参照が残っていた（#362）。
-                TimelinePanel.Children.RemoveAt(idx);
-                _configs.RemoveAt(idx);
+                TimelinePanel.Children.Remove(pane);
+                TimelineGrid.Children.Remove(pane);
+                _configs.Remove(pane.Config);
             }
 
             if (_hardReloadUiUpdaters.Count == 0)
@@ -60,7 +54,8 @@ namespace XTimelineViewer.Views
             // Ctrl+数字（位置で判定）とバッジの表示が食い違っていた。
             RefreshTimelineNumbers();
 
-            ViewModel.HasTimelines = TimelinePanel.Children.Count > 0;
+            ViewModel.HasTimelines = _configs.Count > 0;
+            if (_configs.Count > 0) ApplyLayoutMode();
         }
 
         private static readonly Color[] ProfileBadgeColors =
@@ -137,6 +132,7 @@ namespace XTimelineViewer.Views
                 SaveProfiles();
                 RefreshAllProfileBadges();
                 UpdateHasNamedProfiles();
+                RefreshToolbarProfiles();
             });
         }
     }

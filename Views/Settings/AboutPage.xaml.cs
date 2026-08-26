@@ -37,7 +37,7 @@ namespace XTimelineViewer.Views.Settings
             var versionWithChannel = $"v{versionStr}（{ChannelLabel()}）";
             var edgeChannel = R.Get("EdgeChannel_Runtime");
             var edgeVersion = _parent?.EdgeVersion ?? R.Get("Version_Unknown");
-            var versionInfoText = $"XTimelineViewer (xTV) {versionWithChannel}\r\n{edgeChannel} {edgeVersion}";
+            var versionInfoText = $"{R.Get("App_Title")} {versionWithChannel}\r\n{edgeChannel} {edgeVersion}";
 
             var repoUrl = "https://github.com/kotao-boop/xtimelineviewer-kotsume";
             var fallbackUrl = repoUrl + "/releases/latest";
@@ -94,12 +94,14 @@ namespace XTimelineViewer.Views.Settings
             var textStack = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
             textStack.Children.Add(new TextBlock
             {
-                Text       = "XTimelineViewer (xTV)",
+                Text       = R.Get("App_Title"),
                 FontSize   = 20,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             });
             textStack.Children.Add(new TextBlock { Text = versionText, FontSize = 13, Opacity = 0.7 });
             textStack.Children.Add(new TextBlock { Text = R.Get("About_Copyright"), FontSize = 12, Opacity = 0.6 });
+            textStack.Children.Add(new TextBlock { Text = R.Get("About_Maintainer"), FontSize = 12, Opacity = 0.6 });
+            textStack.Children.Add(new TextBlock { Text = R.Get("About_OriginalAuthor"), FontSize = 12, Opacity = 0.6 });
 
             var titleRow = new StackPanel
             {

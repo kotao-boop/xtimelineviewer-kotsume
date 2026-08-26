@@ -22,7 +22,7 @@ namespace XTimelineViewer.Views
             // 投稿ウィンドウのプリロード（#244 案B）。設定 OFF のときは内部で何もしない。
             WarmUpComposeAsync().FireAndForget(nameof(WarmUpComposeAsync));
 
-            if (!HasNamedProfiles())
+            if (!HasNamedProfiles() && !_appSettings.OnboardingCompleted)
             {
                 // XamlRoot が利用可能になるまで待つ（Content.Loaded は Activate() 後に発火）
                 var tcs = new TaskCompletionSource();
@@ -61,6 +61,11 @@ namespace XTimelineViewer.Views
 
         /// <summary>ViewModel.HasNamedProfiles を現在のプロファイル状態で更新する。</summary>
         private void UpdateHasNamedProfiles()
-            => ViewModel.HasNamedProfiles = HasNamedProfiles();
+        {
+            ViewModel.HasNamedProfiles = HasNamedProfiles();
+            if (EmptyDisabledHint is not null)
+                EmptyDisabledHint.Visibility = ViewModel.HasNamedProfiles ? Visibility.Collapsed : Visibility.Visible;
+            RefreshToolbarProfiles();
+        }
     }
 }

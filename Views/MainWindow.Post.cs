@@ -703,6 +703,12 @@ namespace XTimelineViewer.Views
                 case "focusSearch":
                     SearchBox.Focus(FocusState.Programmatic);
                     break;
+                case "commandPalette":
+                    ShowCommandPaletteAsync().FireAndForget(nameof(ShowCommandPaletteAsync));
+                    break;
+                case "showShortcuts":
+                    ShowShortcutsAsync().FireAndForget(nameof(ShowShortcutsAsync));
+                    break;
                 case "activate":
                     // ホイール操作したペインをアクティブ化（キーフォーカス移動）#221
                     PaneOf(senderWebView)?.SetFocus();
@@ -1012,10 +1018,11 @@ namespace XTimelineViewer.Views
         private void FocusAdjacentTimeline(WebView2 senderWebView, int direction)
         {
             if (PaneOf(senderWebView) is not { } senderPane) return;
-            int idx  = TimelinePanel.Children.IndexOf(senderPane);
+            var visible = Panes.Where(p => p.Config.IsVisible).ToList();
+            int idx  = visible.IndexOf(senderPane);
             int next = idx + direction;
-            if (next < 0 || next >= TimelinePanel.Children.Count) return;
-            var targetPane = (TimelinePane)TimelinePanel.Children[next];
+            if (next < 0 || next >= visible.Count) return;
+            var targetPane = visible[next];
             targetPane.SetFocus();
             targetPane.StartBringIntoView();
         }

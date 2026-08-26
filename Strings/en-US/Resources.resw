@@ -104,7 +104,7 @@
 
   <!-- Settings window navigation -->
   <data name="Nav_General" xml:space="preserve"><value>General</value></data>
-  <data name="Nav_UserInterface" xml:space="preserve"><value>User Interface</value></data>
+  <data name="Nav_UserInterface" xml:space="preserve"><value>Appearance</value></data>
   <data name="Nav_Experimental" xml:space="preserve"><value>Experimental</value></data>
   <data name="Experimental_Caution" xml:space="preserve"><value>Features listed here may change, be deprecated, or be removed without notice.</value></data>
   <data name="Settings_ComposePreload" xml:space="preserve"><value>Preload the compose window</value></data>
@@ -140,7 +140,7 @@
   <data name="PriorRepostSearch_ButtonLabel" xml:space="preserve"><value>Search preceding posts and reposts</value></data>
   <data name="Nav_Extensions" xml:space="preserve"><value>Extensions</value></data>
   <data name="Nav_Profiles" xml:space="preserve"><value>Profiles</value></data>
-  <data name="Nav_Data" xml:space="preserve"><value>User Data</value></data>
+  <data name="Nav_Data" xml:space="preserve"><value>Data</value></data>
   <data name="Settings_RelatedSettings" xml:space="preserve"><value>Related settings</value></data>
   <data name="Nav_About" xml:space="preserve"><value>About</value></data>
   <data name="Pane_Settings_Tooltip" xml:space="preserve"><value>Settings</value></data>
@@ -161,7 +161,7 @@
   <data name="Profiles_DefaultDescription" xml:space="preserve"><value>Internal profile used by the application</value></data>
 
   <!-- Onboarding (#4) -->
-  <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Welcome to XTimelineViewer</value></data>
+  <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Welcome to Kotsume Edition</value></data>
   <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>Display multiple X timelines side by side. Let's start by signing in to your X account and creating a profile.</value></data>
   <data name="Onboarding_PrivacyTitle" xml:space="preserve"><value>Network and data use</value></data>
   <data name="Onboarding_PrivacyBody" xml:space="preserve"><value>X is displayed directly through Edge WebView2. Translation is off by default. If enabled, post text is sent to a Google translation endpoint. The developer does not operate a collection server or usage telemetry.</value></data>
@@ -173,7 +173,7 @@
   <data name="Onboarding_DoneBtn" xml:space="preserve"><value>Done</value></data>
   <data name="Onboarding_CompleteTitle" xml:space="preserve"><value>You're all set!</value></data>
   <data name="Onboarding_CompleteBody" xml:space="preserve"><value>Added {0}'s Home timeline. You can add more timelines and profiles from the menu.</value></data>
-  <data name="Button_Skip" xml:space="preserve"><value>Skip and exit</value></data>
+  <data name="Button_Skip" xml:space="preserve"><value>Set up later</value></data>
 
   <!-- Compose profile selector -->
   <data name="Compose_Profile" xml:space="preserve"><value>Post as (Ctrl+P to switch)</value></data>
@@ -230,7 +230,7 @@
   <data name="Settings_SavedQueries_Description" xml:space="preserve"><value>Queries shown as suggestions in the search box</value></data>
 
   <!-- About dialog sections -->
-  <data name="About_Copyright" xml:space="preserve"><value>© 2026 daruyanagi</value></data>
+  <data name="About_Copyright" xml:space="preserve"><value>© 2026 Kotsume Project contributors</value></data>
   <data name="About_Channel_Winget" xml:space="preserve"><value>winget</value></data>
   <data name="About_Channel_Zip" xml:space="preserve"><value>ZIP</value></data>
   <data name="About_Channel_Packaged" xml:space="preserve"><value>packaged</value></data>
@@ -240,4 +240,88 @@
   <data name="About_OpenLink" xml:space="preserve"><value>Open</value></data>
   <data name="About_Ack_TTL" xml:space="preserve"><value>The Home timeline auto-refresh feature was built in-house, inspired by the idea and implementation of this Chromium extension.</value></data>
   <data name="About_Ack_Icon" xml:space="preserve"><value>Designed the app icon.</value></data>
+
+  <!-- UX refresh -->
+  <data name="App_Title" xml:space="preserve"><value>XTimelineViewer, Kotsume Edition</value></data>
+  <data name="Toolbar_Profile" xml:space="preserve"><value>Profile to use</value></data>
+  <data name="Toolbar_AddTimeline" xml:space="preserve"><value>Timeline</value></data>
+  <data name="Toolbar_AddTimelineTooltip" xml:space="preserve"><value>Add a timeline</value></data>
+  <data name="Empty_WelcomeTitle" xml:space="preserve"><value>Welcome to Kotsume Edition</value></data>
+  <data name="Empty_WelcomeBody" xml:space="preserve"><value>View your X timelines side by side in a layout that works for you.</value></data>
+  <data name="Empty_AddProfile" xml:space="preserve"><value>Add an X account</value></data>
+  <data name="Empty_AddTimeline" xml:space="preserve"><value>Add a timeline</value></data>
+  <data name="Empty_DropHint" xml:space="preserve"><value>Or drop an X URL shortcut here</value></data>
+  <data name="Empty_QuickAdd" xml:space="preserve"><value>Quick add</value></data>
+  <data name="Empty_DisabledHint" xml:space="preserve"><value>Add an X account first to use search, posting, and timelines.</value></data>
+  <data name="Layout_Tooltip" xml:space="preserve"><value>Change layout</value></data>
+  <data name="Layout_Classic" xml:space="preserve"><value>▥  Classic columns</value></data>
+  <data name="Layout_Grid2x2" xml:space="preserve"><value>▦  2 × 2 grid</value></data>
+  <data name="Layout_Grid2x3" xml:space="preserve"><value>▦  2 × 3 grid</value></data>
+  <data name="Layout_VerticalSplit" xml:space="preserve"><value>▤  Vertical split</value></data>
+  <data name="Layout_Focus" xml:space="preserve"><value>▣  Focus</value></data>
+  <data name="Menu_TimelineManager" xml:space="preserve"><value>Manage timelines</value></data>
+  <data name="Menu_Workspaces" xml:space="preserve"><value>Workspaces</value></data>
+  <data name="Menu_Shortcuts" xml:space="preserve"><value>Keyboard shortcuts</value></data>
+  <data name="Menu_CommandPalette" xml:space="preserve"><value>Search commands</value></data>
+  <data name="Timeline_SearchName" xml:space="preserve"><value>Search: “{0}”</value></data>
+  <data name="Timeline_Name" xml:space="preserve"><value>Display name</value></data>
+  <data name="Timeline_NameDescription" xml:space="preserve"><value>Leave blank to name it automatically from Home or the search term.</value></data>
+  <data name="Timeline_Visible" xml:space="preserve"><value>Visible</value></data>
+  <data name="Timeline_Hidden" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Timeline_Duplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="Timeline_MoveUp" xml:space="preserve"><value>Move up</value></data>
+  <data name="Timeline_MoveDown" xml:space="preserve"><value>Move down</value></data>
+  <data name="Timeline_ManagerTitle" xml:space="preserve"><value>Timeline Manager</value></data>
+  <data name="Timeline_ManagerDescription" xml:space="preserve"><value>Rename, show or hide, reorder, duplicate, and remove timelines.</value></data>
+  <data name="Timeline_DeleteConfirmTitle" xml:space="preserve"><value>Remove this timeline?</value></data>
+  <data name="Timeline_DeleteConfirmBody" xml:space="preserve"><value>“{0}” will be removed from this app. Lists and posts on X will not be deleted.</value></data>
+  <data name="Timeline_DeleteConfirm" xml:space="preserve"><value>Remove</value></data>
+  <data name="Pane_Loading" xml:space="preserve"><value>Loading timeline…</value></data>
+  <data name="Pane_LoadError" xml:space="preserve"><value>We couldn't load this timeline.</value></data>
+  <data name="Pane_LoadErrorHint" xml:space="preserve"><value>Check your internet connection and try again.</value></data>
+  <data name="Pane_SignInRequired" xml:space="preserve"><value>You need to sign in to X.</value></data>
+  <data name="Button_Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Button_OpenBrowser" xml:space="preserve"><value>Open in browser</value></data>
+  <data name="Button_SignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Search_PanelTitle" xml:space="preserve"><value>X search results</value></data>
+  <data name="Search_PanelHint" xml:space="preserve"><value>You can pin these results as a timeline when needed.</value></data>
+  <data name="Workspace_Title" xml:space="preserve"><value>Workspaces</value></data>
+  <data name="Workspace_Description" xml:space="preserve"><value>Save timelines, order, visibility, and layout together.</value></data>
+  <data name="Workspace_SaveCurrent" xml:space="preserve"><value>Save current setup</value></data>
+  <data name="Workspace_Name" xml:space="preserve"><value>Workspace name</value></data>
+  <data name="Workspace_Empty" xml:space="preserve"><value>No saved workspaces yet.</value></data>
+  <data name="Workspace_Apply" xml:space="preserve"><value>Open</value></data>
+  <data name="Workspace_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Command_Title" xml:space="preserve"><value>Search commands</value></data>
+  <data name="Command_Placeholder" xml:space="preserve"><value>For example: timeline, settings, layout</value></data>
+  <data name="Shortcuts_Title" xml:space="preserve"><value>Keyboard shortcuts</value></data>
+  <data name="Settings_SearchPlaceholder" xml:space="preserve"><value>Search settings</value></data>
+  <data name="Settings_SearchNoResult" xml:space="preserve"><value>No matching setting was found.</value></data>
+  <data name="Profiles_StatusConfigured" xml:space="preserve"><value>Configured</value></data>
+  <data name="Profiles_TimelineCount" xml:space="preserve"><value>Timelines using this profile: {0}</value></data>
+  <data name="Profiles_HandleUnknown" xml:space="preserve"><value>The account handle will be checked on the next load</value></data>
+  <data name="Extensions_Bundled" xml:space="preserve"><value>Bundled with the app</value></data>
+  <data name="Extensions_UserAdded" xml:space="preserve"><value>Added by you</value></data>
+  <data name="Extensions_SiteAccess" xml:space="preserve"><value>Runs on: X (x.com)</value></data>
+  <data name="Extensions_Capability" xml:space="preserve"><value>What it can do: adjust how X pages are displayed</value></data>
+  <data name="About_OriginalAuthor" xml:space="preserve"><value>Original project: XTimelineViewer by daruyanagi</value></data>
+  <data name="About_Maintainer" xml:space="preserve"><value>Current development and maintenance: Kotsume Project contributors</value></data>
+  <data name="Onboarding_Progress1" xml:space="preserve"><value>1 of 3  Welcome</value></data>
+  <data name="Onboarding_Progress2" xml:space="preserve"><value>2 of 3  Sign in to X</value></data>
+  <data name="Onboarding_Progress3" xml:space="preserve"><value>3 of 3  Recommended settings</value></data>
+  <data name="Button_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Onboarding_CheckLogin" xml:space="preserve"><value>Check sign-in</value></data>
+  <data name="Timeline_CopySuffix" xml:space="preserve"><value>Copy of {0}</value></data>
+  <data name="Workspace_Summary" xml:space="preserve"><value>{0} timelines · {1}</value></data>
+  <data name="Shortcut_FocusTimeline" xml:space="preserve"><value>Go to a numbered timeline</value></data>
+  <data name="Shortcut_MoveBetween" xml:space="preserve"><value>Move between timelines</value></data>
+  <data name="Shortcut_Reorder" xml:space="preserve"><value>Reorder the current timeline</value></data>
+  <data name="Shortcut_Reload" xml:space="preserve"><value>Reload the current timeline</value></data>
+  <data name="Shortcut_TopBottom" xml:space="preserve"><value>Go to the top or bottom of the timeline</value></data>
+  <data name="Layout_Suggestion4" xml:space="preserve"><value>A 2 × 2 grid is a good fit for four timelines.</value></data>
+  <data name="Layout_Suggestion6" xml:space="preserve"><value>A 2 × 3 grid is a good fit for six timelines.</value></data>
+  <data name="Layout_UseSuggestion" xml:space="preserve"><value>Use this layout</value></data>
+  <data name="Profile_Relogin" xml:space="preserve"><value>Sign in again</value></data>
+  <data name="Profile_ReloginDescription" xml:space="preserve"><value>Sign in to X again with this profile if its session has expired.</value></data>
+  <data name="Profile_SaveLogin" xml:space="preserve"><value>Save</value></data>
 </root>

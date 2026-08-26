@@ -2,8 +2,7 @@
     x:Class="XTimelineViewer.Views.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:XTimelineViewer.Views"
-    Title="XTimelineViewer Kotsume Edition">
+    xmlns:local="using:XTimelineViewer.Views">
 
     <!-- KeyboardAcceleratorPlacementMode=Hidden: ルート Grid のグローバルアクセラレータ
          （Ctrl+F / F3）の自動ツールチップが UI のあちこちに出るのを抑止する (#214)。
@@ -13,6 +12,8 @@
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="FocusSearchBox_Invoked"/>
             <KeyboardAccelerator Key="F3" Invoked="FocusSearchBox_Invoked"/>
+            <KeyboardAccelerator Key="K" Modifiers="Control" Invoked="OpenCommandPalette_Invoked"/>
+            <KeyboardAccelerator Key="F1" Invoked="OpenShortcuts_Invoked"/>
             <!-- Ctrl+←/→ で隣のタイムラインへフォーカス（WebView2 非フォーカス時もカバー）#227 -->
             <KeyboardAccelerator Key="Left"  Modifiers="Control" Invoked="FocusAdjacentTimeline_Invoked"/>
             <KeyboardAccelerator Key="Right" Modifiers="Control" Invoked="FocusAdjacentTimeline_Invoked"/>
@@ -48,24 +49,50 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="PostBtn"
-                    Grid.Column="0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Height="32"
-                    Padding="12,0"
-                    FontSize="14"
-                    Style="{StaticResource AccentButtonStyle}"
-                    IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}"
-                    Click="PostBtn_Click">
-                <Button.KeyboardAccelerators>
-                    <KeyboardAccelerator Key="N" Modifiers="Control"/>
-                </Button.KeyboardAccelerators>
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                    <FontIcon Glyph="&#xE70F;" FontFamily="Segoe Fluent Icons" FontSize="14" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="PostLabel" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal"
+                        Spacing="6"
+                        VerticalAlignment="Center">
+                <ComboBox x:Name="ToolbarProfileCombo"
+                          MinWidth="120"
+                          MaxWidth="180"
+                          Height="32"
+                          SelectionChanged="ToolbarProfileCombo_SelectionChanged"/>
+                <Button x:Name="AddTimelineToolbarBtn"
+                        Height="32"
+                        Padding="10,0"
+                        IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                        <TextBlock x:Name="AddTimelineToolbarLabel"/>
+                    </StackPanel>
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem x:Name="ToolbarAddHomeItem" Click="AddHomeTimelineItem_Click"/>
+                            <MenuFlyoutItem x:Name="ToolbarAddNotificationsItem" Click="AddNotificationsTimelineItem_Click"/>
+                            <MenuFlyoutItem x:Name="ToolbarAddBookmarksItem" Click="AddBookmarksTimelineItem_Click"/>
+                            <MenuFlyoutItem x:Name="ToolbarAddListsItem" Click="AddListsTimelineItem_Click"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+                <Button x:Name="PostBtn"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Height="32"
+                        Padding="12,0"
+                        FontSize="14"
+                        Style="{StaticResource AccentButtonStyle}"
+                        IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}"
+                        Click="PostBtn_Click">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="N" Modifiers="Control"/>
+                    </Button.KeyboardAccelerators>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE70F;" FontFamily="Segoe Fluent Icons" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="PostLabel" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
             <AutoSuggestBox x:Name="SearchBox"
                             Grid.Column="1"
                             HorizontalAlignment="Stretch"
@@ -93,35 +120,35 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
                 <!-- レイアウトテンプレート切替ボタン -->
-                <Button x:Name="LayoutBtn" Width="32" Height="32" Padding="0" FontSize="14" ToolTipService.ToolTip="レイアウトテンプレート">
+                <Button x:Name="LayoutBtn" Width="32" Height="32" Padding="0" FontSize="14">
                     <FontIcon Glyph="&#xE737;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     <Button.Flyout>
                         <MenuFlyout>
-                            <MenuFlyoutItem Text="クラシック（横スクロール）" Click="LayoutMenuItem_Click" Tag="Classic">
-                                <MenuFlyoutItem.Icon>
+                            <RadioMenuFlyoutItem x:Name="LayoutClassicItem" GroupName="Layout" Click="LayoutMenuItem_Click" Tag="Classic">
+                                <RadioMenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE81C;" FontFamily="Segoe Fluent Icons"/>
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="2 × 2 グリッド（4分割）" Click="LayoutMenuItem_Click" Tag="Grid2x2">
-                                <MenuFlyoutItem.Icon>
+                                </RadioMenuFlyoutItem.Icon>
+                            </RadioMenuFlyoutItem>
+                            <RadioMenuFlyoutItem x:Name="LayoutGrid2x2Item" GroupName="Layout" Click="LayoutMenuItem_Click" Tag="Grid2x2">
+                                <RadioMenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xF0E2;" FontFamily="Segoe Fluent Icons"/>
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="2 × 3 グリッド（6分割）" Click="LayoutMenuItem_Click" Tag="Grid2x3">
-                                <MenuFlyoutItem.Icon>
+                                </RadioMenuFlyoutItem.Icon>
+                            </RadioMenuFlyoutItem>
+                            <RadioMenuFlyoutItem x:Name="LayoutGrid2x3Item" GroupName="Layout" Click="LayoutMenuItem_Click" Tag="Grid2x3">
+                                <RadioMenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xF0E2;" FontFamily="Segoe Fluent Icons"/>
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="上下 2 分割（縦置きモニター用）" Click="LayoutMenuItem_Click" Tag="VerticalSplit">
-                                <MenuFlyoutItem.Icon>
+                                </RadioMenuFlyoutItem.Icon>
+                            </RadioMenuFlyoutItem>
+                            <RadioMenuFlyoutItem x:Name="LayoutVerticalSplitItem" GroupName="Layout" Click="LayoutMenuItem_Click" Tag="VerticalSplit">
+                                <RadioMenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE738;" FontFamily="Segoe Fluent Icons"/>
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="フォーカス（メイン1列＋サブ2段）" Click="LayoutMenuItem_Click" Tag="Focus">
-                                <MenuFlyoutItem.Icon>
+                                </RadioMenuFlyoutItem.Icon>
+                            </RadioMenuFlyoutItem>
+                            <RadioMenuFlyoutItem x:Name="LayoutFocusItem" GroupName="Layout" Click="LayoutMenuItem_Click" Tag="Focus">
+                                <RadioMenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE736;" FontFamily="Segoe Fluent Icons"/>
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
+                                </RadioMenuFlyoutItem.Icon>
+                            </RadioMenuFlyoutItem>
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
@@ -161,6 +188,19 @@
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
                             </MenuFlyoutSubItem>
+                            <MenuFlyoutItem x:Name="TimelineManagerMenuItem" Click="OpenTimelineManager_Click">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8A0;" FontFamily="Segoe Fluent Icons"/></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="WorkspacesMenuItem" Click="OpenWorkspaces_Click">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8F1;" FontFamily="Segoe Fluent Icons"/></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem x:Name="CommandPaletteMenuItem" Click="OpenCommandPalette_Click">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE721;" FontFamily="Segoe Fluent Icons"/></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="ShortcutsMenuItem" Click="OpenShortcuts_Click">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE765;" FontFamily="Segoe Fluent Icons"/></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
                             <MenuFlyoutSeparator/>
                             <MenuFlyoutSubItem x:Name="ThemeSubMenu">
                                 <MenuFlyoutSubItem.Icon>
@@ -195,33 +235,70 @@
               AllowDrop="True"
               DragOver="MainArea_DragOver"
               Drop="MainArea_Drop">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
             <!-- Empty state hint -->
             <Border x:Name="DropHintBorder"
+                    Grid.Column="0"
                     Visibility="{x:Bind ViewModel.DropHintBorderVisibility, Mode=OneWay}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                     BorderThickness="2"
                     CornerRadius="12"
-                    Padding="60,40">
+                    MaxWidth="620"
+                    Padding="48,36">
                 <StackPanel Spacing="16" HorizontalAlignment="Center">
-                    <TextBlock Text="🐦"
-                               FontSize="52"
-                               HorizontalAlignment="Center"/>
+                    <Image Source="ms-appx:///Assets/StoreLogo.png"
+                           Width="64" Height="64"
+                           HorizontalAlignment="Center"/>
                     <TextBlock x:Name="DropHintTitle"
-                               FontSize="18"
+                               FontSize="24"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Center"/>
                     <TextBlock x:Name="DropHintSubtitle"
-                               FontSize="13"
-                               Opacity="0.6"
+                               FontSize="14"
+                               Opacity="0.75"
+                               MaxWidth="440"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
                                HorizontalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                        <Button x:Name="EmptyAddProfileBtn" Click="NewProfileMenuItem_Click" Style="{StaticResource AccentButtonStyle}"/>
+                        <Button x:Name="EmptyAddTimelineBtn" IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}">
+                            <Button.Flyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem x:Name="EmptyAddHomeItem" Click="AddHomeTimelineItem_Click"/>
+                                    <MenuFlyoutItem x:Name="EmptyAddNotificationsItem" Click="AddNotificationsTimelineItem_Click"/>
+                                    <MenuFlyoutItem x:Name="EmptyAddBookmarksItem" Click="AddBookmarksTimelineItem_Click"/>
+                                    <MenuFlyoutItem x:Name="EmptyAddListsItem" Click="AddListsTimelineItem_Click"/>
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock x:Name="EmptyDisabledHint"
+                               FontSize="12" Opacity="0.7"
+                               TextWrapping="Wrap" TextAlignment="Center"/>
+                    <TextBlock x:Name="EmptyQuickAddLabel"
+                               FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                        <Button x:Name="EmptyQuickHomeBtn" Click="AddHomeTimelineItem_Click" IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}"/>
+                        <Button x:Name="EmptyQuickNotificationsBtn" Click="AddNotificationsTimelineItem_Click" IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}"/>
+                        <Button x:Name="EmptyQuickBookmarksBtn" Click="AddBookmarksTimelineItem_Click" IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}"/>
+                        <Button x:Name="EmptyQuickListsBtn" Click="AddListsTimelineItem_Click" IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}"/>
+                    </StackPanel>
+                    <TextBlock x:Name="EmptyDropHintText"
+                               FontSize="12" Opacity="0.6"
+                               TextAlignment="Center" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
 
             <!-- Timeline scroll area (Classic Columns mode) -->
             <ScrollViewer x:Name="TimelineScroll"
+                          Grid.Column="0"
                           Visibility="{x:Bind ViewModel.TimelineScrollVisibility, Mode=OneWay}"
                           HorizontalScrollMode="Enabled"
                           HorizontalScrollBarVisibility="Auto"
@@ -235,8 +312,57 @@
 
             <!-- Grid Layout Container (2x2, 2x3, Vertical, Focus modes) -->
             <Grid x:Name="TimelineGrid"
+                  Grid.Column="0"
                   Visibility="Collapsed"
                   Padding="4"/>
+
+            <InfoBar x:Name="LayoutSuggestionBar"
+                     Grid.Column="0"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Top"
+                     Margin="12"
+                     IsOpen="False"
+                     IsClosable="True"
+                     Severity="Informational"
+                     Canvas.ZIndex="50">
+                <InfoBar.ActionButton>
+                    <Button x:Name="LayoutSuggestionApplyBtn" Click="LayoutSuggestionApplyBtn_Click"/>
+                </InfoBar.ActionButton>
+            </InfoBar>
+
+            <Border x:Name="SearchSidePanel"
+                    Grid.Column="1"
+                    Width="480"
+                    MaxWidth="560"
+                    Visibility="Collapsed"
+                    BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="1,0,0,0"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Padding="12,8" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock x:Name="SearchPanelTitle" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="SearchPanelHint" FontSize="11" Opacity="0.65"/>
+                        </StackPanel>
+                        <Button x:Name="SearchPinBtn" Grid.Column="1" Click="SearchPinBtn_Click"/>
+                        <Button x:Name="SearchCloseBtn" Grid.Column="2" Click="SearchCloseBtn_Click" Width="32" Height="32" Padding="0">
+                            <FontIcon Glyph="&#xE711;" FontFamily="Segoe Fluent Icons"/>
+                        </Button>
+                    </Grid>
+                    <Grid x:Name="SearchWebViewHost" Grid.Row="1">
+                        <ProgressRing x:Name="SearchProgressRing" IsActive="False" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Window>

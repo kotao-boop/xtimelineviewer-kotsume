@@ -104,7 +104,7 @@
 
   <!-- Settings window navigation -->
   <data name="Nav_General" xml:space="preserve"><value>全般</value></data>
-  <data name="Nav_UserInterface" xml:space="preserve"><value>ユーザーインターフェイス</value></data>
+  <data name="Nav_UserInterface" xml:space="preserve"><value>表示</value></data>
   <data name="Nav_Experimental" xml:space="preserve"><value>試験機能</value></data>
   <data name="Experimental_Caution" xml:space="preserve"><value>ここにリストアップされる機能は予告なく変更されたり、非推奨・削除されることがあります。</value></data>
   <data name="Settings_ComposePreload" xml:space="preserve"><value>投稿ウィンドウをプリロードする</value></data>
@@ -140,7 +140,7 @@
   <data name="PriorRepostSearch_ButtonLabel" xml:space="preserve"><value>直前のポスト・リポストを検索</value></data>
   <data name="Nav_Extensions" xml:space="preserve"><value>拡張機能</value></data>
   <data name="Nav_Profiles" xml:space="preserve"><value>プロファイル</value></data>
-  <data name="Nav_Data" xml:space="preserve"><value>ユーザーデータ管理</value></data>
+  <data name="Nav_Data" xml:space="preserve"><value>データ</value></data>
   <data name="Settings_RelatedSettings" xml:space="preserve"><value>関連する設定</value></data>
   <data name="Nav_About" xml:space="preserve"><value>バージョン情報</value></data>
   <data name="Pane_Settings_Tooltip" xml:space="preserve"><value>設定</value></data>
@@ -161,7 +161,7 @@
   <data name="Profiles_DefaultDescription" xml:space="preserve"><value>アプリケーションが利用する内部プロファイルです</value></data>
 
   <!-- Onboarding (#4) -->
-  <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>XTimelineViewer へようこそ</value></data>
+  <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Kotsume Edition へようこそ</value></data>
   <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>X のタイムラインを並べて表示するアプリです。まず X アカウントにログインしてプロファイルを作成しましょう。</value></data>
   <data name="Onboarding_PrivacyTitle" xml:space="preserve"><value>通信とデータについて</value></data>
   <data name="Onboarding_PrivacyBody" xml:space="preserve"><value>X は Edge WebView2 で直接表示します。翻訳は初期状態でOFFで、有効にすると投稿本文を Google の翻訳用エンドポイントへ送信します。開発者の収集サーバーや利用状況テレメトリはありません。</value></data>
@@ -173,7 +173,7 @@
   <data name="Onboarding_DoneBtn" xml:space="preserve"><value>完了</value></data>
   <data name="Onboarding_CompleteTitle" xml:space="preserve"><value>準備完了！</value></data>
   <data name="Onboarding_CompleteBody" xml:space="preserve"><value>{0} のホームタイムラインを追加しました。メニューからタイムラインやプロファイルを追加できます。</value></data>
-  <data name="Button_Skip" xml:space="preserve"><value>スキップしてアプリを終了</value></data>
+  <data name="Button_Skip" xml:space="preserve"><value>あとで設定</value></data>
 
   <!-- Compose profile selector -->
   <data name="Compose_Profile" xml:space="preserve"><value>投稿アカウント（Ctrl+P で切り替え）</value></data>
@@ -230,7 +230,7 @@
   <data name="Settings_SavedQueries_Description" xml:space="preserve"><value>検索ボックスのサジェストに表示されるクエリ</value></data>
 
   <!-- About dialog sections -->
-  <data name="About_Copyright" xml:space="preserve"><value>© 2026 daruyanagi</value></data>
+  <data name="About_Copyright" xml:space="preserve"><value>© 2026 Kotsume Project contributors</value></data>
   <data name="About_Channel_Winget" xml:space="preserve"><value>winget 版</value></data>
   <data name="About_Channel_Zip" xml:space="preserve"><value>ZIP 版</value></data>
   <data name="About_Channel_Packaged" xml:space="preserve"><value>パッケージ版</value></data>
@@ -240,4 +240,88 @@
   <data name="About_OpenLink" xml:space="preserve"><value>開く</value></data>
   <data name="About_Ack_TTL" xml:space="preserve"><value>ホームタイムラインの自動更新機能は、この Chromium 拡張機能のアイデアと実装を参考に内製化しました。</value></data>
   <data name="About_Ack_Icon" xml:space="preserve"><value>アプリアイコンを制作していただきました。</value></data>
+
+  <!-- UX refresh -->
+  <data name="App_Title" xml:space="preserve"><value>XTimelineViewer, Kotsume Edition</value></data>
+  <data name="Toolbar_Profile" xml:space="preserve"><value>使用するプロフィール</value></data>
+  <data name="Toolbar_AddTimeline" xml:space="preserve"><value>タイムライン</value></data>
+  <data name="Toolbar_AddTimelineTooltip" xml:space="preserve"><value>タイムラインを追加</value></data>
+  <data name="Empty_WelcomeTitle" xml:space="preserve"><value>Kotsume Edition へようこそ</value></data>
+  <data name="Empty_WelcomeBody" xml:space="preserve"><value>X のタイムラインを、見やすく並べて表示できます。</value></data>
+  <data name="Empty_AddProfile" xml:space="preserve"><value>X アカウントを追加</value></data>
+  <data name="Empty_AddTimeline" xml:space="preserve"><value>タイムラインを追加</value></data>
+  <data name="Empty_DropHint" xml:space="preserve"><value>または、X の URL ショートカットをここへドロップしてください</value></data>
+  <data name="Empty_QuickAdd" xml:space="preserve"><value>すぐに追加</value></data>
+  <data name="Empty_DisabledHint" xml:space="preserve"><value>先に X アカウントを追加すると、検索・投稿・タイムライン追加を使えます。</value></data>
+  <data name="Layout_Tooltip" xml:space="preserve"><value>レイアウトを変更</value></data>
+  <data name="Layout_Classic" xml:space="preserve"><value>▥  クラシック（横並び）</value></data>
+  <data name="Layout_Grid2x2" xml:space="preserve"><value>▦  2 × 2 グリッド</value></data>
+  <data name="Layout_Grid2x3" xml:space="preserve"><value>▦  2 × 3 グリッド</value></data>
+  <data name="Layout_VerticalSplit" xml:space="preserve"><value>▤  上下 2 分割</value></data>
+  <data name="Layout_Focus" xml:space="preserve"><value>▣  フォーカス</value></data>
+  <data name="Menu_TimelineManager" xml:space="preserve"><value>タイムラインを管理</value></data>
+  <data name="Menu_Workspaces" xml:space="preserve"><value>ワークスペース</value></data>
+  <data name="Menu_Shortcuts" xml:space="preserve"><value>キーボードショートカット</value></data>
+  <data name="Menu_CommandPalette" xml:space="preserve"><value>操作を検索</value></data>
+  <data name="Timeline_SearchName" xml:space="preserve"><value>「{0}」の検索</value></data>
+  <data name="Timeline_Name" xml:space="preserve"><value>表示名</value></data>
+  <data name="Timeline_NameDescription" xml:space="preserve"><value>空欄にすると、ホームや検索語から自動で名前を付けます。</value></data>
+  <data name="Timeline_Visible" xml:space="preserve"><value>表示中</value></data>
+  <data name="Timeline_Hidden" xml:space="preserve"><value>非表示</value></data>
+  <data name="Timeline_Duplicate" xml:space="preserve"><value>複製</value></data>
+  <data name="Timeline_MoveUp" xml:space="preserve"><value>上へ</value></data>
+  <data name="Timeline_MoveDown" xml:space="preserve"><value>下へ</value></data>
+  <data name="Timeline_ManagerTitle" xml:space="preserve"><value>タイムライン管理</value></data>
+  <data name="Timeline_ManagerDescription" xml:space="preserve"><value>名前の変更、表示・非表示、並べ替え、複製、削除ができます。</value></data>
+  <data name="Timeline_DeleteConfirmTitle" xml:space="preserve"><value>タイムラインを削除しますか？</value></data>
+  <data name="Timeline_DeleteConfirmBody" xml:space="preserve"><value>「{0}」をこのアプリから削除します。X 上のリストやポストは削除されません。</value></data>
+  <data name="Timeline_DeleteConfirm" xml:space="preserve"><value>削除</value></data>
+  <data name="Pane_Loading" xml:space="preserve"><value>タイムラインを読み込んでいます…</value></data>
+  <data name="Pane_LoadError" xml:space="preserve"><value>タイムラインを読み込めませんでした。</value></data>
+  <data name="Pane_LoadErrorHint" xml:space="preserve"><value>インターネット接続を確認して、もう一度お試しください。</value></data>
+  <data name="Pane_SignInRequired" xml:space="preserve"><value>X へのサインインが必要です。</value></data>
+  <data name="Button_Retry" xml:space="preserve"><value>もう一度試す</value></data>
+  <data name="Button_OpenBrowser" xml:space="preserve"><value>ブラウザーで開く</value></data>
+  <data name="Button_SignIn" xml:space="preserve"><value>サインインする</value></data>
+  <data name="Search_PanelTitle" xml:space="preserve"><value>X の検索結果</value></data>
+  <data name="Search_PanelHint" xml:space="preserve"><value>必要なら、この結果をタイムラインとして固定できます。</value></data>
+  <data name="Workspace_Title" xml:space="preserve"><value>ワークスペース</value></data>
+  <data name="Workspace_Description" xml:space="preserve"><value>タイムライン、並び順、表示状態、レイアウトをまとめて保存します。</value></data>
+  <data name="Workspace_SaveCurrent" xml:space="preserve"><value>現在の構成を保存</value></data>
+  <data name="Workspace_Name" xml:space="preserve"><value>ワークスペース名</value></data>
+  <data name="Workspace_Empty" xml:space="preserve"><value>保存済みのワークスペースはありません。</value></data>
+  <data name="Workspace_Apply" xml:space="preserve"><value>開く</value></data>
+  <data name="Workspace_Delete" xml:space="preserve"><value>削除</value></data>
+  <data name="Command_Title" xml:space="preserve"><value>操作を検索</value></data>
+  <data name="Command_Placeholder" xml:space="preserve"><value>例：タイムライン、設定、レイアウト</value></data>
+  <data name="Shortcuts_Title" xml:space="preserve"><value>キーボードショートカット</value></data>
+  <data name="Settings_SearchPlaceholder" xml:space="preserve"><value>設定を検索</value></data>
+  <data name="Settings_SearchNoResult" xml:space="preserve"><value>一致する設定が見つかりませんでした。</value></data>
+  <data name="Profiles_StatusConfigured" xml:space="preserve"><value>設定済み</value></data>
+  <data name="Profiles_TimelineCount" xml:space="preserve"><value>使用中のタイムライン：{0} 個</value></data>
+  <data name="Profiles_HandleUnknown" xml:space="preserve"><value>アカウント名は次回の読み込み時に確認します</value></data>
+  <data name="Extensions_Bundled" xml:space="preserve"><value>アプリに同梱</value></data>
+  <data name="Extensions_UserAdded" xml:space="preserve"><value>利用者が追加</value></data>
+  <data name="Extensions_SiteAccess" xml:space="preserve"><value>動作するサイト：X（x.com）</value></data>
+  <data name="Extensions_Capability" xml:space="preserve"><value>この機能ができること：X のページ表示を調整</value></data>
+  <data name="About_OriginalAuthor" xml:space="preserve"><value>原作：XTimelineViewer by daruyanagi</value></data>
+  <data name="About_Maintainer" xml:space="preserve"><value>現在の開発・保守：Kotsume Project contributors</value></data>
+  <data name="Onboarding_Progress1" xml:space="preserve"><value>1 / 3　ようこそ</value></data>
+  <data name="Onboarding_Progress2" xml:space="preserve"><value>2 / 3　X にサインイン</value></data>
+  <data name="Onboarding_Progress3" xml:space="preserve"><value>3 / 3　おすすめ設定</value></data>
+  <data name="Button_Back" xml:space="preserve"><value>戻る</value></data>
+  <data name="Onboarding_CheckLogin" xml:space="preserve"><value>ログイン済みか確認</value></data>
+  <data name="Timeline_CopySuffix" xml:space="preserve"><value>{0} のコピー</value></data>
+  <data name="Workspace_Summary" xml:space="preserve"><value>タイムライン {0} 個・{1}</value></data>
+  <data name="Shortcut_FocusTimeline" xml:space="preserve"><value>指定した番号のタイムラインへ移動</value></data>
+  <data name="Shortcut_MoveBetween" xml:space="preserve"><value>前後のタイムラインへ移動</value></data>
+  <data name="Shortcut_Reorder" xml:space="preserve"><value>タイムラインを並べ替え</value></data>
+  <data name="Shortcut_Reload" xml:space="preserve"><value>現在のタイムラインを再読み込み</value></data>
+  <data name="Shortcut_TopBottom" xml:space="preserve"><value>タイムラインの先頭・末尾へ移動</value></data>
+  <data name="Layout_Suggestion4" xml:space="preserve"><value>4個のタイムラインには、2 × 2 グリッドが見やすくおすすめです。</value></data>
+  <data name="Layout_Suggestion6" xml:space="preserve"><value>6個のタイムラインには、2 × 3 グリッドが見やすくおすすめです。</value></data>
+  <data name="Layout_UseSuggestion" xml:space="preserve"><value>このレイアウトを使う</value></data>
+  <data name="Profile_Relogin" xml:space="preserve"><value>サインインし直す</value></data>
+  <data name="Profile_ReloginDescription" xml:space="preserve"><value>ログインが切れた場合に、同じプロフィールで X へサインインし直します。</value></data>
+  <data name="Profile_SaveLogin" xml:space="preserve"><value>保存</value></data>
 </root>

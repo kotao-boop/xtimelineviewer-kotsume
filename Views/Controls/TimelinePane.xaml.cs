@@ -59,6 +59,8 @@ namespace XTimelineViewer.Views.Controls
 
         /// <summary>横幅がドラッグによって変更・確定された時のイベント</summary>
         internal event Action<TimelinePane, double>? WidthResized;
+        internal event Action<TimelinePane>? RetryRequested;
+        internal event Action<TimelinePane>? OpenInBrowserRequested;
 
         private void InitializeResizeGrip()
         {
@@ -210,7 +212,7 @@ namespace XTimelineViewer.Views.Controls
             };
             Grid.SetRow(_webView, 1);
             PaneRoot.Children.Add(_webView);
-            AutomationProperties.SetName(_webView, UrlLabel.Text);
+            AutomationProperties.SetName(_webView, TitleLabel.Text);
             AttachFocusHandler(_webView);
             return _webView;
         }
@@ -243,11 +245,13 @@ namespace XTimelineViewer.Views.Controls
         /// </summary>
         public void UpdateUrlHeader()
         {
+            TitleLabel.Text = TimelineLabelHelper.GetFriendlyName(Config, R.Get);
             UrlLabel.Text = Uri.TryCreate(Config.Url, UriKind.Absolute, out var u)
                 ? SearchQueryHelper.DecodeSearchPath(u.Host + u.PathAndQuery)
                 : Config.Url;
             TypeIcon.Glyph = UrlHelper.GetTimelineGlyph(Config.Url);
-            AutomationProperties.SetName(_webView, UrlLabel.Text);
+            AutomationProperties.SetName(_webView, TitleLabel.Text);
+            ToolTipService.SetToolTip(TitleLabel, UrlLabel.Text);
             AutoLoadIcon.Visibility = IsHome ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -257,7 +261,44 @@ namespace XTimelineViewer.Views.Controls
             var tip = R.Get("Pane_Settings_Tooltip");
             ToolTipService.SetToolTip(SettingsBtn, tip);
             AutomationProperties.SetName(SettingsBtn, tip);
+            StatusRetryBtn.Content = R.Get("Button_Retry");
+            StatusBrowserBtn.Content = R.Get("Button_OpenBrowser");
+            UpdateUrlHeader();
         }
+
+        public void ShowLoadingState()
+        {
+            NavigationStateOverlay.Visibility = Visibility.Visible;
+            NavigationProgress.IsActive = true;
+            NavigationProgress.Visibility = Visibility.Visible;
+            NavigationStateTitle.Text = R.Get("Pane_Loading");
+            NavigationStateHint.Text = string.Empty;
+            NavigationActions.Visibility = Visibility.Collapsed;
+        }
+
+        public void ShowErrorState(bool signInRequired = false)
+        {
+            NavigationStateOverlay.Visibility = Visibility.Visible;
+            NavigationProgress.IsActive = false;
+            NavigationProgress.Visibility = Visibility.Collapsed;
+            NavigationStateTitle.Text = R.Get(signInRequired ? "Pane_SignInRequired" : "Pane_LoadError");
+            NavigationStateHint.Text = signInRequired ? string.Empty : R.Get("Pane_LoadErrorHint");
+            StatusRetryBtn.Content = R.Get(signInRequired ? "Button_SignIn" : "Button_Retry");
+            StatusBrowserBtn.Content = R.Get("Button_OpenBrowser");
+            NavigationActions.Visibility = Visibility.Visible;
+        }
+
+        public void HideNavigationState()
+        {
+            NavigationProgress.IsActive = false;
+            NavigationStateOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void StatusRetryBtn_Click(object sender, RoutedEventArgs e)
+            => RetryRequested?.Invoke(this);
+
+        private void StatusBrowserBtn_Click(object sender, RoutedEventArgs e)
+            => OpenInBrowserRequested?.Invoke(this);
 
         /// <summary>
         /// 番号バッジ（#225）。表示順の 1..9 を受け取る。9 を超えるペインは null。
