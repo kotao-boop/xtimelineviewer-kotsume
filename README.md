@@ -52,6 +52,14 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 | **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.3.0-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
 | **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.3.0-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
 
+### Microsoft Store版の状況
+
+Microsoft Store版は、2026年8月26日にx64版・ARM64版を認定申請し、現在はMicrosoftによる審査中です。まだStoreで公開された状態ではありません。
+
+認定に合格した場合、Store版のMSIXはMicrosoft Storeから更新されます。GitHub Releasesで配布するEXE・ZIPとは別の配布経路であり、現在のGitHub版はコード署名されていません。
+
+申請の詳しい記録は、[Microsoft Store提出状況](docs/MICROSOFT_STORE_PUBLISHING.md)を確認してください。
+
 ---
 
 ## 動作要件

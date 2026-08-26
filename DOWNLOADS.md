@@ -5,6 +5,14 @@
 Download the latest Windows packages from the
 [GitHub Releases page](https://github.com/kotao-boop/xtimelineviewer-kotsume/releases/latest).
 
+## Microsoft Store status
+
+The Microsoft Store submission for the x64 and ARM64 packages was sent on August 26, 2026, and is currently
+under certification review. The Store version is not publicly available yet.
+
+If certification is approved, the Store MSIX and the GitHub EXE/ZIP packages will remain separate distribution
+channels. Store updates will be delivered through Microsoft Store; the current GitHub release is not code-signed.
+
 ## Code-signing status
 
 The current v2.3.0 release is **not code-signed**. Windows may therefore show an "Unknown publisher" or
