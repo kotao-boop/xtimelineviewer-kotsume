@@ -239,8 +239,6 @@
   <data name="About_Acknowledgements" xml:space="preserve"><value>Acknowledgements</value></data>
   <data name="About_OpenLink" xml:space="preserve"><value>Open</value></data>
   <data name="About_Ack_TTL" xml:space="preserve"><value>The Home timeline auto-refresh feature was built in-house, inspired by the idea and implementation of this Chromium extension.</value></data>
-  <data name="About_Ack_Icon" xml:space="preserve"><value>Designed the app icon.</value></data>
-
   <!-- UX refresh -->
   <data name="App_Title" xml:space="preserve"><value>XTimelineViewer, Kotsume Edition</value></data>
   <data name="Toolbar_Profile" xml:space="preserve"><value>Profile to use</value></data>

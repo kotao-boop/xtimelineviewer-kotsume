@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">XTimelineViewer Kotsume Edition small app icon</title>
+  <desc id="desc">A simplified small-clawed otter between three colorful viewing panels.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="72%">
+      <stop offset="0" stop-color="#12315a"/>
+      <stop offset="1" stop-color="#061731"/>
+    </radialGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b96b35"/>
+      <stop offset="1" stop-color="#7a3d23"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <path d="M19 205C12 148 19 78 70 51C79 46 87 53 83 62C67 100 64 157 70 210Z" fill="#14bfd1"/>
+  <path d="M91 45C100 34 112 31 128 31C144 31 156 34 165 45C171 54 172 74 172 100V176H84V100C84 74 85 54 91 45Z" fill="#65ddb4"/>
+  <path d="M237 205C244 148 237 78 186 51C177 46 169 53 173 62C189 100 192 157 186 210Z" fill="#ff704c"/>
+  <circle cx="88" cy="109" r="20" fill="#9c522a"/>
+  <circle cx="168" cy="109" r="20" fill="#9c522a"/>
+  <circle cx="88" cy="109" r="9" fill="#142036"/>
+  <circle cx="168" cy="109" r="9" fill="#142036"/>
+  <path d="M73 132C73 89 96 71 128 71C160 71 183 90 183 133C183 178 163 204 128 218C93 204 73 177 73 132Z" fill="url(#fur)"/>
+  <path d="M83 139C88 121 106 118 121 129C126 133 130 133 135 129C150 118 168 121 173 139C177 158 159 176 128 176C97 176 79 158 83 139Z" fill="#ffd899"/>
+  <path d="M94 119C100 111 112 111 119 120C112 130 100 130 94 122Z" fill="#101a2c"/>
+  <circle cx="110" cy="117" r="2.5" fill="#ffe8b8"/>
+  <path d="M137 120C144 111 156 111 162 119V122C156 130 144 130 137 120Z" fill="#101a2c"/>
+  <circle cx="146" cy="117" r="2.5" fill="#ffe8b8"/>
+  <path d="M116 138C119 131 124 128 128 128C133 128 138 131 140 138C139 145 133 149 128 151C122 149 117 145 116 138Z" fill="#101a2c"/>
+  <path d="M128 149V158M128 158C123 163 117 163 112 160M128 158C133 163 139 163 144 160" fill="none" stroke="#101a2c" stroke-width="4" stroke-linecap="round"/>
+</svg>
