@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using XTimelineViewer.Models;
@@ -23,6 +24,8 @@ namespace XTimelineViewer.Views.Controls
         // ログイン時に検出した X のスクリーンネーム。Name はユーザーが編集できるため別に保持する。
         private string? _detectedScreenName;
         private bool _initialized;
+        private CoreWebView2Environment? _environment;
+        private readonly HashSet<Window> _signInWindows = [];
 
         /// <summary>このコントロールが扱う新規プロファイルの ID。</summary>
         public string ProfileId => _profileId;
@@ -66,6 +69,7 @@ namespace XTimelineViewer.Views.Controls
             Directory.CreateDirectory(folder);
             var options = new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = true };
             var env = await CoreWebView2Environment.CreateWithOptionsAsync("", folder, options);
+            _environment = env;
             await LoginWebView.EnsureCoreWebView2Async(env);
             _initialized = true;
 
@@ -88,7 +92,94 @@ namespace XTimelineViewer.Views.Controls
                 LoginDetected?.Invoke(screenName);
             };
 
+            // Google / Apple サインインは window.open で認証画面を開く。既定動作に任せると
+            // 外部ブラウザーへ移り、そちらの Cookie はこのプロファイルへ戻ってこない。
+            // 同じ CoreWebView2Environment を使うアプリ内ウィンドウを NewWindow に渡し、
+            // 認証結果を元の X ログイン画面と安全に共有する。
+            LoginWebView.CoreWebView2.NewWindowRequested += LoginWebView_NewWindowRequested;
+
             LoginWebView.Source = new Uri("https://x.com/i/flow/login");
+        }
+
+        private async void LoginWebView_NewWindowRequested(
+            CoreWebView2 sender,
+            CoreWebView2NewWindowRequestedEventArgs args)
+        {
+            var deferral = args.GetDeferral();
+            Window? popupWindow = null;
+            WebView2? popupWebView = null;
+
+            try
+            {
+                // アドレスバーのない認証画面へ任意サイトを開かせない。
+                if (!UrlHelper.IsTrustedSignInPopupUri(args.Uri))
+                {
+                    args.Handled = true;
+                    AppLog.Debug("Blocked an untrusted sign-in popup.");
+                    return;
+                }
+
+                if (_environment is null)
+                {
+                    args.Handled = true;
+                    AppLog.Debug("Blocked a sign-in popup because the WebView2 environment was unavailable.");
+                    return;
+                }
+
+                popupWebView = new WebView2();
+                popupWindow = new Window
+                {
+                    Title = R.Get("Profile_SignInPopupTitle"),
+                    Content = popupWebView,
+                };
+
+                popupWindow.AppWindow.Resize(new Windows.Graphics.SizeInt32(560, 760));
+                popupWindow.Activate();
+                await popupWebView.EnsureCoreWebView2Async(_environment);
+
+                popupWebView.CoreWebView2.Profile.PreferredColorScheme = this.ActualTheme switch
+                {
+                    ElementTheme.Light => CoreWebView2PreferredColorScheme.Light,
+                    ElementTheme.Dark  => CoreWebView2PreferredColorScheme.Dark,
+                    _                  => CoreWebView2PreferredColorScheme.Auto,
+                };
+
+                // 認証途中のトップレベル遷移も正規ホストだけに限定する。
+                popupWebView.CoreWebView2.NavigationStarting += (_, navigationArgs) =>
+                {
+                    if (UrlHelper.IsTrustedSignInPopupUri(navigationArgs.Uri))
+                    {
+                        if (Uri.TryCreate(navigationArgs.Uri, UriKind.Absolute, out var uri))
+                            popupWindow.Title = $"{R.Get("Profile_SignInPopupTitle")} — {uri.Host}";
+                        return;
+                    }
+
+                    navigationArgs.Cancel = true;
+                    AppLog.Debug("Blocked an untrusted navigation in the sign-in popup.");
+                };
+
+                popupWebView.CoreWebView2.WindowCloseRequested += (_, _) => popupWindow.Close();
+                popupWindow.Closed += (_, _) =>
+                {
+                    _signInWindows.Remove(popupWindow);
+                    try { popupWebView.Close(); } catch { }
+                };
+
+                _signInWindows.Add(popupWindow);
+                args.NewWindow = popupWebView.CoreWebView2;
+                args.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                args.Handled = true;
+                AppLog.Error("Profile sign-in popup", ex);
+                try { popupWebView?.Close(); } catch { }
+                try { popupWindow?.Close(); } catch { }
+            }
+            finally
+            {
+                deferral.Complete();
+            }
         }
 
         private async Task<string?> TryGetScreenNameAsync()
@@ -123,6 +214,11 @@ namespace XTimelineViewer.Views.Controls
         /// <summary>WebView2 を明示的に閉じて環境を解放する。</summary>
         public void CloseWebView()
         {
+            foreach (var window in new List<Window>(_signInWindows))
+            {
+                try { window.Close(); } catch { }
+            }
+            _signInWindows.Clear();
             try { LoginWebView.Close(); } catch { }
         }
 

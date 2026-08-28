@@ -1,7 +1,7 @@
 ; Inno Setup Script for XTimelineViewer Kotsume Edition
 #define MyAppName "XTimelineViewer Kotsume Edition"
 #ifndef MyAppVersion
-#define MyAppVersion "2.3.1"
+#define MyAppVersion "2.3.2"
 #endif
 #define MyAppPublisher "Kotsume Project"
 #define MyAppURL "https://github.com/kotao-boop/xtimelineviewer-kotsume"

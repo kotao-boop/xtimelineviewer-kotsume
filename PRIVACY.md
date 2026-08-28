@@ -1,6 +1,6 @@
 # プライバシーポリシー / Privacy Policy
 
-最終更新日: 2026年8月23日
+最終更新日: 2026年8月28日
 
 この文書は、XTimelineViewer Kotsume Edition（以下「本アプリ」）が扱うデータと通信を説明します。
 本アプリはオープンソースの非公式Xクライアントであり、X Corp.、Google LLC、Microsoft Corporation
@@ -19,6 +19,13 @@
 本アプリはMicrosoft Edge WebView2を使って `https://x.com/` を表示します。ログイン情報、Cookie、
 閲覧履歴など、WebView2内でXが取り扱うデータには、Xのプライバシーポリシーが適用されます。
 本アプリの開発者が運営するサーバーへ、XのパスワードやCookieを送信する処理はありません。
+
+利用者がXのログイン画面で「Googleで続ける」または「Appleで続ける」を明示的に選んだ場合、
+本アプリは同じWebView2プロファイルを使う認証用ウィンドウで、Googleの
+`https://accounts.google.com/` またはAppleの `https://appleid.apple.com/` を表示します。
+認証情報は各サービスとXの間で処理され、本アプリ独自の設定ファイルやログへパスワード、
+認証Cookie、認証コードを保存する処理はありません。認証用ウィンドウは、X、Google、Appleの
+正規HTTPSホストだけへ移動できるよう制限しています。
 
 ## 2. 翻訳機能
 
@@ -85,6 +92,8 @@ MSIX版は、Windowsのアプリ設定にあるリセットまたはアンイン
 本アプリから利用する第三者サービスには、それぞれの利用規約とプライバシーポリシーが適用されます。
 
 - X: `https://x.com/` / プライバシー: `https://x.com/en/privacy`
+- GoogleによるXへのログイン（利用者が選んだ場合）: `https://accounts.google.com/` / プライバシー: `https://policies.google.com/privacy`
+- AppleによるXへのログイン（利用者が選んだ場合）: `https://appleid.apple.com/` / プライバシー: `https://www.apple.com/legal/privacy/`
 - Google翻訳用エンドポイント: `https://translate.googleapis.com/` / プライバシー: `https://policies.google.com/privacy`
 - GitHub Releases API: `https://api.github.com/` / プライバシー: `https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement`
 - Microsoft Edge WebView2 / Microsoft Store / winget / プライバシー: `https://privacy.microsoft.com/privacystatement`
@@ -103,4 +112,6 @@ The application does not operate a developer-controlled analytics or collection 
 through Microsoft Edge WebView2. Translation is disabled by default and requires an in-app disclosure before use.
 When translation is requested, the visible post text is sent to `translate.googleapis.com`. Settings, WebView2
 profiles and logs are stored locally. Unpackaged builds contact the GitHub Releases API to check for
-updates. See the Japanese sections above for the complete current data-flow description.
+updates. If the user explicitly chooses Google or Apple on X's sign-in page, the corresponding authentication
+page is opened in an in-app WebView2 window that shares the same local profile with X. See the Japanese sections
+above for the complete current data-flow description.
