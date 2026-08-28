@@ -200,13 +200,15 @@ namespace XTimelineViewer.Tests
         }
 
         [Fact]
-        public void Readme_DoesNotDescribeCurrentUnsignedReleaseAsSigned()
+        public void Readme_DistinguishesStoreSigningFromUnsignedGitHubRelease()
         {
             var readme = Read("README.md");
 
-            Assert.Contains($"v{CurrentVersion()}は正式なGitHubリリースですが、コード署名はありません", readme);
+            Assert.Contains("Microsoft Store版はMicrosoftが署名して配布します", readme);
+            Assert.Contains($"GitHubで配布するv{CurrentVersion()}のEXE・ZIPはコード署名されていない", readme);
             Assert.Contains("## Code signing policy", readme);
-            Assert.Contains("Application preparation in progress", readme);
+            Assert.Contains("Microsoft Store distribution is live", readme);
+            Assert.Contains($"GitHub v{CurrentVersion()} EXE/ZIP release remains unsigned", readme);
             Assert.Contains("SHA256SUMS.txt", readme);
         }
 

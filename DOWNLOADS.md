@@ -7,15 +7,15 @@ Download the latest Windows packages from the
 
 ## Microsoft Store status
 
-The Microsoft Store submission for the x64 and ARM64 packages was sent on August 26, 2026, and is currently
-under certification review. The Store version is not publicly available yet.
+The initial x64 and ARM64 Microsoft Store submission was certified and became publicly available on
+August 27, 2026. Store packages are signed and updated through Microsoft Store.
 
-If certification is approved, the Store MSIX and the GitHub EXE/ZIP packages will remain separate distribution
-channels. Store updates will be delivered through Microsoft Store; the current GitHub release is not code-signed.
+The Store MSIX and GitHub EXE/ZIP packages are separate distribution channels. Store updates are delivered
+through Microsoft Store. GitHub packages do not become signed merely because the Store version is signed.
 
 ## Code-signing status
 
-The current v2.3.0 release is **not code-signed**. Windows may therefore show an "Unknown publisher" or
+The GitHub v2.3.1 release is **not code-signed**. Windows may therefore show an "Unknown publisher" or
 Microsoft Defender SmartScreen warning. The release includes `SHA256SUMS.txt` and GitHub Artifact Attestations
 for its final packages. These help verify that a file is the exact file produced by the repository's release
 workflow; they do not replace Authenticode code signing and do not by themselves prove that software is safe.
@@ -23,8 +23,8 @@ workflow; they do not replace Authenticode code signing and do not by themselves
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate by
 [SignPath Foundation](https://signpath.org/).
 
-The project is preparing an application to SignPath Foundation. Each release states its own signing status.
-Do not treat v2.3.0 as an approved or signed SignPath artifact.
+The SignPath application is currently deferred while Microsoft Store is the primary signed distribution route.
+Each release states its own signing status. Do not treat GitHub packages as approved or signed SignPath artifacts.
 
 ## Package formats
 

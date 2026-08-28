@@ -3,8 +3,8 @@
 このチェックリストは、Partner Centerへの提出前に使います。製品名の予約と正式なIdentityの
 `Package.appxmanifest`への反映は完了しています。
 
-> **現在の状態（2026年8月26日）:** x64版・ARM64版をPartner Centerへ提出済みで、現在は`In certification`
-> （認定審査中）です。認定合格、Store公開、WACK合格は、結果が表示されるまで完了扱いにしません。
+> **現在の状態（2026年8月28日）:** v2.3.0のx64版・ARM64版は認定に合格し、Storeで公開済みです。
+> v2.3.1のブランド更新を準備しています。初回合格を次回更新の合格保証として扱いません。
 
 ## 1. アカウントと製品Identity
 
@@ -21,7 +21,7 @@
 - [x] `Publisher` をPartner Centerの正式な値へ置き換えた
 - [x] アプリ版と4桁のパッケージ版を一致させた
 - [x] x64とARM64の提出用パッケージをローカルで生成した
-- [ ] `internetClient` が実際のHTTPS通信に必要であることを説明できる
+- [x] `internetClient` が実際のHTTPS通信に必要であることを認証ノートで説明した
 - [x] `runFullTrust` がWinUI 3デスクトップ機能に必要であることをPartner Centerへ説明した
 - [x] `scripts/test-store-readiness.ps1` が `-AllowDevelopmentIdentity` なしで成功する
 
@@ -50,13 +50,15 @@
 - [x] 日本語・英語の説明文
 - [x] 個人情報が写っていないスクリーンショット
 - [x] パッケージ内のアプリアイコンをStore表示に使用
+- [x] v2.3.1用の匿名化済み実画面スクリーンショットを保存した
+- [x] v2.3.1用の日本語・英語「新機能」文案を保存した
 - [x] カテゴリと年齢区分
 - [x] プライバシーポリシーURL
 - [x] サポートURL
 - [ ] Windows App SDKの再配布条件を満たすStoreの使用許諾条件を確認した
 - [x] 非公式Xクライアントであり、X Corp.の提供・承認製品ではない旨
 - [x] 翻訳時に投稿本文をGoogleへ送る旨
-- [ ] 更新経路はStoreであり、GitHub版の自己更新とは別である旨
+- [x] 更新経路はStoreであり、GitHub版の自己更新とは別である旨
 
 ## 6. 認証担当者向けノート
 
@@ -68,8 +70,8 @@
 
 ## 7. 最終提出ゲート
 
-- [ ] ソース、manifest、掲載版、パッケージ版が一致している
-- [ ] LICENSE、THIRD-PARTY-NOTICES、`licenses`フォルダーがパッケージ内にある
+- [x] v2.3.1のソース、manifest、掲載版、パッケージ版が一致している
+- [x] LICENSE、THIRD-PARTY-NOTICES、`licenses`フォルダーがパッケージ内にある
 - [ ] WACK結果と手動確認結果をリリース記録へ保存した
 - [ ] 既知の未解決ブロッカーが0件である
 - [x] Partner Centerの提出内容を別の目で確認した
