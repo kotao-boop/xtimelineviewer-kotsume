@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">XTimelineViewer Kotsume Edition app icon</title>
+  <desc id="desc">A calm small-clawed otter looking out between three colorful viewing panels.</desc>
+  <defs>
+    <radialGradient id="background" cx="50%" cy="42%" r="72%">
+      <stop offset="0" stop-color="#12315a"/>
+      <stop offset="0.64" stop-color="#091f43"/>
+      <stop offset="1" stop-color="#061731"/>
+    </radialGradient>
+    <linearGradient id="leftPanel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#24d5df"/>
+      <stop offset="1" stop-color="#079dbf"/>
+    </linearGradient>
+    <linearGradient id="centerPanel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8af0c6"/>
+      <stop offset="1" stop-color="#42cfa2"/>
+    </linearGradient>
+    <linearGradient id="rightPanel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffb067"/>
+      <stop offset="1" stop-color="#ff5d44"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0.15" y1="0.08" x2="0.85" y2="0.92">
+      <stop offset="0" stop-color="#b96b35"/>
+      <stop offset="0.55" stop-color="#985027"/>
+      <stop offset="1" stop-color="#71391f"/>
+    </linearGradient>
+    <linearGradient id="chest" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#a95f31"/>
+      <stop offset="1" stop-color="#7a3d23"/>
+    </linearGradient>
+    <linearGradient id="muzzle" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe3aa"/>
+      <stop offset="1" stop-color="#f5bd72"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#020b1c" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+
+  <!-- Full-bleed background prevents white fringes after Store/Windows masking. -->
+  <rect width="1024" height="1024" fill="url(#background)"/>
+
+  <!-- Three abstract views. They deliberately avoid browser-window or timeline UI shapes. -->
+  <path d="M102 772C73 597 75 377 139 277C181 211 255 173 323 157C352 150 373 178 360 205C296 340 270 561 297 757C300 780 286 802 264 810L154 849C130 857 107 798 102 772Z" fill="url(#leftPanel)"/>
+  <path d="M367 173C397 139 451 126 512 126C573 126 627 139 657 173C682 202 694 271 694 365V642H330V365C330 271 342 202 367 173Z" fill="url(#centerPanel)"/>
+  <path d="M922 772C951 597 949 377 885 277C843 211 769 173 701 157C672 150 651 178 664 205C728 340 754 561 727 757C724 780 738 802 760 810L870 849C894 857 917 798 922 772Z" fill="url(#rightPanel)"/>
+
+  <!-- Otter emblem. -->
+  <g filter="url(#softShadow)">
+    <!-- Ears sit behind the head and remain visible at small sizes. -->
+    <circle cx="357" cy="447" r="58" fill="#a95e2f"/>
+    <circle cx="357" cy="447" r="28" fill="#172238"/>
+    <circle cx="667" cy="447" r="58" fill="#a95e2f"/>
+    <circle cx="667" cy="447" r="28" fill="#172238"/>
+
+    <!-- Long, compact body creates a recognizable silhouette without detailed fur. -->
+    <path d="M352 536C352 432 420 371 515 371C612 371 681 437 681 544V712C681 798 620 864 512 913C404 864 343 798 343 712L352 536Z" fill="url(#chest)"/>
+    <path d="M343 698C380 761 433 824 512 879C591 824 644 761 681 698V742C681 819 620 875 512 925C404 875 343 819 343 742V698Z" fill="#6d3722" opacity="0.4"/>
+
+    <!-- Head is slightly longer than a toy mascot but still welcoming. -->
+    <path d="M326 521C326 415 401 349 510 349C621 349 698 419 698 528C698 649 623 720 511 720C399 720 326 648 326 521Z" fill="url(#fur)"/>
+
+    <!-- Subtle eye masks add intelligence without eyebrows or an aggressive expression. -->
+    <path d="M380 493C414 461 460 459 487 491C461 526 411 533 380 493Z" fill="#8c4725" opacity="0.72"/>
+    <path d="M545 491C573 458 619 461 649 495C616 531 571 525 545 491Z" fill="#8c4725" opacity="0.72"/>
+
+    <!-- Medium-small almond eyes: between the mature and friendly concept studies. -->
+    <path d="M400 488C420 466 458 468 478 497C462 531 421 535 399 505C396 499 397 493 400 488Z" fill="#111c30"/>
+    <ellipse cx="449" cy="490" rx="8" ry="9" fill="#ffe8b8"/>
+    <path d="M546 497C566 468 604 466 624 488C627 493 628 499 625 505C603 535 562 531 546 497Z" fill="#111c30"/>
+    <ellipse cx="579" cy="490" rx="8" ry="9" fill="#ffe8b8"/>
+
+    <!-- One continuous cream muzzle stays legible when reduced. -->
+    <path d="M366 560C379 516 427 506 482 535C500 545 524 545 542 535C597 506 645 516 658 560C675 618 622 678 512 678C402 678 349 618 366 560Z" fill="url(#muzzle)"/>
+
+    <!-- Nose and restrained friendly mouth. -->
+    <path d="M471 559C481 540 499 532 513 532C529 532 548 540 557 559C556 580 536 594 514 602C491 594 472 580 471 559Z" fill="#111a2c"/>
+    <ellipse cx="495" cy="555" rx="6" ry="7" fill="#354158" opacity="0.55"/>
+    <path d="M514 594V621" fill="none" stroke="#111a2c" stroke-width="12" stroke-linecap="round"/>
+    <path d="M514 621C497 638 475 640 457 630M514 621C531 638 553 640 571 630" fill="none" stroke="#111a2c" stroke-width="10" stroke-linecap="round"/>
+
+    <!-- Small-clawed paws are merged visually with the body and outlined by the background. -->
+    <path d="M288 731C288 690 318 663 358 663C398 663 426 694 421 737C416 779 389 804 350 804C311 804 288 774 288 731Z" fill="#a95e2f" stroke="#091f43" stroke-width="18"/>
+    <path d="M736 731C736 690 706 663 666 663C626 663 598 694 603 737C608 779 635 804 674 804C713 804 736 774 736 731Z" fill="#a95e2f" stroke="#091f43" stroke-width="18"/>
+    <path d="M337 751L331 785M366 748L367 785M687 751L693 785M658 748L657 785" fill="none" stroke="#71391f" stroke-width="9" stroke-linecap="round"/>
+  </g>
+</svg>
