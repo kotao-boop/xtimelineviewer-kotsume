@@ -1,6 +1,6 @@
 # Microsoft Store無料MSIX配布の運用・提出状況
 
-最終更新日: 2026年8月26日
+最終更新日: 2026年8月28日
 
 ## 目的と範囲
 
@@ -26,15 +26,19 @@ Partner Centerで `XTimelineViewer Kotsume Edition` を予約し、発行され�
 
 ## 現在の提出状況
 
-2026年8月26日、正式なPartner Center Identityで作成したx64版・ARM64版のMSIXUploadパッケージをMicrosoft Storeへ提出した。
+2026年8月26日、正式なPartner Center Identityで作成したx64版・ARM64版のv2.3.0
+MSIXUploadパッケージをMicrosoft Storeへ提出した。認定に合格し、2026年8月27日に一般公開された。
 
-- Partner Centerの状態: `In certification`（認定審査中）
-- Store掲載: 日本語・英語ともに登録済み
-- Store公開: まだ公開されていない
-- `runFullTrust`: 利用理由を提出済み。Microsoftの承認結果は審査中
-- 公開タイミング: 認定に合格したら自動的に公開する設定
+- Store掲載: 公開済み
+- 公開名: `XTimelineViewer Kotsume Edition`
+- 公開発行者: `Kotsume Project`
+- 対応アーキテクチャ: x64 / ARM64
+- `runFullTrust`: 初回提出の認定に合格
+- 年齢区分: X上で利用者投稿が表示される可能性を含めたIARC区分を使用
+- 更新経路: Microsoft Store
 
-認定結果と公開日はまだ確定していない。審査通過やStore公開を事前に断定せず、Partner Centerに表示される最新状態を優先する。
+2026年8月28日現在、v2.3.1のブランド更新を準備している。新しいオリジナルアイコン、匿名化済みの
+実画面スクリーンショット、謝辞訂正を含む。提出前と提出後の最新状態はPartner Centerの表示を優先する。
 
 ## 提出前に確認する手順
 
@@ -44,7 +48,7 @@ Partner Centerで `XTimelineViewer Kotsume Edition` を予約し、発行され�
 4. 公開プレビューに本名、住所、電話番号などが表示されていないことを確認する。
 5. 内容に問題がないことを確認してから、審査へ提出する。
 
-今回の提出では、上記を確認したうえで2026年8月26日に送信済みである。次回の更新や再提出でも、この手順を使う。
+初回提出では、上記を確認したうえで2026年8月26日に送信し、認定に合格した。次回の更新でも、この手順を使う。
 
 本人確認資料、Microsoftアカウントの認証情報、回復コードはリポジトリやチャットへ貼り付けない。
 
@@ -54,9 +58,9 @@ Partner Centerで `XTimelineViewer Kotsume Edition` を予約し、発行され�
 2. [x] DisplayName、Description、PublisherDisplayNameをKotsume Editionへ更新する。
 3. [x] x64/arm64のStore upload packageをローカルで生成する。
 4. [ ] Windows App Certification Kitで確認する。
-5. [x] Partner Centerへ提出する（2026年8月26日、現在は`In certification`）。
-6. [ ] 認定結果とStore公開状況を確認する。
-7. [ ] Store版とGitHub版の更新経路・署名状態をREADMEで区別する。
+5. [x] Partner Centerへ提出する（2026年8月26日）。
+6. [x] 認定結果とStore公開状況を確認する（2026年8月27日公開）。
+7. [x] Store版とGitHub版の更新経路・署名状態をREADMEで区別する。
 
 提出前の全確認は `docs/store/SUBMISSION_CHECKLIST.md`、認証担当者向け説明は
 `docs/store/CERTIFICATION_NOTES_TEMPLATE.md` を使う。
@@ -76,12 +80,11 @@ Partner Centerの正確なIdentityへ置き換えた後は、GitHub Actionsの
 - ローカルのWebView2プロファイル、Cookie、設定、ログの保存と削除方法
 - `runFullTrust`はWinUI 3のデスクトップ画面、ローカルデータ、外部ブラウザー連携に使い、サービスのインストールや認証情報の取得には使わないこと
 
-## 認定結果待ち・未確認事項
+## 次回更新で確認する事項
 
-- `runFullTrust`、WebView2、同梱拡張の読み込みがStore認定を通るか
 - Windows App Certification Kit（WACK）のx64/ARM64結果
 - XおよびGoogle側の規約と、Storeの最新ポリシーに照らした最終的な許容範囲
 - 他の利用者が書いた投稿をGoogleへ送る翻訳について、Storeポリシー10.5.3がどのように適用されるか
-- 認定後のStore公開日と、Store版の更新動作
+- v2.3.1更新パッケージの認定結果と、既存利用者への更新配信
 
-これらは認定結果が出た後に更新する。審査通過を事前に断定せず、実際のPartner Centerと認定結果を優先する。
+初回提出の認定合格は、今後の更新が自動的に合格する保証ではない。実際のPartner Centerと認定結果を優先する。

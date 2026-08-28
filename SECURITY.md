@@ -26,7 +26,8 @@
 本プロジェクトの第一者実行ファイルは、GitHub-hosted Windows Runner上で公開ソースからビルドします。
 第三者・Microsoft製バイナリを本プロジェクトの証明書で再署名しません。
 
-現在公開中のv2.3.0は未署名です。最終成果物にはSHA-256とGitHub Artifact Attestationを付けていますが、
-これらはコード署名や安全性の保証そのものではありません。SignPath Foundationへの申請準備と署名
-パイプラインの設計は[コード署名ランブック](docs/CODE_SIGNING_RUNBOOK.md)を参照してください。承認前または
-署名検証に失敗した成果物を「署名済み」と表示してはなりません。
+Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するEXE・ZIPは未署名です。GitHub版の
+最終成果物にはSHA-256とGitHub Artifact Attestationを付けていますが、これらはコード署名や安全性の
+保証そのものではありません。SignPathの検討経緯と署名パイプラインの設計は
+[コード署名ランブック](docs/CODE_SIGNING_RUNBOOK.md)を参照してください。Store署名をGitHub版の署名と
+説明したり、署名検証に失敗した成果物を「署名済み」と表示したりしてはなりません。
