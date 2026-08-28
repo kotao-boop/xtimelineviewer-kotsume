@@ -30,6 +30,32 @@ namespace XTimelineViewer.Services
             (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
              string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase));
 
+        /// <summary>
+        /// X のサインイン画面が別ウィンドウで開くことを許可する認証先。
+        ///
+        /// ログイン用 WebView2 にはアドレスバーがないため、任意の HTTPS ページを
+        /// ポップアップ内へ開くとフィッシング画面を見分けにくい。X 本体と、X が
+        /// 提供する Google / Apple サインインの正規ホストだけを完全一致で許可する。
+        /// </summary>
+        internal static bool IsTrustedSignInPopupUri(string? value)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+                !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                !uri.IsDefaultPort)
+                return false;
+
+            return uri.Host.ToLowerInvariant() switch
+            {
+                "x.com"                 => true,
+                "www.x.com"             => true,
+                "twitter.com"           => true,
+                "www.twitter.com"       => true,
+                "accounts.google.com"   => true,
+                "appleid.apple.com"     => true,
+                _                       => false,
+            };
+        }
+
         /// <summary>同じ HTTPS オリジン（scheme / host / port）かを確認する。</summary>
         internal static bool IsSameHttpsOrigin(string? candidateUrl, string? trustedUrl)
         {

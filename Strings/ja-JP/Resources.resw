@@ -30,6 +30,7 @@
   <data name="AddProfile_Detected" xml:space="preserve"><value>{0} としてログインしました</value></data>
   <data name="AddProfile_CreateBtn" xml:space="preserve"><value>プロファイルを作成</value></data>
   <data name="AddProfile_FallbackLabel" xml:space="preserve"><value>プロファイル名</value></data>
+  <data name="Profile_SignInPopupTitle" xml:space="preserve"><value>安全なサインイン</value></data>
 
   <!-- Theme selector items -->
   <data name="Theme_System" xml:space="preserve"><value>システム</value></data>

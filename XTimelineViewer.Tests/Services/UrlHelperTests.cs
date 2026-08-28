@@ -43,6 +43,24 @@ public class UrlHelperTests
     public void IsSafeExternalUri_AllowsOnlyWebSchemes(string value, bool expected)
         => Assert.Equal(expected, UrlHelper.IsSafeExternalUri(new Uri(value)));
 
+    [Theory]
+    [InlineData("https://accounts.google.com/gsi/button?client_id=test", true)]
+    [InlineData("https://accounts.google.com/gsi/select?client_id=test", true)]
+    [InlineData("https://accounts.google.com/o/oauth2/auth", true)]
+    [InlineData("https://ACCOUNTS.GOOGLE.COM/signin", true)]
+    [InlineData("https://x.com/i/flow/login", true)]
+    [InlineData("https://x.com/i/jf/onboarding/web?mode=login", true)]
+    [InlineData("https://twitter.com/i/flow/login", true)]
+    [InlineData("https://appleid.apple.com/auth/authorize?client_id=com.twitter.twitter.siwa&response_mode=web_message", true)]
+    [InlineData("https://accounts.google.com.evil.example/signin", false)]
+    [InlineData("https://evil.example/?next=accounts.google.com", false)]
+    [InlineData("http://accounts.google.com/signin", false)]
+    [InlineData("https://accounts.google.com:444/signin", false)]
+    [InlineData("javascript:alert(1)", false)]
+    [InlineData("not-a-url", false)]
+    public void IsTrustedSignInPopupUri_AllowsOnlyExactAuthenticationHosts(string value, bool expected)
+        => Assert.Equal(expected, UrlHelper.IsTrustedSignInPopupUri(value));
+
     // ── IsOnBaseUrl ───────────────────────────────────────────────────────────
 
     [Theory]

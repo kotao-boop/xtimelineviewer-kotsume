@@ -30,6 +30,7 @@
   <data name="AddProfile_Detected" xml:space="preserve"><value>Signed in as {0}</value></data>
   <data name="AddProfile_CreateBtn" xml:space="preserve"><value>Create Profile</value></data>
   <data name="AddProfile_FallbackLabel" xml:space="preserve"><value>Profile Name</value></data>
+  <data name="Profile_SignInPopupTitle" xml:space="preserve"><value>Secure sign-in</value></data>
 
   <!-- Theme selector items -->
   <data name="Theme_System" xml:space="preserve"><value>System</value></data>
