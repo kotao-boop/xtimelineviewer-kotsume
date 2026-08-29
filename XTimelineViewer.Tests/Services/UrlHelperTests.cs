@@ -69,6 +69,17 @@ public class UrlHelperTests
     public void IsTrustedSignInPopupUri_AllowsOnlyExactAuthenticationHosts(string value, bool expected)
         => Assert.Equal(expected, UrlHelper.IsTrustedSignInPopupUri(value));
 
+    [Theory]
+    [InlineData("https://accounts.google.com/o/oauth2/auth", true)]
+    [InlineData("https://ACCOUNTS.GOOGLE.COM/gsi/select", true)]
+    [InlineData("https://appleid.apple.com/auth/authorize", true)]
+    [InlineData("https://x.com/i/flow/login", false)]
+    [InlineData("https://accounts.google.com.evil.example/signin", false)]
+    [InlineData("http://accounts.google.com/signin", false)]
+    [InlineData("intent://accounts.google.com/path", false)]
+    public void IsExternalIdentityProviderUri_RequiresExactHttpsHost(string value, bool expected)
+        => Assert.Equal(expected, UrlHelper.IsExternalIdentityProviderUri(value));
+
     // ── IsOnBaseUrl ───────────────────────────────────────────────────────────
 
     [Theory]

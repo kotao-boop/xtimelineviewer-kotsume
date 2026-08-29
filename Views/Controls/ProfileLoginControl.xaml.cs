@@ -5,6 +5,7 @@ using Microsoft.Web.WebView2.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using XTimelineViewer.Models;
 using XTimelineViewer.Services;
@@ -26,6 +27,7 @@ namespace XTimelineViewer.Views.Controls
         private bool _initialized;
         private CoreWebView2Environment? _environment;
         private readonly HashSet<Window> _signInWindows = [];
+        private bool _socialSignInDialogOpen;
 
         /// <summary>このコントロールが扱う新規プロファイルの ID。</summary>
         public string ProfileId => _profileId;
@@ -52,6 +54,8 @@ namespace XTimelineViewer.Views.Controls
             AutomationProperties.SetName(ProfileNameBox, R.Get("AddProfile_FallbackLabel"));
             AutomationProperties.SetName(LoginWebView, R.Get("AddProfile_LoginHint"));
             ManualCheckBtn.Content = R.Get("Onboarding_CheckLogin");
+            SocialSignInNotice.Title = R.Get("Profile_SocialSignInNoticeTitle");
+            SocialSignInNotice.Message = R.Get("Profile_SocialSignInNoticeBody");
         }
 
         /// <summary>
@@ -97,6 +101,7 @@ namespace XTimelineViewer.Views.Controls
             // 同じ CoreWebView2Environment を使うアプリ内ウィンドウを NewWindow に渡し、
             // 認証結果を元の X ログイン画面と安全に共有する。
             ConfigureSignInWebView(LoginWebView.CoreWebView2);
+            await InstallSocialSignInGuardAsync(LoginWebView.CoreWebView2);
 
             LoginWebView.Source = new Uri("https://x.com/i/flow/login");
         }
@@ -112,6 +117,18 @@ namespace XTimelineViewer.Views.Controls
             try
             {
                 AppLog.Debug($"Sign-in popup requested: {UrlHelper.GetSafeUriForLog(args.Uri)}");
+
+                // Google は埋め込み WebView での OAuth を公式に禁止している。外部 Edge へ
+                // 任せても、そこで作られた X の Cookie は本アプリのプロファイルへ戻らず、
+                // 認証後に白画面になる。Apple も同じセッション分離が起きるため、意図せず
+                // ブラウザーへ飛ばす代わりに、X 用パスワードでのログイン方法を案内する。
+                if (UrlHelper.IsExternalIdentityProviderUri(args.Uri))
+                {
+                    args.Handled = true;
+                    AppLog.Debug("Blocked external social sign-in because its browser session cannot return to the app.");
+                    ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));
+                    return;
+                }
 
                 // アドレスバーのない認証画面へ任意サイトを開かせない。
                 if (!UrlHelper.IsTrustedSignInPopupUri(args.Uri))
@@ -151,6 +168,7 @@ namespace XTimelineViewer.Views.Controls
                 // 既定動作で外部 Edge へ出てしまい、web_message が元の X へ戻らない。
                 // すべての子 WebView2 に同じ処理を再帰的に設定する。
                 ConfigureSignInWebView(popupWebView.CoreWebView2);
+                await InstallSocialSignInGuardAsync(popupWebView.CoreWebView2);
 
                 // 認証途中のトップレベル遷移も正規ホストだけに限定する。
                 popupWebView.CoreWebView2.NavigationStarting += (_, navigationArgs) =>
@@ -201,6 +219,16 @@ namespace XTimelineViewer.Views.Controls
             core.NewWindowRequested -= LoginWebView_NewWindowRequested;
             core.NewWindowRequested += LoginWebView_NewWindowRequested;
 
+            // target=_self で Google / Apple へ移動する場合も、外部ブラウザーへ切り替わる
+            // 前に止める。NewWindowRequested だけでは同一タブ遷移を捕まえられない。
+            core.NavigationStarting += (_, args) =>
+            {
+                if (!UrlHelper.IsExternalIdentityProviderUri(args.Uri)) return;
+                args.Cancel = true;
+                AppLog.Debug("Blocked social sign-in navigation that cannot return its session to the app.");
+                ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));
+            };
+
             // HTTPS ではない外部アプリ起動要求（intent: や独自スキームなど）を
             // 認証中に許すと、ブラウザーへ出たまま結果が戻らない。ここでは止め、
             // 個人情報を含まない scheme/host/path だけを診断ログへ残す。
@@ -208,7 +236,80 @@ namespace XTimelineViewer.Views.Controls
             {
                 args.Cancel = true;
                 AppLog.Debug($"Blocked an external sign-in URI scheme: {UrlHelper.GetSafeUriForLog(args.Uri)}");
+                ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));
             };
+        }
+
+        /// <summary>
+        /// X のログイン画面が WebView2 のウィンドウ/遷移イベントを通さずにOSブラウザーを
+        /// 呼ぶ場合にも備え、Google / Apple ボタンのクリックをページ内で先に止める。
+        /// ブランド名だけを見ており、入力内容・メールアドレス・パスワードは読み取らない。
+        /// </summary>
+        private async Task InstallSocialSignInGuardAsync(CoreWebView2 core)
+        {
+            core.WebMessageReceived += (_, args) =>
+            {
+                try
+                {
+                    using var message = JsonDocument.Parse(args.WebMessageAsJson);
+                    if (message.RootElement.TryGetProperty("type", out var type) &&
+                        type.GetString() == "xtv-social-signin-blocked")
+                        ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));
+                }
+                catch (JsonException)
+                {
+                    // この専用ログイン WebView から来た不明なメッセージは無視する。
+                }
+            };
+
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(
+                """
+                (() => {
+                  if (window.__xtvSocialSignInGuard) return;
+                  window.__xtvSocialSignInGuard = true;
+                  if (!['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(location.hostname)) return;
+                  addEventListener('click', event => {
+                    const element = event.target instanceof Element
+                      ? event.target.closest('button, a, [role="button"]')
+                      : null;
+                    if (!element) return;
+                    const label = `${element.innerText || ''} ${element.getAttribute('aria-label') || ''}`;
+                    if (!/(^|\s)(Google|Apple)(\s|$)/i.test(label)) return;
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    chrome.webview.postMessage({ type: 'xtv-social-signin-blocked' });
+                  }, true);
+                })();
+                """);
+        }
+
+        private async Task ShowSocialSignInGuidanceAsync()
+        {
+            if (_socialSignInDialogOpen || XamlRoot is null) return;
+            _socialSignInDialogOpen = true;
+            try
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = R.Get("Profile_SocialSignInDialogTitle"),
+                    Content = R.Get("Profile_SocialSignInDialogBody"),
+                    PrimaryButtonText = R.Get("Profile_OpenPasswordReset"),
+                    CloseButtonText = R.Get("Button_Close"),
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = XamlRoot,
+                };
+                if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+                {
+                    // ここだけは利用者が明示的に選んだ場合に外部ブラウザーを開く。
+                    // X 用パスワードを設定後、この画面へ戻ってメール/ユーザー名でログインする。
+                    await Windows.System.Launcher.LaunchUriAsync(
+                        new Uri("https://x.com/account/begin_password_reset"));
+                }
+            }
+            finally
+            {
+                _socialSignInDialogOpen = false;
+            }
         }
 
         private async Task<string?> TryGetScreenNameAsync()

@@ -8,6 +8,7 @@
         <Grid x:Name="LoginPhase">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Grid Grid.Row="0" Padding="16,8" ColumnSpacing="8">
@@ -21,8 +22,14 @@
                            Opacity="0.7"/>
                 <Button x:Name="ManualCheckBtn" Grid.Column="1" Click="ManualCheckBtn_Click"/>
             </Grid>
+            <InfoBar x:Name="SocialSignInNotice"
+                     Grid.Row="1"
+                     IsOpen="True"
+                     IsClosable="False"
+                     Severity="Informational"
+                     Margin="12,0,12,8"/>
             <WebView2 x:Name="LoginWebView"
-                      Grid.Row="1"
+                      Grid.Row="2"
                       xmlns="using:Microsoft.UI.Xaml.Controls"/>
         </Grid>
 

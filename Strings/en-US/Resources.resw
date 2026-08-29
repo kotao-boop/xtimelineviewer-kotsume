@@ -327,4 +327,9 @@
   <data name="Profile_Relogin" xml:space="preserve"><value>Sign in again</value></data>
   <data name="Profile_ReloginDescription" xml:space="preserve"><value>Sign in to X again with this profile if its session has expired.</value></data>
   <data name="Profile_SaveLogin" xml:space="preserve"><value>Save</value></data>
+  <data name="Profile_SocialSignInNoticeTitle" xml:space="preserve"><value>Accounts created with Google or Apple can still sign in</value></data>
+  <data name="Profile_SocialSignInNoticeBody" xml:space="preserve"><value>Use your X email address, username, or phone number and your X password here. The Google and Apple buttons open an external browser whose sign-in session cannot return to this app.</value></data>
+  <data name="Profile_SocialSignInDialogTitle" xml:space="preserve"><value>Google or Apple sign-in cannot finish inside this app</value></data>
+  <data name="Profile_SocialSignInDialogBody" xml:space="preserve"><value>For account security, Google does not allow Google sign-in in an embedded app browser. Signing in through an external browser cannot pass that X session back to XTimelineViewer, which is why the flow ends on a blank page.&#x0A;&#x0A;Sign in with your X email address, username, or phone number and your X password. If you do not know your X password, use the button below to set or reset it, then return here to sign in.</value></data>
+  <data name="Profile_OpenPasswordReset" xml:space="preserve"><value>Set or reset X password</value></data>
 </root>
