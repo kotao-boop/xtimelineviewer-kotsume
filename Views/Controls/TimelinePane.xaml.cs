@@ -61,6 +61,7 @@ namespace XTimelineViewer.Views.Controls
         internal event Action<TimelinePane, double>? WidthResized;
         internal event Action<TimelinePane>? RetryRequested;
         internal event Action<TimelinePane>? OpenInBrowserRequested;
+        internal event Action<TimelinePane>? TemporaryHideRequested;
 
         private void InitializeResizeGrip()
         {
@@ -261,6 +262,9 @@ namespace XTimelineViewer.Views.Controls
             var tip = R.Get("Pane_Settings_Tooltip");
             ToolTipService.SetToolTip(SettingsBtn, tip);
             AutomationProperties.SetName(SettingsBtn, tip);
+            var hideTip = R.Get("Pane_TemporaryHide_Tooltip");
+            ToolTipService.SetToolTip(TemporaryHideBtn, hideTip);
+            AutomationProperties.SetName(TemporaryHideBtn, hideTip);
             StatusRetryBtn.Content = R.Get("Button_Retry");
             StatusBrowserBtn.Content = R.Get("Button_OpenBrowser");
             UpdateUrlHeader();
@@ -299,6 +303,12 @@ namespace XTimelineViewer.Views.Controls
 
         private void StatusBrowserBtn_Click(object sender, RoutedEventArgs e)
             => OpenInBrowserRequested?.Invoke(this);
+
+        private void TemporaryHideBtn_Click(object sender, RoutedEventArgs e)
+            => TemporaryHideRequested?.Invoke(this);
+
+        public void SetTemporaryHideAvailable(bool available)
+            => TemporaryHideBtn.IsEnabled = available;
 
         /// <summary>
         /// 番号バッジ（#225）。表示順の 1..9 を受け取る。9 を超えるペインは null。

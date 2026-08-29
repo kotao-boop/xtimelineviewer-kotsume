@@ -30,6 +30,10 @@ namespace XTimelineViewer.Views
 {
     public sealed partial class MainWindow : Window
     {
+        // 一時非表示は「しばらく2本だけに集中したい」用途のため、保存しない。
+        // アプリを再起動すれば必ず元の表示状態に戻る。
+        private readonly HashSet<TimelineConfig> _temporarilyHiddenTimelines = [];
+
         // ── Persistence ───────────────────────────────────────────
         // 実体は Services/TimelineStore.cs（#368）。ここは例外を握って記録するだけ。
 
@@ -208,6 +212,7 @@ namespace XTimelineViewer.Views
         private void UpdateLayoutMenuState()
         {
             var mode = _appSettings.LayoutMode ?? "Classic";
+            LayoutAutoItem.IsChecked = mode == "Auto";
             LayoutClassicItem.IsChecked = mode == "Classic";
             LayoutGrid2x2Item.IsChecked = mode == "Grid2x2";
             LayoutGrid2x3Item.IsChecked = mode == "Grid2x3";
@@ -221,7 +226,14 @@ namespace XTimelineViewer.Views
 
             var panes = Panes.ToList();
             if (panes.Count == 0) return;
-            var visiblePanes = panes.Where(p => p.Config.IsVisible).ToList();
+            _temporarilyHiddenTimelines.RemoveWhere(c => !_configs.Contains(c));
+            var visiblePanes = panes.Where(IsPaneEffectivelyVisible).ToList();
+            if (visiblePanes.Count == 0 && panes.Any(p => p.Config.IsVisible) && _temporarilyHiddenTimelines.Count > 0)
+            {
+                // 表示中の最後の1本が削除された場合なども、真っ暗な画面にはしない。
+                _temporarilyHiddenTimelines.Clear();
+                visiblePanes = panes.Where(IsPaneEffectivelyVisible).ToList();
+            }
             UpdateLayoutMenuState();
 
             if (mode == "Classic")
@@ -236,7 +248,8 @@ namespace XTimelineViewer.Views
                 TimelinePanel.Children.Clear();
                 foreach (var pane in panes)
                 {
-                    pane.Visibility = pane.Config.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+                    ResetGridPlacement(pane);
+                    pane.Visibility = IsPaneEffectivelyVisible(pane) ? Visibility.Visible : Visibility.Collapsed;
                     pane.Width = double.IsNaN(pane.Config.Width) || pane.Config.Width <= 0 ? 350 : pane.Config.Width;
                     pane.HorizontalAlignment = HorizontalAlignment.Left;
                     pane.VerticalAlignment = VerticalAlignment.Stretch;
@@ -253,14 +266,41 @@ namespace XTimelineViewer.Views
                 TimelineGrid.RowDefinitions.Clear();
                 TimelineGrid.ColumnDefinitions.Clear();
 
-                if (mode == "Grid2x2")
+                foreach (var pane in panes) ResetGridPlacement(pane);
+
+                if (mode == "Auto")
+                {
+                    var plan = LayoutPlanner.GetAutoGrid(visiblePanes.Count);
+                    for (var row = 0; row < plan.Rows; row++)
+                        TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    for (var column = 0; column < plan.Columns; column++)
+                        TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
+                    {
+                        hidden.Visibility = Visibility.Collapsed;
+                        TimelineGrid.Children.Add(hidden);
+                    }
+                    for (var i = 0; i < visiblePanes.Count; i++)
+                    {
+                        var pane = visiblePanes[i];
+                        pane.Visibility = Visibility.Visible;
+                        pane.Width = double.NaN;
+                        pane.HorizontalAlignment = HorizontalAlignment.Stretch;
+                        pane.VerticalAlignment = VerticalAlignment.Stretch;
+                        Grid.SetRow(pane, i / plan.Columns);
+                        Grid.SetColumn(pane, i % plan.Columns);
+                        TimelineGrid.Children.Add(pane);
+                    }
+                }
+                else if (mode == "Grid2x2")
                 {
                     TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    foreach (var hidden in panes.Where(p => !p.Config.IsVisible))
+                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
                     {
                         hidden.Visibility = Visibility.Collapsed;
                         TimelineGrid.Children.Add(hidden);
@@ -287,7 +327,7 @@ namespace XTimelineViewer.Views
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    foreach (var hidden in panes.Where(p => !p.Config.IsVisible))
+                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
                     {
                         hidden.Visibility = Visibility.Collapsed;
                         TimelineGrid.Children.Add(hidden);
@@ -312,7 +352,7 @@ namespace XTimelineViewer.Views
                     TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    foreach (var hidden in panes.Where(p => !p.Config.IsVisible))
+                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
                     {
                         hidden.Visibility = Visibility.Collapsed;
                         TimelineGrid.Children.Add(hidden);
@@ -337,7 +377,7 @@ namespace XTimelineViewer.Views
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.4, GridUnitType.Star) });
                     TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                    foreach (var hidden in panes.Where(p => !p.Config.IsVisible))
+                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
                     {
                         hidden.Visibility = Visibility.Collapsed;
                         TimelineGrid.Children.Add(hidden);
@@ -368,7 +408,54 @@ namespace XTimelineViewer.Views
             }
 
             RefreshTimelineNumbers();
+            RefreshTemporaryVisibilityUi();
         }
+
+        private static void ResetGridPlacement(TimelinePane pane)
+        {
+            Grid.SetRow(pane, 0);
+            Grid.SetColumn(pane, 0);
+            Grid.SetRowSpan(pane, 1);
+            Grid.SetColumnSpan(pane, 1);
+        }
+
+        private bool IsPaneEffectivelyVisible(TimelinePane pane)
+            => pane.Config.IsVisible && !_temporarilyHiddenTimelines.Contains(pane.Config);
+
+        private void TemporaryHideTimeline(TimelinePane pane)
+        {
+            if (!IsPaneEffectivelyVisible(pane)) return;
+            if (Panes.Count(IsPaneEffectivelyVisible) <= 1) return;
+
+            _temporarilyHiddenTimelines.Add(pane.Config);
+            ApplyLayoutMode();
+        }
+
+        private void RestoreTemporarilyHiddenTimelines()
+        {
+            if (_temporarilyHiddenTimelines.Count == 0) return;
+            _temporarilyHiddenTimelines.Clear();
+            ApplyLayoutMode();
+        }
+
+        private void RefreshTemporaryVisibilityUi()
+        {
+            var count = _temporarilyHiddenTimelines.Count(c => _configs.Contains(c));
+            RestoreHiddenBtn.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            HiddenTimelineCountText.Text = count.ToString(CultureInfo.CurrentCulture);
+            var restoreTip = string.Format(R.Get("Timeline_RestoreHidden"), count);
+            ToolTipService.SetToolTip(RestoreHiddenBtn, restoreTip);
+            AutomationProperties.SetName(RestoreHiddenBtn, restoreTip);
+
+            var canHide = Panes.Count(IsPaneEffectivelyVisible) > 1;
+            foreach (var pane in Panes) pane.SetTemporaryHideAvailable(canHide && IsPaneEffectivelyVisible(pane));
+        }
+
+        private void AutoArrangeBtn_Click(object sender, RoutedEventArgs e)
+            => SetLayoutFromCommand("Auto");
+
+        private void RestoreHiddenBtn_Click(object sender, RoutedEventArgs e)
+            => RestoreTemporarilyHiddenTimelines();
 
         // ── タイムライン番号バッジ / 番号フォーカス（#225）──────────────────────
         // 表示順に従って 1..9 を割り当てる。10 個目以降はバッジ非表示。
@@ -377,7 +464,7 @@ namespace XTimelineViewer.Views
             int n = 1;
             foreach (var pane in Panes)
             {
-                if (!pane.Config.IsVisible)
+                if (!IsPaneEffectivelyVisible(pane))
                 {
                     pane.SetNumber(null);
                     continue;
@@ -390,7 +477,7 @@ namespace XTimelineViewer.Views
         // Ctrl+数字 で、表示順 oneBased 番目のタイムラインをアクティブ化する。
         private void FocusTimelineByIndex(int oneBased)
         {
-            var panes = Panes.Where(p => p.Config.IsVisible).ToList();
+            var panes = Panes.Where(IsPaneEffectivelyVisible).ToList();
             int i = oneBased - 1;
             if (i < 0 || i >= panes.Count) return;
             {
@@ -402,7 +489,7 @@ namespace XTimelineViewer.Views
         // Ctrl+←/→（WebView2 非フォーカス時）。現在アクティブなペインを基準に隣へ移動する。
         private void FocusAdjacentFromActive(int direction)
         {
-            var panes = Panes.Where(p => p.Config.IsVisible).ToList();
+            var panes = Panes.Where(IsPaneEffectivelyVisible).ToList();
             if (panes.Count == 0) return;
 
             int cur = _focusedPane is null ? -1 : panes.IndexOf(_focusedPane);
@@ -432,7 +519,7 @@ namespace XTimelineViewer.Views
         // 再挿入でフォーカスが外れるので、連続して押せるよう戻しておく。
         private void MovePaneAdjacent(TimelinePane pane, int direction)
         {
-            var visible = Panes.Where(p => p.Config.IsVisible).ToList();
+            var visible = Panes.Where(IsPaneEffectivelyVisible).ToList();
             int visibleFrom = visible.IndexOf(pane);
             if (visibleFrom < 0) return;
             int visibleTo = visibleFrom + direction;
@@ -541,6 +628,7 @@ namespace XTimelineViewer.Views
             };
             pane.OpenInBrowserRequested += p =>
                 LaunchUriByEdgeProfileAsync(new Uri(p.Config.Url)).FireAndForget(nameof(LaunchUriByEdgeProfileAsync));
+            pane.TemporaryHideRequested += TemporaryHideTimeline;
 
             pane.ShowLoadingState();
 
@@ -851,7 +939,15 @@ namespace XTimelineViewer.Views
             ViewModel.HasTimelines = _configs.Count > 0;
             RefreshTimelineNumbers();
             RefreshPaneThemes();
-            if (_configs.Count > 0) ApplyLayoutMode();
+            if (_configs.Count > 0)
+            {
+                ApplyLayoutMode();
+            }
+            else
+            {
+                _temporarilyHiddenTimelines.Clear();
+                RefreshTemporaryVisibilityUi();
+            }
             UpdateLayoutSuggestion();
         }
 

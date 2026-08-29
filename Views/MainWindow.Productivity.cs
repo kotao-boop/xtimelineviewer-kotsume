@@ -155,6 +155,7 @@ namespace XTimelineViewer.Views
                     visible.Click += (_, _) =>
                     {
                         config.IsVisible = visible.IsChecked == true;
+                        if (config.IsVisible) _temporarilyHiddenTimelines.Remove(config);
                         visible.Content = R.Get(config.IsVisible ? "Timeline_Visible" : "Timeline_Hidden");
                         if (pane is not null) pane.Visibility = config.IsVisible ? Visibility.Visible : Visibility.Collapsed;
                         ApplyLayoutMode();
@@ -401,6 +402,7 @@ namespace XTimelineViewer.Views
                 new(R.Get("Menu_Workspaces"), "workspace save switch", () => ShowWorkspacesAsync().FireAndForget(nameof(ShowWorkspacesAsync))),
                 new(R.Get("Menu_Settings"), "settings preferences", () => OpenSettingsWindow()),
                 new(R.Get("Menu_NewProfile"), "profile account login", () => NewProfileMenuItem_Click(this, new RoutedEventArgs())),
+                new(R.Get("Layout_Auto"), "layout auto arrange reflow 自動 整列", () => SetLayoutFromCommand("Auto")),
                 new(R.Get("Layout_Classic"), "layout classic", () => SetLayoutFromCommand("Classic")),
                 new(R.Get("Layout_Grid2x2"), "layout grid 2x2", () => SetLayoutFromCommand("Grid2x2")),
                 new(R.Get("Layout_Grid2x3"), "layout grid 2x3", () => SetLayoutFromCommand("Grid2x3")),
@@ -477,6 +479,7 @@ namespace XTimelineViewer.Views
 
         private static string GetLayoutDisplayName(string mode) => mode switch
         {
+            "Auto" => R.Get("Layout_Auto"),
             "Grid2x2" => R.Get("Layout_Grid2x2"),
             "Grid2x3" => R.Get("Layout_Grid2x3"),
             "VerticalSplit" => R.Get("Layout_VerticalSplit"),
