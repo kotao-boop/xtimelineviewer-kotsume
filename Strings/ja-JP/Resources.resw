@@ -145,6 +145,7 @@
   <data name="Settings_RelatedSettings" xml:space="preserve"><value>関連する設定</value></data>
   <data name="Nav_About" xml:space="preserve"><value>バージョン情報</value></data>
   <data name="Pane_Settings_Tooltip" xml:space="preserve"><value>設定</value></data>
+  <data name="Pane_TemporaryHide_Tooltip" xml:space="preserve"><value>このタイムラインを一時的に隠す</value></data>
   <data name="Tooltip_ActivateHotkey" xml:space="preserve"><value>Ctrl+{0} でアクティブ化</value></data>
   <data name="Pane_Delete" xml:space="preserve"><value>このタイムラインを削除</value></data>
   <data name="DragCaption" xml:space="preserve"><value>タイムラインを追加</value></data>
@@ -253,6 +254,9 @@
   <data name="Empty_QuickAdd" xml:space="preserve"><value>すぐに追加</value></data>
   <data name="Empty_DisabledHint" xml:space="preserve"><value>先に X アカウントを追加すると、検索・投稿・タイムライン追加を使えます。</value></data>
   <data name="Layout_Tooltip" xml:space="preserve"><value>レイアウトを変更</value></data>
+  <data name="Layout_Auto" xml:space="preserve"><value>自動整列</value></data>
+  <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>表示中のタイムラインを自動整列</value></data>
+  <data name="Timeline_RestoreHidden" xml:space="preserve"><value>一時的に隠したタイムラインを戻す（{0}個）</value></data>
   <data name="Layout_Classic" xml:space="preserve"><value>▥  クラシック（横並び）</value></data>
   <data name="Layout_Grid2x2" xml:space="preserve"><value>▦  2 × 2 グリッド</value></data>
   <data name="Layout_Grid2x3" xml:space="preserve"><value>▦  2 × 3 グリッド</value></data>

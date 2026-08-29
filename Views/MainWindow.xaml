@@ -119,11 +119,51 @@
                         Spacing="4"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
+                <Button x:Name="AutoArrangeBtn"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
+                        Click="AutoArrangeBtn_Click"
+                        AutomationProperties.AutomationId="AutoArrangeBtn">
+                    <FontIcon Glyph="&#xE8A0;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
+                </Button>
+
+                <Button x:Name="RestoreHiddenBtn"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
+                        Visibility="Collapsed"
+                        Click="RestoreHiddenBtn_Click"
+                        AutomationProperties.AutomationId="RestoreHiddenBtn">
+                    <Grid>
+                        <FontIcon Glyph="&#xE890;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
+                        <Border Background="{ThemeResource SystemAccentColor}"
+                                CornerRadius="8"
+                                MinWidth="16"
+                                Height="16"
+                                Padding="3,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Margin="13,-8,-8,0">
+                            <TextBlock x:Name="HiddenTimelineCountText"
+                                       FontSize="10"
+                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                </Button>
+
                 <!-- レイアウトテンプレート切替ボタン -->
                 <Button x:Name="LayoutBtn" Width="32" Height="32" Padding="0" FontSize="14">
                     <FontIcon Glyph="&#xE737;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     <Button.Flyout>
                         <MenuFlyout>
+                            <RadioMenuFlyoutItem x:Name="LayoutAutoItem" GroupName="Layout" Click="LayoutMenuItem_Click" Tag="Auto">
+                                <RadioMenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE8A0;" FontFamily="Segoe Fluent Icons"/>
+                                </RadioMenuFlyoutItem.Icon>
+                            </RadioMenuFlyoutItem>
                             <RadioMenuFlyoutItem x:Name="LayoutClassicItem" GroupName="Layout" Click="LayoutMenuItem_Click" Tag="Classic">
                                 <RadioMenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE81C;" FontFamily="Segoe Fluent Icons"/>

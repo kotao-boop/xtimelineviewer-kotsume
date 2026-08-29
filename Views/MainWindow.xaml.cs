@@ -419,13 +419,17 @@ namespace XTimelineViewer.Views
             AutomationProperties.SetName(PostBtn,    R.Get("PostBtn_Tooltip"));
             AutomationProperties.SetName(AppMenuBtn, R.Get("AppMenu_Tooltip"));
             LayoutClassicItem.Text = R.Get("Layout_Classic");
+            LayoutAutoItem.Text = R.Get("Layout_Auto");
             LayoutGrid2x2Item.Text = R.Get("Layout_Grid2x2");
             LayoutGrid2x3Item.Text = R.Get("Layout_Grid2x3");
             LayoutVerticalSplitItem.Text = R.Get("Layout_VerticalSplit");
             LayoutFocusItem.Text = R.Get("Layout_Focus");
             ToolTipService.SetToolTip(LayoutBtn, R.Get("Layout_Tooltip"));
             AutomationProperties.SetName(LayoutBtn, R.Get("Layout_Tooltip"));
+            ToolTipService.SetToolTip(AutoArrangeBtn, R.Get("Layout_Auto_Tooltip"));
+            AutomationProperties.SetName(AutoArrangeBtn, R.Get("Layout_Auto_Tooltip"));
             UpdateLayoutMenuState();
+            RefreshTemporaryVisibilityUi();
             ThemeSubMenu.Text       = R.Get("Menu_Theme");
             ThemeSystemItem.Text    = R.Get("Theme_System");
             ThemeLightItem.Text     = R.Get("Theme_Light");

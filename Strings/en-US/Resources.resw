@@ -145,6 +145,7 @@
   <data name="Settings_RelatedSettings" xml:space="preserve"><value>Related settings</value></data>
   <data name="Nav_About" xml:space="preserve"><value>About</value></data>
   <data name="Pane_Settings_Tooltip" xml:space="preserve"><value>Settings</value></data>
+  <data name="Pane_TemporaryHide_Tooltip" xml:space="preserve"><value>Temporarily hide this timeline</value></data>
   <data name="Tooltip_ActivateHotkey" xml:space="preserve"><value>Activate with Ctrl+{0}</value></data>
   <data name="Pane_Delete" xml:space="preserve"><value>Remove This Timeline</value></data>
   <data name="DragCaption" xml:space="preserve"><value>Add Timeline</value></data>
@@ -253,6 +254,9 @@
   <data name="Empty_QuickAdd" xml:space="preserve"><value>Quick add</value></data>
   <data name="Empty_DisabledHint" xml:space="preserve"><value>Add an X account first to use search, posting, and timelines.</value></data>
   <data name="Layout_Tooltip" xml:space="preserve"><value>Change layout</value></data>
+  <data name="Layout_Auto" xml:space="preserve"><value>Auto arrange</value></data>
+  <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>Automatically arrange visible timelines</value></data>
+  <data name="Timeline_RestoreHidden" xml:space="preserve"><value>Restore temporarily hidden timelines ({0})</value></data>
   <data name="Layout_Classic" xml:space="preserve"><value>▥  Classic columns</value></data>
   <data name="Layout_Grid2x2" xml:space="preserve"><value>▦  2 × 2 grid</value></data>
   <data name="Layout_Grid2x3" xml:space="preserve"><value>▦  2 × 3 grid</value></data>

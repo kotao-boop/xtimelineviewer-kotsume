@@ -86,6 +86,16 @@
                               Margin="0,0,2,0"
                               VerticalAlignment="Center"
                               Visibility="Collapsed"/>
+                    <Button x:Name="TemporaryHideBtn"
+                            Width="28"
+                            Height="26"
+                            Padding="0"
+                            Click="TemporaryHideBtn_Click"
+                            AutomationProperties.AutomationId="PaneTemporaryHideBtn">
+                        <FontIcon Glyph="&#xED1A;"
+                                  FontFamily="Segoe Fluent Icons"
+                                  FontSize="14"/>
+                    </Button>
                     <Button x:Name="SettingsBtn"
                             Width="28"
                             Height="26"
