@@ -57,6 +57,22 @@ namespace XTimelineViewer.Services
         }
 
         /// <summary>
+        /// X のログイン画面から呼び出される外部IDプロバイダー。
+        /// Google は埋め込み WebView での OAuth を認めておらず、Apple も外部ブラウザーへ
+        /// 切り替わると X のセッション Cookie が本アプリへ戻らないため、案内表示の判定に使う。
+        /// </summary>
+        internal static bool IsExternalIdentityProviderUri(string? value)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+                !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                !uri.IsDefaultPort)
+                return false;
+
+            return string.Equals(uri.Host, "accounts.google.com", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(uri.Host, "appleid.apple.com", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// 診断ログ用にURLをscheme・host・pathだけへ縮める。
         /// 認証コード、メールアドレス、stateなどが入り得るquery/fragmentは保存しない。
         /// </summary>
