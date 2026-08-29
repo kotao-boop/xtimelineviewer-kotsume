@@ -332,4 +332,20 @@
   <data name="Profile_SocialSignInDialogTitle" xml:space="preserve"><value>Google or Apple sign-in cannot finish inside this app</value></data>
   <data name="Profile_SocialSignInDialogBody" xml:space="preserve"><value>For account security, Google does not allow Google sign-in in an embedded app browser. Signing in through an external browser cannot pass that X session back to XTimelineViewer, which is why the flow ends on a blank page.&#x0A;&#x0A;Sign in with your X email address, username, or phone number and your X password. If you do not know your X password, use the button below to set or reset it, then return here to sign in.</value></data>
   <data name="Profile_OpenPasswordReset" xml:space="preserve"><value>Set or reset X password</value></data>
+  <data name="Settings_Backup" xml:space="preserve"><value>Back up settings</value></data>
+  <data name="Settings_Backup_Description" xml:space="preserve"><value>Save settings, profile names, timeline URLs, saved searches, and workspaces in one file. X sign-in data and cookies are not included.</value></data>
+  <data name="Settings_Backup_Save" xml:space="preserve"><value>Save backup</value></data>
+  <data name="Settings_Restore" xml:space="preserve"><value>Restore from backup</value></data>
+  <data name="Settings_Restore_Description" xml:space="preserve"><value>Restore a saved setup. Your current settings are backed up automatically before they are replaced.</value></data>
+  <data name="Settings_Restore_Open" xml:space="preserve"><value>Choose file</value></data>
+  <data name="Settings_Backup_FileType" xml:space="preserve"><value>XTimelineViewer settings backup</value></data>
+  <data name="Settings_Backup_SuccessTitle" xml:space="preserve"><value>Backup saved</value></data>
+  <data name="Settings_Backup_SuccessBody" xml:space="preserve"><value>Saved {0} configuration files. Sign-in data was not included.</value></data>
+  <data name="Settings_Backup_ErrorTitle" xml:space="preserve"><value>Couldn't save the backup</value></data>
+  <data name="Settings_Restore_ConfirmTitle" xml:space="preserve"><value>Restore this backup?</value></data>
+  <data name="Settings_Restore_ConfirmBody" xml:space="preserve"><value>This replaces the current settings, timelines, profile configuration, and workspaces. Your X sign-in state is not changed. The current settings are backed up automatically first.</value></data>
+  <data name="Settings_Restore_Confirm" xml:space="preserve"><value>Restore</value></data>
+  <data name="Settings_Restore_SuccessTitle" xml:space="preserve"><value>Settings restored</value></data>
+  <data name="Settings_Restore_SuccessBody" xml:space="preserve"><value>Restored {0} configuration files and applied them to the app.</value></data>
+  <data name="Settings_Restore_ErrorTitle" xml:space="preserve"><value>Couldn't restore the backup</value></data>
 </root>

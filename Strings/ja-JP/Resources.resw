@@ -332,4 +332,20 @@
   <data name="Profile_SocialSignInDialogTitle" xml:space="preserve"><value>Google／Appleログインはこのアプリ内で完了できません</value></data>
   <data name="Profile_SocialSignInDialogBody" xml:space="preserve"><value>Googleは安全のため、アプリ内ブラウザーでのGoogleログインを許可していません。外部ブラウザーでログインしても、そのログイン状態をXTimelineViewerへ渡せないため、白い画面で止まります。&#x0A;&#x0A;Xのメールアドレス、ユーザー名、または電話番号と「X用パスワード」でログインしてください。X用パスワードが分からない場合は、下のボタンから設定・再設定し、この画面へ戻ってログインしてください。</value></data>
   <data name="Profile_OpenPasswordReset" xml:space="preserve"><value>X用パスワードを設定・再設定</value></data>
+  <data name="Settings_Backup" xml:space="preserve"><value>設定をバックアップ</value></data>
+  <data name="Settings_Backup_Description" xml:space="preserve"><value>設定、プロフィール名、タイムラインURL、保存検索、ワークスペースを1つのファイルに保存します。Xのログイン情報やCookieは含みません。</value></data>
+  <data name="Settings_Backup_Save" xml:space="preserve"><value>バックアップを保存</value></data>
+  <data name="Settings_Restore" xml:space="preserve"><value>バックアップから復元</value></data>
+  <data name="Settings_Restore_Description" xml:space="preserve"><value>保存した構成をこのアプリへ戻します。復元前の現在の設定も自動で退避します。</value></data>
+  <data name="Settings_Restore_Open" xml:space="preserve"><value>ファイルを選ぶ</value></data>
+  <data name="Settings_Backup_FileType" xml:space="preserve"><value>XTimelineViewer 設定バックアップ</value></data>
+  <data name="Settings_Backup_SuccessTitle" xml:space="preserve"><value>バックアップを保存しました</value></data>
+  <data name="Settings_Backup_SuccessBody" xml:space="preserve"><value>{0}個の設定ファイルを保存しました。ログイン情報は含まれていません。</value></data>
+  <data name="Settings_Backup_ErrorTitle" xml:space="preserve"><value>バックアップを保存できませんでした</value></data>
+  <data name="Settings_Restore_ConfirmTitle" xml:space="preserve"><value>このバックアップを復元しますか？</value></data>
+  <data name="Settings_Restore_ConfirmBody" xml:space="preserve"><value>現在の設定、タイムライン、プロフィール構成、ワークスペースを置き換えます。Xのログイン状態は変更しません。現在の設定は復元前に自動で退避します。</value></data>
+  <data name="Settings_Restore_Confirm" xml:space="preserve"><value>復元する</value></data>
+  <data name="Settings_Restore_SuccessTitle" xml:space="preserve"><value>設定を復元しました</value></data>
+  <data name="Settings_Restore_SuccessBody" xml:space="preserve"><value>{0}個の設定ファイルを復元し、画面へ反映しました。</value></data>
+  <data name="Settings_Restore_ErrorTitle" xml:space="preserve"><value>バックアップを復元できませんでした</value></data>
 </root>

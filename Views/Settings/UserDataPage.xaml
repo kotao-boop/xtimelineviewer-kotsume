@@ -11,6 +11,26 @@
                        Style="{StaticResource TitleTextBlockStyle}"
                        Margin="0,0,0,16"/>
 
+            <!-- Portable backup (login sessions and WebView2 cookies are intentionally excluded) -->
+            <controls:SettingsCard x:Name="BackupCard">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE74E;" FontFamily="Segoe Fluent Icons"/>
+                </controls:SettingsCard.HeaderIcon>
+                <Button x:Name="BackupBtn" Click="BackupBtn_Click"/>
+            </controls:SettingsCard>
+
+            <controls:SettingsCard x:Name="RestoreCard">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE777;" FontFamily="Segoe Fluent Icons"/>
+                </controls:SettingsCard.HeaderIcon>
+                <Button x:Name="RestoreBtn" Click="RestoreBtn_Click"/>
+            </controls:SettingsCard>
+
+            <InfoBar x:Name="BackupStatusBar"
+                     IsOpen="False"
+                     IsClosable="True"
+                     Margin="0,4,0,8"/>
+
             <!-- Export Settings Folder -->
             <controls:SettingsCard x:Name="ExportFolderCard">
                 <controls:SettingsCard.HeaderIcon>
