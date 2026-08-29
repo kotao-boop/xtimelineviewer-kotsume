@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Windowing;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -41,6 +41,7 @@ namespace XTimelineViewer.Views
 
         // 終了時に一度だけ保存してから閉じ直すためのフラグ（#338）
         private bool _closeHandled;
+        private bool _socialSignInDialogOpen;
 
         // MSIX パッケージ環境では ApplicationData.Current.LocalFolder を使用する。
         // 旧バージョン（アンパッケージド）からの移行のため、旧パスにファイルが存在すれば自動コピーする。
@@ -107,6 +108,7 @@ namespace XTimelineViewer.Views
         }
 
         private AppSettings _appSettings = new();
+        private bool _bossModeActive;
         private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
         private readonly List<TimelineConfig> _configs = [];
         /// <summary>
@@ -336,6 +338,7 @@ namespace XTimelineViewer.Views
         public MainWindow()
         {
             this.InitializeComponent();
+            InitializeBossMode();
             AppWindow.Resize(new SizeInt32(1400, 900));
             // ツールバーが重なるほど狭くできないよう下限を引く（#342）
             if (AppWindow.Presenter is OverlappedPresenter presenter)
@@ -378,6 +381,7 @@ namespace XTimelineViewer.Views
             };
             ((FrameworkElement)Content).ActualThemeChanged += (s, e) => ApplyThemeToWebViews();
             LoadSettings();
+            InitializeBossMode();
             LoadProfiles();
             LoadWorkspaces();
             CleanupOrphanedProfiles();

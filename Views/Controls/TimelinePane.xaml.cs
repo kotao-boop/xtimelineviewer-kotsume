@@ -56,9 +56,13 @@ namespace XTimelineViewer.Views.Controls
         private bool _isResizing = false;
         private double _resizeStartPointerX;
         private double _resizeStartWidth;
+        private bool _isResizingHeight;
+        private double _resizeStartPointerY;
+        private double _resizeStartHeight;
 
         /// <summary>横幅がドラッグによって変更・確定された時のイベント</summary>
         internal event Action<TimelinePane, double>? WidthResized;
+        internal event Action<TimelinePane, double>? HeightResized;
         internal event Action<TimelinePane>? RetryRequested;
         internal event Action<TimelinePane>? OpenInBrowserRequested;
         internal event Action<TimelinePane>? TemporaryHideRequested;
@@ -132,6 +136,62 @@ namespace XTimelineViewer.Views.Controls
                     try { this.ProtectedCursor = null; } catch { }
                     WidthResized?.Invoke(this, this.Width);
                 }
+            };
+
+            VerticalResizeGrip.PointerEntered += (s, e) =>
+            {
+                if (!_isResizingHeight)
+                {
+                    VerticalResizeGripBar.Opacity = 0.6;
+                    try { ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth); } catch { }
+                }
+            };
+            VerticalResizeGrip.PointerExited += (s, e) =>
+            {
+                if (!_isResizingHeight)
+                {
+                    VerticalResizeGripBar.Opacity = 0.0;
+                    try { ProtectedCursor = null; } catch { }
+                }
+            };
+            VerticalResizeGrip.PointerPressed += (s, e) =>
+            {
+                var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
+                if (!pt.Properties.IsLeftButtonPressed) return;
+                _isResizingHeight = true;
+                _resizeStartPointerY = pt.Position.Y;
+                _resizeStartHeight = ActualHeight > 0 ? ActualHeight : (double.IsNaN(Height) ? 600 : Height);
+                VerticalResizeGrip.CapturePointer(e.Pointer);
+                VerticalResizeGripBar.Opacity = 1.0;
+                e.Handled = true;
+            };
+            VerticalResizeGrip.PointerMoved += (s, e) =>
+            {
+                if (!_isResizingHeight) return;
+                var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
+                var deltaY = pt.Position.Y - _resizeStartPointerY;
+                var newHeight = Math.Clamp(_resizeStartHeight + deltaY, 180, 1600);
+                Height = newHeight;
+                Config.Height = newHeight;
+                e.Handled = true;
+            };
+            VerticalResizeGrip.PointerReleased += (s, e) =>
+            {
+                if (!_isResizingHeight) return;
+                _isResizingHeight = false;
+                VerticalResizeGrip.ReleasePointerCapture(e.Pointer);
+                VerticalResizeGripBar.Opacity = 0.0;
+                try { ProtectedCursor = null; } catch { }
+                HeightResized?.Invoke(this, Height);
+                e.Handled = true;
+            };
+            VerticalResizeGrip.PointerCaptureLost += (s, e) =>
+            {
+                if (!_isResizingHeight) return;
+                _isResizingHeight = false;
+                VerticalResizeGripBar.Opacity = 0.0;
+                try { ProtectedCursor = null; } catch { }
+                HeightResized?.Invoke(this, Height);
             };
         }
 
@@ -272,6 +332,7 @@ namespace XTimelineViewer.Views.Controls
 
         public void ShowLoadingState()
         {
+            IsSignInRequired = false;
             NavigationStateOverlay.Visibility = Visibility.Visible;
             NavigationProgress.IsActive = true;
             NavigationProgress.Visibility = Visibility.Visible;
@@ -282,11 +343,12 @@ namespace XTimelineViewer.Views.Controls
 
         public void ShowErrorState(bool signInRequired = false)
         {
+            IsSignInRequired = signInRequired;
             NavigationStateOverlay.Visibility = Visibility.Visible;
             NavigationProgress.IsActive = false;
             NavigationProgress.Visibility = Visibility.Collapsed;
             NavigationStateTitle.Text = R.Get(signInRequired ? "Pane_SignInRequired" : "Pane_LoadError");
-            NavigationStateHint.Text = signInRequired ? string.Empty : R.Get("Pane_LoadErrorHint");
+            NavigationStateHint.Text = signInRequired ? R.Get("Pane_SignInHint") : R.Get("Pane_LoadErrorHint");
             StatusRetryBtn.Content = R.Get(signInRequired ? "Button_SignIn" : "Button_Retry");
             StatusBrowserBtn.Content = R.Get("Button_OpenBrowser");
             NavigationActions.Visibility = Visibility.Visible;
@@ -294,9 +356,13 @@ namespace XTimelineViewer.Views.Controls
 
         public void HideNavigationState()
         {
+            IsSignInRequired = false;
             NavigationProgress.IsActive = false;
             NavigationStateOverlay.Visibility = Visibility.Collapsed;
         }
+
+        /// <summary>現在のエラー表示がXへの再サインイン要求か。</summary>
+        public bool IsSignInRequired { get; private set; }
 
         private void StatusRetryBtn_Click(object sender, RoutedEventArgs e)
             => RetryRequested?.Invoke(this);

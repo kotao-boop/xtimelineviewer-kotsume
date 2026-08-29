@@ -550,6 +550,11 @@ namespace XTimelineViewer.Views
         private void OnWebViewMessageReceived(WebView2 senderWebView, string message)
         {
             if (string.IsNullOrEmpty(message)) return;
+            if (message == SignInFlowHelper.BlockedMessage)
+            {
+                ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));
+                return;
+            }
             if (message.StartsWith("saveFrame:", StringComparison.Ordinal))
             {
                 if (message.Length > MaxFrameBase64Chars + 512) return;

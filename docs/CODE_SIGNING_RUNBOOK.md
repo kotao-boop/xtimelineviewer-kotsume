@@ -4,7 +4,7 @@
 
 ## 現在の状態
 
-- GitHubで公開するv2.3.4のEXE・ZIPは未署名。Windowsの警告が出る可能性をREADME、ダウンロード案内、リリースノートで明記する。Microsoft Store版のMicrosoft署名とは区別する。
+- GitHubで公開するv2.4.0のEXE・ZIPは未署名。Windowsの警告が出る可能性をREADME、ダウンロード案内、リリースノートで明記する。Microsoft Store版のMicrosoft署名とは区別する。
 - SignPath Foundationへの申請準備中。
 - READMEの署名状態、コード署名ポリシー、担当者、プライバシーポリシーを公開済みの差分として準備した。
 - .NET本体とネイティブランチャーは、同じ製品名・製品バージョンを持つ。

@@ -71,6 +71,17 @@
                               IsOn="{x:Bind VM.VideoFrameSaveEnabled, Mode=TwoWay}"/>
             </controls:SettingsCard>
 
+            <controls:SettingsCard x:Name="BossModeCard">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE7B7;" FontFamily="Segoe Fluent Icons"/>
+                </controls:SettingsCard.HeaderIcon>
+                <StackPanel Spacing="6">
+                    <ToggleSwitch x:Name="BossModeToggle"
+                                  IsOn="{x:Bind VM.BossModeButtonVisible, Mode=TwoWay}"/>
+                    <Button x:Name="BossModeImageButton" Click="BossModeImageButton_Click"/>
+                    <TextBlock x:Name="BossModeImageLabel" FontSize="12" Opacity="0.7" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </controls:SettingsCard>
             <!-- ［…］メニューに「直前のリポストを検索」を追加（#315）-->
             <controls:SettingsCard x:Name="PriorRepostSearchCard">
                 <controls:SettingsCard.HeaderIcon>

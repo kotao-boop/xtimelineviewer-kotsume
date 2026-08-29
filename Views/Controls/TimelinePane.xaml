@@ -151,5 +151,22 @@
                        RadiusX="1.5"
                        RadiusY="1.5"/>
         </Border>
+
+        <Border x:Name="VerticalResizeGrip"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Bottom"
+                Height="8"
+                Margin="0,0,0,-4"
+                Background="Transparent"
+                Canvas.ZIndex="100">
+            <Rectangle x:Name="VerticalResizeGripBar"
+                       Height="3"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Bottom"
+                       Fill="{ThemeResource TimelinePaneBorderBrush}"
+                       Opacity="0"
+                       RadiusX="1.5"
+                       RadiusY="1.5"/>
+        </Border>
     </Grid>
 </UserControl>

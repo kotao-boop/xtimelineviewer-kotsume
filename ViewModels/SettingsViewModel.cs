@@ -26,6 +26,7 @@ namespace XTimelineViewer.ViewModels
 
         private readonly AppSettings _settings;
         private readonly Action?     _settingsChanged;
+        internal AppSettings Settings => _settings;
 
         public SettingsViewModel(AppSettings settings, Action? settingsChanged = null)
         {
@@ -103,6 +104,16 @@ namespace XTimelineViewer.ViewModels
             }
         }
 
+        public bool BossModeButtonVisible
+        {
+            get => _settings.BossModeButtonVisible;
+            set
+            {
+                if (_settings.BossModeButtonVisible == value) return;
+                _settings.BossModeButtonVisible = value;
+                Notify(nameof(BossModeButtonVisible));
+            }
+        }
         // ── 試験機能 ──────────────────────────────────────────────────────────────
 
         public bool OpenComposerInBrowser

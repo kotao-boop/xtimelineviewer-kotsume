@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
 using System;
@@ -134,6 +134,7 @@ namespace XTimelineViewer.Views
             settingsWin.SettingsChanged += () =>
             {
                 SaveSettings();
+                InitializeBossMode();
                 ApplySavedTheme();
                 UpdateThemeRadioState();
                 WarmUpComposeAsync().FireAndForget(nameof(WarmUpComposeAsync));  // 投稿プリロードの ON/OFF を即時反映（#244 案B）
@@ -217,6 +218,30 @@ namespace XTimelineViewer.Views
             SaveProfiles();
             SaveWorkspaces();
             await SaveTimelinesAsync();
+        }
+
+        private async System.Threading.Tasks.Task ShowSocialSignInGuidanceAsync()
+        {
+            if (_socialSignInDialogOpen || Content?.XamlRoot is null) return;
+            _socialSignInDialogOpen = true;
+            try
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = R.Get("Profile_SocialSignInDialogTitle"),
+                    Content = R.Get("Profile_SocialSignInDialogBody"),
+                    PrimaryButtonText = R.Get("Profile_OpenPasswordReset"),
+                    CloseButtonText = R.Get("Button_Close"),
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = Content.XamlRoot,
+                };
+                if (await ShowDialogAsync(dialog) == ContentDialogResult.Primary)
+                    await Windows.System.Launcher.LaunchUriAsync(new Uri(SignInFlowHelper.PasswordResetUrl));
+            }
+            finally
+            {
+                _socialSignInDialogOpen = false;
+            }
         }
 
     }
