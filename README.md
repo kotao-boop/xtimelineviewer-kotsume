@@ -45,16 +45,16 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 [ダウンロード案内](DOWNLOADS.md)から、お好みの形式を確認してご利用いただけます。
 
 > [!WARNING]
-> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.3.2のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
+> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.3.3のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
 
 | 形式 | ファイル名 | 説明 |
 |---|---|---|
-| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.3.2-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
-| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.3.2-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
+| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.3.3-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
+| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.3.3-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
 
 ### Microsoft Store版の状況
 
-Microsoft Store版のv2.3.0は、2026年8月26日にx64版・ARM64版を認定申請し、認定合格後の2026年8月27日に公開されました。新しいオリジナルアイコンと匿名化済みスクリーンショットを反映するv2.3.1更新は、現在認定審査中です。Google・Appleログインの緊急修正v2.3.2は、まずGitHub版で検証します。
+Microsoft Store版のv2.3.0は、2026年8月26日にx64版・ARM64版を認定申請し、認定合格後の2026年8月27日に公開されました。新しいオリジナルアイコンと匿名化済みスクリーンショットを反映するv2.3.1更新は、現在認定審査中です。v2.3.2の利用者確認でGoogleログインが外部Edgeへ出る問題が残ったため、入れ子の認証画面にも対応するv2.3.3をGitHub版で再検証します。
 
 Store版のMSIXはMicrosoftが署名し、Microsoft Storeからインストールと更新を行います。GitHub Releasesで配布するEXE・ZIPとは別の配布経路であり、現在のGitHub版はコード署名されていません。
 
@@ -123,7 +123,7 @@ Store版のMSIXはMicrosoftが署名し、Microsoft Storeからインストー�
 
 ## Code signing policy
 
-**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.3.2 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
+**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.3.3 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
 
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 

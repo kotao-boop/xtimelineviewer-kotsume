@@ -5,6 +5,14 @@ namespace XTimelineViewer.Tests.Services;
 
 public class UrlHelperTests
 {
+    [Theory]
+    [InlineData("https://accounts.google.com/o/oauth2/auth?login_hint=user@example.com&code=secret#token", "https://accounts.google.com/o/oauth2/auth")]
+    [InlineData("https://x.com/i/flow/login?state=secret", "https://x.com/i/flow/login")]
+    [InlineData("intent://accounts.google.com/path#Intent;scheme=https;end", "intent:")]
+    [InlineData("not a uri", "(invalid URI)")]
+    public void GetSafeUriForLog_RemovesSensitiveQueryAndFragment(string input, string expected)
+        => Assert.Equal(expected, UrlHelper.GetSafeUriForLog(input));
+
     // ── IsXUrl ────────────────────────────────────────────────────────────────
 
     [Theory]
