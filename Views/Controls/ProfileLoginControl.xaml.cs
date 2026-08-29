@@ -96,7 +96,7 @@ namespace XTimelineViewer.Views.Controls
             // 外部ブラウザーへ移り、そちらの Cookie はこのプロファイルへ戻ってこない。
             // 同じ CoreWebView2Environment を使うアプリ内ウィンドウを NewWindow に渡し、
             // 認証結果を元の X ログイン画面と安全に共有する。
-            LoginWebView.CoreWebView2.NewWindowRequested += LoginWebView_NewWindowRequested;
+            ConfigureSignInWebView(LoginWebView.CoreWebView2);
 
             LoginWebView.Source = new Uri("https://x.com/i/flow/login");
         }
@@ -111,6 +111,8 @@ namespace XTimelineViewer.Views.Controls
 
             try
             {
+                AppLog.Debug($"Sign-in popup requested: {UrlHelper.GetSafeUriForLog(args.Uri)}");
+
                 // アドレスバーのない認証画面へ任意サイトを開かせない。
                 if (!UrlHelper.IsTrustedSignInPopupUri(args.Uri))
                 {
@@ -144,6 +146,12 @@ namespace XTimelineViewer.Views.Controls
                     _                  => CoreWebView2PreferredColorScheme.Auto,
                 };
 
+                // X → Google/Apple → 追加確認画面のように、認証画面がさらに別画面を
+                // 開くことがある。最初の WebView2 だけにイベントを付けると、2段目は
+                // 既定動作で外部 Edge へ出てしまい、web_message が元の X へ戻らない。
+                // すべての子 WebView2 に同じ処理を再帰的に設定する。
+                ConfigureSignInWebView(popupWebView.CoreWebView2);
+
                 // 認証途中のトップレベル遷移も正規ホストだけに限定する。
                 popupWebView.CoreWebView2.NavigationStarting += (_, navigationArgs) =>
                 {
@@ -155,7 +163,13 @@ namespace XTimelineViewer.Views.Controls
                     }
 
                     navigationArgs.Cancel = true;
-                    AppLog.Debug("Blocked an untrusted navigation in the sign-in popup.");
+                    AppLog.Debug($"Blocked an untrusted navigation in the sign-in popup: {UrlHelper.GetSafeUriForLog(navigationArgs.Uri)}");
+                };
+
+                popupWebView.CoreWebView2.NavigationCompleted += (core, navigationArgs) =>
+                {
+                    if (!navigationArgs.IsSuccess)
+                        AppLog.Debug($"Sign-in popup navigation failed: {navigationArgs.WebErrorStatus}; {UrlHelper.GetSafeUriForLog(core.Source)}");
                 };
 
                 popupWebView.CoreWebView2.WindowCloseRequested += (_, _) => popupWindow.Close();
@@ -180,6 +194,21 @@ namespace XTimelineViewer.Views.Controls
             {
                 deferral.Complete();
             }
+        }
+
+        private void ConfigureSignInWebView(CoreWebView2 core)
+        {
+            core.NewWindowRequested -= LoginWebView_NewWindowRequested;
+            core.NewWindowRequested += LoginWebView_NewWindowRequested;
+
+            // HTTPS ではない外部アプリ起動要求（intent: や独自スキームなど）を
+            // 認証中に許すと、ブラウザーへ出たまま結果が戻らない。ここでは止め、
+            // 個人情報を含まない scheme/host/path だけを診断ログへ残す。
+            core.LaunchingExternalUriScheme += (_, args) =>
+            {
+                args.Cancel = true;
+                AppLog.Debug($"Blocked an external sign-in URI scheme: {UrlHelper.GetSafeUriForLog(args.Uri)}");
+            };
         }
 
         private async Task<string?> TryGetScreenNameAsync()

@@ -56,6 +56,19 @@ namespace XTimelineViewer.Services
             };
         }
 
+        /// <summary>
+        /// 診断ログ用にURLをscheme・host・pathだけへ縮める。
+        /// 認証コード、メールアドレス、stateなどが入り得るquery/fragmentは保存しない。
+        /// </summary>
+        internal static string GetSafeUriForLog(string? value)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri)) return "(invalid URI)";
+            if (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
+                return $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}";
+            return $"{uri.Scheme}:";
+        }
+
         /// <summary>同じ HTTPS オリジン（scheme / host / port）かを確認する。</summary>
         internal static bool IsSameHttpsOrigin(string? candidateUrl, string? trustedUrl)
         {
