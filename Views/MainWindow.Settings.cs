@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
 using System;
@@ -120,6 +120,11 @@ namespace XTimelineViewer.Views
             settingsWin.SaveSettingsOnly = SaveSettings;
             settingsWin.UpdateMenuBadge = UpdateMenuUpdateBadge;
             settingsWin.ExitAndRunWingetUpdate = null;
+            settingsWin.BackupRestored = async () =>
+            {
+                settingsWin.Close();
+                await ReloadRestoredConfigurationAsync();
+            };
 
             // 親ウィンドウのテーマを引き継ぐ
             var theme = ((FrameworkElement)Content).RequestedTheme;
@@ -129,6 +134,7 @@ namespace XTimelineViewer.Views
             settingsWin.SettingsChanged += () =>
             {
                 SaveSettings();
+                InitializeBossMode();
                 ApplySavedTheme();
                 UpdateThemeRadioState();
                 WarmUpComposeAsync().FireAndForget(nameof(WarmUpComposeAsync));  // 投稿プリロードの ON/OFF を即時反映（#244 案B）
@@ -175,6 +181,67 @@ namespace XTimelineViewer.Views
                 settingsWin.SelectPage(initialPage);
 
             settingsWin.Activate();
+        }
+
+        /// <summary>復元された設定を、アプリを再起動せず現在の画面へ反映する。</summary>
+        private async System.Threading.Tasks.Task ReloadRestoredConfigurationAsync()
+        {
+            foreach (var pane in Panes.ToList()) CleanupWebView(pane.WebView);
+            TimelinePanel.Children.Clear();
+            TimelineGrid.Children.Clear();
+            _configs.Clear();
+            _temporarilyHiddenTimelines.Clear();
+
+            _appSettings = SettingsService.LoadSettings(SettingsFilePath);
+            _profiles = SettingsService.LoadProfiles(ProfilesFilePath);
+            if (_profiles.Count == 0)
+                _profiles.Add(new ProfileConfig { Id = "default", Name = "Default" });
+            _workspaces = WorkspaceStore.Load(WorkspacesFilePath);
+
+            var locale = _appSettings.Language == "system" ? null : _appSettings.Language;
+            R.Reload(locale);
+            ApplySavedTheme();
+            UpdateThemeRadioState();
+            RefreshUIText();
+            RefreshToolbarProfiles();
+            UpdateHasNamedProfiles();
+
+            foreach (var config in TimelineStore.Load(SaveFilePath)) AddTimeline(config);
+            ViewModel.HasTimelines = _configs.Count > 0;
+            if (_configs.Count > 0) ApplyLayoutMode(_appSettings.LayoutMode);
+            RefreshTemporaryVisibilityUi();
+            RefreshAllProfileBadges();
+            UpdateMenuUpdateBadge();
+
+            // 復元した内容を通常の原子的保存経路にも通し、次回起動を確実にする。
+            SaveSettings();
+            SaveProfiles();
+            SaveWorkspaces();
+            await SaveTimelinesAsync();
+        }
+
+        private async System.Threading.Tasks.Task ShowSocialSignInGuidanceAsync()
+        {
+            if (_socialSignInDialogOpen || Content?.XamlRoot is null) return;
+            _socialSignInDialogOpen = true;
+            try
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = R.Get("Profile_SocialSignInDialogTitle"),
+                    Content = R.Get("Profile_SocialSignInDialogBody"),
+                    PrimaryButtonText = R.Get("Profile_OpenPasswordReset"),
+                    CloseButtonText = R.Get("Button_Close"),
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = Content.XamlRoot,
+                };
+                if (await ShowDialogAsync(dialog) == ContentDialogResult.Primary)
+                    await Windows.System.Launcher.LaunchUriAsync(new Uri(SignInFlowHelper.PasswordResetUrl));
+            }
+            finally
+            {
+                _socialSignInDialogOpen = false;
+            }
         }
 
     }

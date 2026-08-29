@@ -5,7 +5,6 @@ using Microsoft.Web.WebView2.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
 using System.Threading.Tasks;
 using XTimelineViewer.Models;
 using XTimelineViewer.Services;
@@ -251,36 +250,16 @@ namespace XTimelineViewer.Views.Controls
             {
                 try
                 {
-                    using var message = JsonDocument.Parse(args.WebMessageAsJson);
-                    if (message.RootElement.TryGetProperty("type", out var type) &&
-                        type.GetString() == "xtv-social-signin-blocked")
+                    if (args.TryGetWebMessageAsString() == SignInFlowHelper.BlockedMessage)
                         ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));
                 }
-                catch (JsonException)
+                catch (ArgumentException)
                 {
                     // この専用ログイン WebView から来た不明なメッセージは無視する。
                 }
             };
 
-            await core.AddScriptToExecuteOnDocumentCreatedAsync(
-                """
-                (() => {
-                  if (window.__xtvSocialSignInGuard) return;
-                  window.__xtvSocialSignInGuard = true;
-                  if (!['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(location.hostname)) return;
-                  addEventListener('click', event => {
-                    const element = event.target instanceof Element
-                      ? event.target.closest('button, a, [role="button"]')
-                      : null;
-                    if (!element) return;
-                    const label = `${element.innerText || ''} ${element.getAttribute('aria-label') || ''}`;
-                    if (!/(^|\s)(Google|Apple)(\s|$)/i.test(label)) return;
-                    event.preventDefault();
-                    event.stopImmediatePropagation();
-                    chrome.webview.postMessage({ type: 'xtv-social-signin-blocked' });
-                  }, true);
-                })();
-                """);
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(SignInFlowHelper.GuardScript);
         }
 
         private async Task ShowSocialSignInGuidanceAsync()
@@ -303,7 +282,7 @@ namespace XTimelineViewer.Views.Controls
                     // ここだけは利用者が明示的に選んだ場合に外部ブラウザーを開く。
                     // X 用パスワードを設定後、この画面へ戻ってメール/ユーザー名でログインする。
                     await Windows.System.Launcher.LaunchUriAsync(
-                        new Uri("https://x.com/account/begin_password_reset"));
+                        new Uri(SignInFlowHelper.PasswordResetUrl));
                 }
             }
             finally

@@ -7,6 +7,9 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 using XTimelineViewer.ViewModels;
 
 namespace XTimelineViewer.Views.Settings
@@ -85,6 +88,14 @@ namespace XTimelineViewer.Views.Settings
             VideoFrameSaveToggle.OnContent  = R.Get("Toggle_On");
             VideoFrameSaveToggle.OffContent = R.Get("Toggle_Off");
 
+            BossModeCard.Header = R.Get("Settings_BossMode");
+            BossModeCard.Description = R.Get("Settings_BossMode_Description");
+            BossModeToggle.OnContent = R.Get("Toggle_On");
+            BossModeToggle.OffContent = R.Get("Toggle_Off");
+            BossModeImageButton.Content = R.Get("Settings_BossMode_SelectImage");
+            BossModeImageLabel.Text = VM?.Settings.BossModeImagePath is { Length: > 0 } path
+                ? Path.GetFileName(path)
+                : R.Get("Settings_BossMode_NoImage");
             // ［…］メニューに「直前のリポストを検索」（#315）
             PriorRepostSearchCard.Header      = R.Get("Settings_PriorRepostSearch");
             PriorRepostSearchCard.Description = R.Get("Settings_PriorRepostSearch_Description");
@@ -95,6 +106,28 @@ namespace XTimelineViewer.Views.Settings
             Bindings.Update();
         }
 
+
+        private async void BossModeImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parent is null || VM is null) return;
+            var picker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(picker, _parent.WindowHandle);
+            picker.ViewMode = PickerViewMode.Thumbnail;
+            picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            picker.FileTypeFilter.Add(".png");
+            picker.FileTypeFilter.Add(".jpg");
+            picker.FileTypeFilter.Add(".jpeg");
+            picker.FileTypeFilter.Add(".bmp");
+            var file = await picker.PickSingleFileAsync();
+            if (file is null) return;
+            var dir = Path.Combine(_parent.SettingsFolder, "boss-mode");
+            Directory.CreateDirectory(dir);
+            var destination = Path.Combine(dir, "boss-image" + Path.GetExtension(file.Name).ToLowerInvariant());
+            File.Copy(file.Path, destination, true);
+            VM.Settings.BossModeImagePath = destination;
+            _parent.SaveSettingsOnly?.Invoke();
+            BossModeImageLabel.Text = Path.GetFileName(destination);
+        }
         // 保存先フォルダーへの inline リンクを含む説明文を組み立てる（#312）。
         // 3 行構成で、リンク（フォルダー名）は各行末に置き i18n の語順問題を軽減する。
         //   1) 画像の保存先 → ピクチャ\XTimelineViewer（リンク）

@@ -14,6 +14,7 @@
             <KeyboardAccelerator Key="F3" Invoked="FocusSearchBox_Invoked"/>
             <KeyboardAccelerator Key="K" Modifiers="Control" Invoked="OpenCommandPalette_Invoked"/>
             <KeyboardAccelerator Key="F1" Invoked="OpenShortcuts_Invoked"/>
+            <KeyboardAccelerator Key="Escape" Invoked="BossModeEscape_Invoked"/>
             <!-- Ctrl+←/→ で隣のタイムラインへフォーカス（WebView2 非フォーカス時もカバー）#227 -->
             <KeyboardAccelerator Key="Left"  Modifiers="Control" Invoked="FocusAdjacentTimeline_Invoked"/>
             <KeyboardAccelerator Key="Right" Modifiers="Control" Invoked="FocusAdjacentTimeline_Invoked"/>
@@ -119,6 +120,7 @@
                         Spacing="4"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
+                <Button x:Name="BossModeBtn" Width="32" Height="32" Padding="0" Click="BossModeBtn_Click" Visibility="Collapsed" AutomationProperties.AutomationId="BossModeBtn" ToolTipService.ToolTip="ボスが来たモード"><FontIcon Glyph="&#xE7B7;" FontFamily="Segoe Fluent Icons" FontSize="14"/></Button>
                 <Button x:Name="AutoArrangeBtn"
                         Width="32"
                         Height="32"
@@ -356,6 +358,19 @@
                   Visibility="Collapsed"
                   Padding="4"/>
 
+            <Border x:Name="BossModeOverlay"
+                    Grid.Column="0"
+                    Background="Black"
+                    Visibility="Collapsed"
+                    Canvas.ZIndex="200">
+                <Grid>
+                    <Image x:Name="BossModeImage" Stretch="UniformToFill"/>
+                    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Orientation="Horizontal" Spacing="8" Margin="16">
+                        <Button x:Name="BossModeCloseBtn" Click="BossModeCloseBtn_Click" Content="戻る"/>
+                    </StackPanel>
+                    <TextBlock x:Name="BossModeEmptyText" Text="表示画像を設定から選んでください" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                </Grid>
+            </Border>
             <InfoBar x:Name="LayoutSuggestionBar"
                      Grid.Column="0"
                      HorizontalAlignment="Center"

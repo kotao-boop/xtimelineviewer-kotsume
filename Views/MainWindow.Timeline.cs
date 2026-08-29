@@ -409,6 +409,30 @@ namespace XTimelineViewer.Views
 
             RefreshTimelineNumbers();
             RefreshTemporaryVisibilityUi();
+
+            if (_appSettings.LayoutMode != "Classic")
+            {
+                foreach (var row in TimelineGrid.RowDefinitions)
+                    row.Height = new GridLength(1, GridUnitType.Star);
+                foreach (var pane in Panes.Where(IsPaneEffectivelyVisible))
+                {
+                    var row = Grid.GetRow(pane);
+                    if (Grid.GetRowSpan(pane) == 1 && pane.Config.Height >= 180 && row < TimelineGrid.RowDefinitions.Count)
+                        TimelineGrid.RowDefinitions[row].Height = new GridLength(pane.Config.Height, GridUnitType.Pixel);
+                }
+            }
+        }
+
+        private void OnPaneHeightResized(TimelinePane pane, double height)
+        {
+            pane.Config.Height = Math.Clamp(height, 180, 1600);
+            if (_appSettings.LayoutMode != "Classic")
+            {
+                var row = Grid.GetRow(pane);
+                if (Grid.GetRowSpan(pane) == 1 && row < TimelineGrid.RowDefinitions.Count)
+                    TimelineGrid.RowDefinitions[row].Height = new GridLength(pane.Config.Height, GridUnitType.Pixel);
+            }
+            SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
         }
 
         private static void ResetGridPlacement(TimelinePane pane)
@@ -575,6 +599,7 @@ namespace XTimelineViewer.Views
 
             // 手動ドラッグによる幅変更を保存する
             pane.WidthResized += (p, w) => SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
+            pane.HeightResized += OnPaneHeightResized;
 
             TimelinePanel.Children.Add(pane);
             ApplyPaneTheme(pane);
@@ -623,6 +648,23 @@ namespace XTimelineViewer.Views
 
             pane.RetryRequested += p =>
             {
+                if (p.IsSignInRequired &&
+                    _profiles.FirstOrDefault(profile => profile.Id == p.Config.ProfileId) is { } profile)
+                {
+                    AddProfileWindow.ShowReloginModal(this, profile, updated =>
+                    {
+                        profile.Name = updated.Name;
+                        profile.ScreenName = updated.ScreenName;
+                        SaveProfiles();
+                        RefreshAllProfileBadges();
+                        foreach (var target in Panes.Where(x => x.Config.ProfileId == profile.Id))
+                        {
+                            target.ShowLoadingState();
+                            target.WebView.Source = new Uri(target.Config.Url);
+                        }
+                    });
+                    return;
+                }
                 p.ShowLoadingState();
                 p.WebView.Source = new Uri(p.Config.Url);
             };

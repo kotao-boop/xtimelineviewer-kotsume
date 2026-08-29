@@ -1044,6 +1044,7 @@ namespace XTimelineViewer.Views
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(TimestampInterceptScript);
                 // 編集状態レポーター（#258）：全ペインに注入し、編集中（リプライ/引用）を C# へ通知する。
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(EditStateReporterScript);
+                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(SignInFlowHelper.GuardScript);
                 // メディア拡大ボタン（#293）：全ペインに注入。config を先に入れてから本体を注入する。
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(BuildMediaOverlayButtonConfigJs());
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(MediaOverlayButtonScript);
@@ -1065,13 +1066,25 @@ namespace XTimelineViewer.Views
                         LogDebug("Rejected WebView message from an untrusted source.");
                         return;
                     }
-                    OnWebViewMessageReceived(webView, e.TryGetWebMessageAsString());
+                    try
+                    {
+                        OnWebViewMessageReceived(webView, e.TryGetWebMessageAsString());
+                    }
+                    catch (ArgumentException)
+                    {
+                        LogDebug("Rejected a non-string WebView message.");
+                    }
                 };
 
                 // 外部リンクをシステム既定ブラウザーまたは指定 Edge プロファイルで開く
                 webView.CoreWebView2.NewWindowRequested += async (s, args) =>
                 {
                     args.Handled = true;
+                    if (UrlHelper.IsExternalIdentityProviderUri(args.Uri))
+                    {
+                        ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));
+                        return;
+                    }
                     if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var external) &&
                         UrlHelper.IsSafeExternalUri(external))
                         await LaunchUriByEdgeProfileAsync(external);
@@ -1080,6 +1093,13 @@ namespace XTimelineViewer.Views
                 webView.CoreWebView2.NavigationStarting += async (s, args) =>
                 {
                     if (!Uri.TryCreate(args.Uri, UriKind.Absolute, out var nav)) return;
+
+                    if (UrlHelper.IsExternalIdentityProviderUri(args.Uri))
+                    {
+                        args.Cancel = true;
+                        ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));
+                        return;
+                    }
 
                     if (!UrlHelper.IsSameHttpsOrigin(args.Uri, cfg.Url))
                     {

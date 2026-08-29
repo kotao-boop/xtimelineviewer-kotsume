@@ -28,5 +28,7 @@ namespace XTimelineViewer.Models
         public string  LayoutMode            { get; set; } = "Classic"; // "Classic" | "Auto" | "Grid2x2" | "Grid2x3" | "VerticalSplit" | "Focus"
         public bool    OnboardingCompleted   { get; set; } = false;     // 「あとで設定」を含め、初回案内を完了したか
         public string? ActiveWorkspaceId     { get; set; } = null;      // 現在適用中のワークスペース
+        public bool    BossModeButtonVisible { get; set; } = false;
+        public string? BossModeImagePath    { get; set; } = null;
     }
 }

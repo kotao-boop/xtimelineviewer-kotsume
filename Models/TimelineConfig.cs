@@ -5,6 +5,7 @@ namespace XTimelineViewer.Models
         public string Name               { get; set; } = "";
         public string Url                { get; set; } = "";
         public double Width              { get; set; } = 350;
+        public double Height             { get; set; } = 0;
         public bool   HideSidebar       { get; set; } = false;
         public bool   HideCompose       { get; set; } = true;
         public bool   HideListHeader    { get; set; } = false;
@@ -25,6 +26,7 @@ namespace XTimelineViewer.Models
             Name               = Name,
             Url                = Url,
             Width              = Width,
+            Height             = Height,
             HideSidebar        = HideSidebar,
             HideCompose        = HideCompose,
             HideListHeader     = HideListHeader,

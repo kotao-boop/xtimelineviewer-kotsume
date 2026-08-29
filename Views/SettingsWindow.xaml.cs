@@ -78,6 +78,12 @@ namespace XTimelineViewer.Views
         /// <summary>メニューの更新バッジを更新するコールバック。</summary>
         internal Action? UpdateMenuBadge { get; set; }
 
+        /// <summary>設定バックアップの復元後、MainWindow の表示状態を読み直す。</summary>
+        internal Func<Task>? BackupRestored { get; set; }
+
+        /// <summary>この設定ウィンドウにファイル選択画面を関連付けるためのハンドル。</summary>
+        internal IntPtr WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+
         /// <summary>アプリを終了して winget でアップデートを開始するコールバック。</summary>
         internal Action? ExitAndRunWingetUpdate { get; set; }
 
