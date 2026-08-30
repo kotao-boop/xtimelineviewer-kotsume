@@ -671,6 +671,29 @@ namespace XTimelineViewer.Views
             pane.OpenInBrowserRequested += p =>
                 LaunchUriByEdgeProfileAsync(new Uri(p.Config.Url)).FireAndForget(nameof(LaunchUriByEdgeProfileAsync));
             pane.TemporaryHideRequested += TemporaryHideTimeline;
+            pane.ReloadRequested += p =>
+            {
+                p.SetUnreadCount(0);
+                try { p.WebView.Reload(); }
+                catch { p.WebView.Source = new Uri(p.Config.Url); }
+            };
+            pane.TranslationToggleRequested += p =>
+                SendTranslationCommandAsync(p, "toggle").FireAndForget(nameof(SendTranslationCommandAsync));
+            pane.FocusModeRequested += p =>
+            {
+                _focusedPane = p;
+                RefreshPaneThemes();
+                _appSettings.LayoutMode = "Focus";
+                SaveSettings();
+                ApplyLayoutMode("Focus");
+            };
+            pane.JumpToNewestRequested += p =>
+            {
+                p.SetUnreadCount(0);
+                p.WebView.CoreWebView2?.ExecuteScriptAsync(
+                    "window.scrollTo({top:0,behavior:'smooth'});window._xtvUnreadReset&&window._xtvUnreadReset();")
+                    .AsTask().FireAndForget("JumpToNewest");
+            };
 
             pane.ShowLoadingState();
 
@@ -787,6 +810,12 @@ namespace XTimelineViewer.Views
                 Foreground          = (Brush)Application.Current.Resources["SystemFillColorCriticalBrush"],
             };
 
+            var translationConsentBtn = new Button
+            {
+                Content = R.Get("Pane_Translation_Consent"),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+
             var profileBox = new ComboBox
             {
                 Header              = R.Get("Timeline_Profile"),
@@ -852,6 +881,8 @@ namespace XTimelineViewer.Views
             panel.Children.Add(hardReloadToggle);
             panel.Children.Add(hardReloadIntervalBox);
             panel.Children.Add(new NavigationViewItemSeparator { Margin = new Thickness(0, 8, 0, 0) });
+            panel.Children.Add(translationConsentBtn);
+            panel.Children.Add(new NavigationViewItemSeparator { Margin = new Thickness(0, 8, 0, 0) });
             panel.Children.Add(deleteBtn);
 
             var dlg = new ContentDialog
@@ -869,13 +900,19 @@ namespace XTimelineViewer.Views
             };
 
             bool shouldDelete = false;
+            bool shouldOpenTranslationConsent = false;
             deleteBtn.Click += (_, _) => { shouldDelete = true; dlg.Hide(); };
+            translationConsentBtn.Click += (_, _) => { shouldOpenTranslationConsent = true; dlg.Hide(); };
 
             var result = await ShowDialogAsync(dlg);
 
             if (shouldDelete)
             {
                 await ConfirmAndRemoveTimelineAsync(pane);
+            }
+            else if (shouldOpenTranslationConsent)
+            {
+                await SendTranslationCommandAsync(pane, "settings");
             }
             else if (result == ContentDialogResult.Primary)
             {

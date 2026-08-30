@@ -1044,6 +1044,8 @@ namespace XTimelineViewer.Views
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(TimestampInterceptScript);
                 // 編集状態レポーター（#258）：全ペインに注入し、編集中（リプライ/引用）を C# へ通知する。
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(EditStateReporterScript);
+                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(UnreadCounterScript);
+                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(TranslationStateBridgeScript);
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(SignInFlowHelper.GuardScript);
                 // メディア拡大ボタン（#293）：全ペインに注入。config を先に入れてから本体を注入する。
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(BuildMediaOverlayButtonConfigJs());

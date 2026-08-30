@@ -54,6 +54,7 @@ namespace XTimelineViewer.Views.Controls
 
         // ── ドラッグリサイズ ────────────────────────────────────
         private bool _isResizing = false;
+        private int _unreadCount;
         private double _resizeStartPointerX;
         private double _resizeStartWidth;
         private bool _isResizingHeight;
@@ -66,6 +67,10 @@ namespace XTimelineViewer.Views.Controls
         internal event Action<TimelinePane>? RetryRequested;
         internal event Action<TimelinePane>? OpenInBrowserRequested;
         internal event Action<TimelinePane>? TemporaryHideRequested;
+        internal event Action<TimelinePane>? ReloadRequested;
+        internal event Action<TimelinePane>? TranslationToggleRequested;
+        internal event Action<TimelinePane>? FocusModeRequested;
+        internal event Action<TimelinePane>? JumpToNewestRequested;
 
         private void InitializeResizeGrip()
         {
@@ -325,6 +330,17 @@ namespace XTimelineViewer.Views.Controls
             var hideTip = R.Get("Pane_TemporaryHide_Tooltip");
             ToolTipService.SetToolTip(TemporaryHideBtn, hideTip);
             AutomationProperties.SetName(TemporaryHideBtn, hideTip);
+            var refreshTip = R.Get("Pane_Refresh_Tooltip");
+            ToolTipService.SetToolTip(RefreshBtn, refreshTip);
+            AutomationProperties.SetName(RefreshBtn, refreshTip);
+            UpdateTranslationButtonVisual();
+            var focusTip = R.Get("Pane_Focus_Tooltip");
+            ToolTipService.SetToolTip(FocusBtn, focusTip);
+            AutomationProperties.SetName(FocusBtn, focusTip);
+            var newItemsTip = R.Get("Pane_NewItems_Tooltip");
+            ToolTipService.SetToolTip(NewItemsBtn, newItemsTip);
+            AutomationProperties.SetName(NewItemsBtn, newItemsTip);
+            SetUnreadCount(_unreadCount);
             StatusRetryBtn.Content = R.Get("Button_Retry");
             StatusBrowserBtn.Content = R.Get("Button_OpenBrowser");
             UpdateUrlHeader();
@@ -372,6 +388,49 @@ namespace XTimelineViewer.Views.Controls
 
         private void TemporaryHideBtn_Click(object sender, RoutedEventArgs e)
             => TemporaryHideRequested?.Invoke(this);
+
+        private void RefreshBtn_Click(object sender, RoutedEventArgs e)
+            => ReloadRequested?.Invoke(this);
+
+        private void TranslationBtn_Click(object sender, RoutedEventArgs e)
+            => TranslationToggleRequested?.Invoke(this);
+
+        private void FocusBtn_Click(object sender, RoutedEventArgs e)
+            => FocusModeRequested?.Invoke(this);
+
+        private void NewItemsBtn_Click(object sender, RoutedEventArgs e)
+            => JumpToNewestRequested?.Invoke(this);
+
+        public void SetUnreadCount(int count)
+        {
+            count = Math.Clamp(count, 0, 999);
+            _unreadCount = count;
+            NewItemsText.Text = string.Format(R.Get("Pane_NewItems"), count);
+            NewItemsBtn.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            AutomationProperties.SetName(NewItemsBtn,
+                count > 0 ? string.Format(R.Get("Pane_NewItems"), count) : R.Get("Pane_NewItems_Tooltip"));
+        }
+
+        private bool _translationEnabled;
+
+        public void SetTranslationState(bool enabled)
+        {
+            _translationEnabled = enabled;
+            UpdateTranslationButtonVisual();
+        }
+
+        private void UpdateTranslationButtonVisual()
+        {
+            if (TranslationBtn is null || TranslationIcon is null) return;
+            var key = _translationEnabled ? "Pane_Translation_On" : "Pane_Translation_Off";
+            var tip = R.Get(key);
+            ToolTipService.SetToolTip(TranslationBtn, tip);
+            AutomationProperties.SetName(TranslationBtn, tip);
+            TranslationIcon.Opacity = _translationEnabled ? 1.0 : 0.55;
+            TranslationIcon.Foreground = _translationEnabled
+                ? (Brush)Application.Current.Resources["SystemAccentColor"]
+                : null;
+        }
 
         public void SetTemporaryHideAvailable(bool available)
             => TemporaryHideBtn.IsEnabled = available;

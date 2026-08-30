@@ -321,6 +321,55 @@
   <data name="Onboarding_CheckLogin" xml:space="preserve"><value>Check sign-in</value></data>
   <data name="Timeline_CopySuffix" xml:space="preserve"><value>Copy of {0}</value></data>
   <data name="Workspace_Summary" xml:space="preserve"><value>{0} timelines · {1}</value></data>
+  <data name="Workspace_TabEmpty" xml:space="preserve"><value>Save a workspace to switch setups from here</value></data>
+  <data name="Workspace_TabTooltip" xml:space="preserve"><value>Open “{0}” ({1} timelines)</value></data>
+  <data name="Workspace_AddOrManage" xml:space="preserve"><value>Save or manage workspaces</value></data>
+  <data name="Workspace_UpdateCurrent" xml:space="preserve"><value>Update with current setup</value></data>
+  <data name="Workspace_Duplicate" xml:space="preserve"><value>Duplicate workspace</value></data>
+  <data name="ColumnCreator_Title" xml:space="preserve"><value>Add a timeline</value></data>
+  <data name="ColumnCreator_Description" xml:space="preserve"><value>Choose what to show. You can also build an advanced search without memorizing operators.</value></data>
+  <data name="ColumnCreator_Type" xml:space="preserve"><value>Content</value></data>
+  <data name="ColumnCreator_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="ColumnCreator_AdvancedSearch" xml:space="preserve"><value>Advanced search</value></data>
+  <data name="ColumnCreator_Profile" xml:space="preserve"><value>Specific account</value></data>
+  <data name="ColumnCreator_Explore" xml:space="preserve"><value>Explore</value></data>
+  <data name="ColumnCreator_CustomUrl" xml:space="preserve"><value>Custom X URL</value></data>
+  <data name="ColumnCreator_ProfileHandle" xml:space="preserve"><value>Account name</value></data>
+  <data name="ColumnCreator_ProfileDescription" xml:space="preserve"><value>Enter the username of the X account you want to display.</value></data>
+  <data name="ColumnCreator_ProfileError" xml:space="preserve"><value>Enter a valid account name using letters, numbers, or underscores.</value></data>
+  <data name="ColumnCreator_CustomDescription" xml:space="preserve"><value>Only pages on x.com can be added.</value></data>
+  <data name="ColumnCreator_UrlError" xml:space="preserve"><value>Enter a valid URL beginning with https://x.com/.</value></data>
+  <data name="SearchBuilder_Title" xml:space="preserve"><value>Search conditions</value></data>
+  <data name="SearchBuilder_Description" xml:space="preserve"><value>Fill in only what you need. The resulting query appears below.</value></data>
+  <data name="SearchBuilder_AllWords" xml:space="preserve"><value>All of these words</value></data>
+  <data name="SearchBuilder_ExactPhrase" xml:space="preserve"><value>This exact phrase</value></data>
+  <data name="SearchBuilder_AnyWords" xml:space="preserve"><value>Any of these words</value></data>
+  <data name="SearchBuilder_ExcludedWords" xml:space="preserve"><value>None of these words</value></data>
+  <data name="SearchBuilder_FromAccount" xml:space="preserve"><value>From this account</value></data>
+  <data name="SearchBuilder_ToAccount" xml:space="preserve"><value>To this account</value></data>
+  <data name="SearchBuilder_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="SearchBuilder_AnyLanguage" xml:space="preserve"><value>Any language</value></data>
+  <data name="SearchBuilder_Japanese" xml:space="preserve"><value>Japanese</value></data>
+  <data name="SearchBuilder_English" xml:space="preserve"><value>English</value></data>
+  <data name="SearchBuilder_Media" xml:space="preserve"><value>Photos and videos</value></data>
+  <data name="SearchBuilder_AnyMedia" xml:space="preserve"><value>Any</value></data>
+  <data name="SearchBuilder_Images" xml:space="preserve"><value>Posts with images</value></data>
+  <data name="SearchBuilder_Videos" xml:space="preserve"><value>Posts with videos</value></data>
+  <data name="SearchBuilder_ExcludeReplies" xml:space="preserve"><value>Exclude replies</value></data>
+  <data name="SearchBuilder_Since" xml:space="preserve"><value>Start date</value></data>
+  <data name="SearchBuilder_Until" xml:space="preserve"><value>End date</value></data>
+  <data name="SearchBuilder_Optional" xml:space="preserve"><value>Optional</value></data>
+  <data name="SearchBuilder_Preview" xml:space="preserve"><value>Query sent to X</value></data>
+  <data name="SearchBuilder_EmptyPreview" xml:space="preserve"><value>Enter at least one condition</value></data>
+  <data name="SearchBuilder_Required" xml:space="preserve"><value>Enter at least one search condition.</value></data>
+  <data name="SearchBuilder_DateError" xml:space="preserve"><value>The end date must be after the start date.</value></data>
+  <data name="Pane_Refresh_Tooltip" xml:space="preserve"><value>Refresh this timeline</value></data>
+  <data name="Pane_Focus_Tooltip" xml:space="preserve"><value>Focus this timeline</value></data>
+  <data name="Pane_NewItems" xml:space="preserve"><value>{0} new</value></data>
+  <data name="Pane_NewItems_Tooltip" xml:space="preserve"><value>Jump to new posts</value></data>
+  <data name="Pane_Translation_On" xml:space="preserve"><value>Auto-translate: on (click to turn off)</value></data>
+  <data name="Pane_Translation_Off" xml:space="preserve"><value>Auto-translate: off (click to turn on)</value></data>
+  <data name="Pane_Translation_Consent" xml:space="preserve"><value>Open translation data consent settings</value></data>
   <data name="Shortcut_FocusTimeline" xml:space="preserve"><value>Go to a numbered timeline</value></data>
   <data name="Shortcut_MoveBetween" xml:space="preserve"><value>Move between timelines</value></data>
   <data name="Shortcut_Reorder" xml:space="preserve"><value>Reorder the current timeline</value></data>

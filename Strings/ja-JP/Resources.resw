@@ -321,6 +321,55 @@
   <data name="Onboarding_CheckLogin" xml:space="preserve"><value>ログイン済みか確認</value></data>
   <data name="Timeline_CopySuffix" xml:space="preserve"><value>{0} のコピー</value></data>
   <data name="Workspace_Summary" xml:space="preserve"><value>タイムライン {0} 個・{1}</value></data>
+  <data name="Workspace_TabEmpty" xml:space="preserve"><value>ワークスペースを保存すると、ここからすぐ切り替えられます</value></data>
+  <data name="Workspace_TabTooltip" xml:space="preserve"><value>「{0}」を開く（タイムライン {1} 個）</value></data>
+  <data name="Workspace_AddOrManage" xml:space="preserve"><value>ワークスペースを保存・管理</value></data>
+  <data name="Workspace_UpdateCurrent" xml:space="preserve"><value>現在の構成で上書き</value></data>
+  <data name="Workspace_Duplicate" xml:space="preserve"><value>ワークスペースを複製</value></data>
+  <data name="ColumnCreator_Title" xml:space="preserve"><value>タイムラインを追加</value></data>
+  <data name="ColumnCreator_Description" xml:space="preserve"><value>表示したい内容を選びます。検索条件も、この画面で分かりやすく組み立てられます。</value></data>
+  <data name="ColumnCreator_Type" xml:space="preserve"><value>表示する内容</value></data>
+  <data name="ColumnCreator_Add" xml:space="preserve"><value>追加</value></data>
+  <data name="ColumnCreator_AdvancedSearch" xml:space="preserve"><value>高度な検索</value></data>
+  <data name="ColumnCreator_Profile" xml:space="preserve"><value>特定のアカウント</value></data>
+  <data name="ColumnCreator_Explore" xml:space="preserve"><value>話題を探す</value></data>
+  <data name="ColumnCreator_CustomUrl" xml:space="preserve"><value>X のURLを指定</value></data>
+  <data name="ColumnCreator_ProfileHandle" xml:space="preserve"><value>アカウント名</value></data>
+  <data name="ColumnCreator_ProfileDescription" xml:space="preserve"><value>表示したいXアカウントのユーザー名を入力します。</value></data>
+  <data name="ColumnCreator_ProfileError" xml:space="preserve"><value>半角英数字または「_」で、正しいアカウント名を入力してください。</value></data>
+  <data name="ColumnCreator_CustomDescription" xml:space="preserve"><value>x.com で始まるページだけを追加できます。</value></data>
+  <data name="ColumnCreator_UrlError" xml:space="preserve"><value>https://x.com/ で始まる正しいURLを入力してください。</value></data>
+  <data name="SearchBuilder_Title" xml:space="preserve"><value>検索条件</value></data>
+  <data name="SearchBuilder_Description" xml:space="preserve"><value>必要な欄だけ入力してください。下に実際の検索式を表示します。</value></data>
+  <data name="SearchBuilder_AllWords" xml:space="preserve"><value>すべて含む言葉</value></data>
+  <data name="SearchBuilder_ExactPhrase" xml:space="preserve"><value>完全に一致する言葉</value></data>
+  <data name="SearchBuilder_AnyWords" xml:space="preserve"><value>いずれかを含む言葉</value></data>
+  <data name="SearchBuilder_ExcludedWords" xml:space="preserve"><value>含めない言葉</value></data>
+  <data name="SearchBuilder_FromAccount" xml:space="preserve"><value>このアカウントから</value></data>
+  <data name="SearchBuilder_ToAccount" xml:space="preserve"><value>このアカウント宛て</value></data>
+  <data name="SearchBuilder_Language" xml:space="preserve"><value>言語</value></data>
+  <data name="SearchBuilder_AnyLanguage" xml:space="preserve"><value>指定しない</value></data>
+  <data name="SearchBuilder_Japanese" xml:space="preserve"><value>日本語</value></data>
+  <data name="SearchBuilder_English" xml:space="preserve"><value>英語</value></data>
+  <data name="SearchBuilder_Media" xml:space="preserve"><value>画像・動画</value></data>
+  <data name="SearchBuilder_AnyMedia" xml:space="preserve"><value>指定しない</value></data>
+  <data name="SearchBuilder_Images" xml:space="preserve"><value>画像がある投稿</value></data>
+  <data name="SearchBuilder_Videos" xml:space="preserve"><value>動画がある投稿</value></data>
+  <data name="SearchBuilder_ExcludeReplies" xml:space="preserve"><value>返信を除く</value></data>
+  <data name="SearchBuilder_Since" xml:space="preserve"><value>開始日</value></data>
+  <data name="SearchBuilder_Until" xml:space="preserve"><value>終了日</value></data>
+  <data name="SearchBuilder_Optional" xml:space="preserve"><value>指定しない</value></data>
+  <data name="SearchBuilder_Preview" xml:space="preserve"><value>Xへ渡す検索式</value></data>
+  <data name="SearchBuilder_EmptyPreview" xml:space="preserve"><value>条件を1つ以上入力してください</value></data>
+  <data name="SearchBuilder_Required" xml:space="preserve"><value>検索条件を1つ以上入力してください。</value></data>
+  <data name="SearchBuilder_DateError" xml:space="preserve"><value>終了日は開始日より後の日付にしてください。</value></data>
+  <data name="Pane_Refresh_Tooltip" xml:space="preserve"><value>このタイムラインを更新</value></data>
+  <data name="Pane_Focus_Tooltip" xml:space="preserve"><value>このタイムラインに集中</value></data>
+  <data name="Pane_NewItems" xml:space="preserve"><value>新着 {0} 件</value></data>
+  <data name="Pane_NewItems_Tooltip" xml:space="preserve"><value>新着投稿へ移動</value></data>
+  <data name="Pane_Translation_On" xml:space="preserve"><value>自動翻訳：オン（クリックでオフ）</value></data>
+  <data name="Pane_Translation_Off" xml:space="preserve"><value>自動翻訳：オフ（クリックでオン）</value></data>
+  <data name="Pane_Translation_Consent" xml:space="preserve"><value>翻訳データ送信の同意設定を開く</value></data>
   <data name="Shortcut_FocusTimeline" xml:space="preserve"><value>指定した番号のタイムラインへ移動</value></data>
   <data name="Shortcut_MoveBetween" xml:space="preserve"><value>前後のタイムラインへ移動</value></data>
   <data name="Shortcut_Reorder" xml:space="preserve"><value>タイムラインを並べ替え</value></data>

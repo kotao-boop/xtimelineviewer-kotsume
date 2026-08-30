@@ -550,6 +550,8 @@ namespace XTimelineViewer.Views
         private void OnWebViewMessageReceived(WebView2 senderWebView, string message)
         {
             if (string.IsNullOrEmpty(message)) return;
+            if (TryHandleUnreadMessage(senderWebView, message)) return;
+            if (TryHandleTranslationStateMessage(senderWebView, message)) return;
             if (message == SignInFlowHelper.BlockedMessage)
             {
                 ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));

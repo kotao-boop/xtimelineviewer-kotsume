@@ -22,9 +22,91 @@ namespace XTimelineViewer.Views
         private string? SelectedToolbarProfileId
             => (ToolbarProfileCombo.SelectedItem as ComboBoxItem)?.Tag as string;
 
-        private void LoadWorkspaces() => _workspaces = WorkspaceStore.Load(WorkspacesFilePath);
+        private void LoadWorkspaces()
+        {
+            _workspaces = WorkspaceStore.Load(WorkspacesFilePath);
+            RefreshWorkspaceTabs();
+        }
 
         private void SaveWorkspaces() => WorkspaceStore.Save(WorkspacesFilePath, _workspaces);
+
+        private void RefreshWorkspaceTabs()
+        {
+            if (WorkspaceTabsPanel is null) return;
+            WorkspaceTabsPanel.Children.Clear();
+
+            if (_workspaces.Count == 0)
+            {
+                WorkspaceTabsPanel.Children.Add(new TextBlock
+                {
+                    Text = R.Get("Workspace_TabEmpty"),
+                    Opacity = 0.65,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(4, 0, 0, 0),
+                });
+            }
+
+            foreach (var workspace in _workspaces)
+            {
+                var active = string.Equals(_appSettings.ActiveWorkspaceId, workspace.Id, StringComparison.Ordinal);
+                var tab = new Button
+                {
+                    Content = workspace.Name,
+                    Height = 28,
+                    Padding = new Thickness(12, 0, 12, 0),
+                    Tag = workspace.Id,
+                };
+                if (active && Application.Current.Resources["AccentButtonStyle"] is Style accent)
+                    tab.Style = accent;
+                ToolTipService.SetToolTip(tab, string.Format(R.Get("Workspace_TabTooltip"), workspace.Name, workspace.Timelines.Count));
+                AutomationProperties.SetName(tab, workspace.Name);
+                tab.Click += async (_, _) =>
+                {
+                    if (!string.Equals(_appSettings.ActiveWorkspaceId, workspace.Id, StringComparison.Ordinal))
+                        await ApplyWorkspaceAsync(workspace);
+                };
+
+                var menu = new MenuFlyout();
+                var update = new MenuFlyoutItem { Text = R.Get("Workspace_UpdateCurrent") };
+                update.Click += (_, _) =>
+                {
+                    workspace.LayoutMode = _appSettings.LayoutMode;
+                    workspace.Timelines = _configs.Select(c => c.Clone()).ToList();
+                    _appSettings.ActiveWorkspaceId = workspace.Id;
+                    SaveWorkspaces();
+                    SaveSettings();
+                    RefreshWorkspaceTabs();
+                };
+                var duplicate = new MenuFlyoutItem { Text = R.Get("Workspace_Duplicate") };
+                duplicate.Click += (_, _) =>
+                {
+                    var copy = workspace.Clone();
+                    copy.Id = Guid.NewGuid().ToString("N");
+                    copy.Name = string.Format(R.Get("Timeline_CopySuffix"), workspace.Name);
+                    _workspaces.Add(copy);
+                    SaveWorkspaces();
+                    RefreshWorkspaceTabs();
+                };
+                var delete = new MenuFlyoutItem { Text = R.Get("Workspace_Delete") };
+                delete.Click += (_, _) =>
+                {
+                    _workspaces.Remove(workspace);
+                    if (_appSettings.ActiveWorkspaceId == workspace.Id) _appSettings.ActiveWorkspaceId = null;
+                    SaveWorkspaces();
+                    SaveSettings();
+                    RefreshWorkspaceTabs();
+                };
+                menu.Items.Add(update);
+                menu.Items.Add(duplicate);
+                menu.Items.Add(new MenuFlyoutSeparator());
+                menu.Items.Add(delete);
+                tab.ContextFlyout = menu;
+                WorkspaceTabsPanel.Children.Add(tab);
+            }
+
+            ToolTipService.SetToolTip(WorkspaceAddBtn, R.Get("Workspace_AddOrManage"));
+            AutomationProperties.SetName(WorkspaceAddBtn, R.Get("Workspace_AddOrManage"));
+        }
 
         private void RefreshToolbarProfiles()
         {
@@ -329,6 +411,7 @@ namespace XTimelineViewer.Views
                         if (_appSettings.ActiveWorkspaceId == workspace.Id) _appSettings.ActiveWorkspaceId = null;
                         SaveWorkspaces();
                         SaveSettings();
+                        RefreshWorkspaceTabs();
                         Rebuild();
                     };
                     buttons.Children.Add(open);
@@ -354,6 +437,7 @@ namespace XTimelineViewer.Views
                 _appSettings.ActiveWorkspaceId = workspace.Id;
                 SaveWorkspaces();
                 SaveSettings();
+                RefreshWorkspaceTabs();
                 nameBox.Text = string.Empty;
                 Rebuild();
             };
@@ -376,6 +460,7 @@ namespace XTimelineViewer.Views
             if (_configs.Count > 0) ApplyLayoutMode();
             await SaveTimelinesAsync();
             SaveSettings();
+            RefreshWorkspaceTabs();
         }
 
         private void OpenCommandPalette_Click(object sender, RoutedEventArgs e)

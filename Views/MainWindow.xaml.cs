@@ -409,10 +409,6 @@ namespace XTimelineViewer.Views
             EmptyQuickNotificationsBtn.Content = R.Get("Timeline_Notifications");
             EmptyQuickBookmarksBtn.Content = R.Get("Timeline_Bookmarks");
             EmptyQuickListsBtn.Content = R.Get("Timeline_Lists");
-            EmptyAddHomeItem.Text = R.Get("Timeline_Home");
-            EmptyAddNotificationsItem.Text = R.Get("Timeline_Notifications");
-            EmptyAddBookmarksItem.Text = R.Get("Timeline_Bookmarks");
-            EmptyAddListsItem.Text = R.Get("Timeline_Lists");
             AddTimelineToolbarLabel.Text = R.Get("Toolbar_AddTimeline");
             ToolTipService.SetToolTip(AddTimelineToolbarBtn, R.Get("Toolbar_AddTimelineTooltip"));
             AutomationProperties.SetName(AddTimelineToolbarBtn, R.Get("Toolbar_AddTimelineTooltip"));
@@ -447,10 +443,6 @@ namespace XTimelineViewer.Views
             AddNotificationsTimelineItem.Text = R.Get("Timeline_Notifications");
             AddBookmarksTimelineItem.Text     = R.Get("Timeline_Bookmarks");
             AddListsTimelineItem.Text         = R.Get("Timeline_Lists");
-            ToolbarAddHomeItem.Text           = R.Get("Timeline_Home");
-            ToolbarAddNotificationsItem.Text  = R.Get("Timeline_Notifications");
-            ToolbarAddBookmarksItem.Text      = R.Get("Timeline_Bookmarks");
-            ToolbarAddListsItem.Text          = R.Get("Timeline_Lists");
             TimelineManagerMenuItem.Text      = R.Get("Menu_TimelineManager");
             WorkspacesMenuItem.Text           = R.Get("Menu_Workspaces");
             CommandPaletteMenuItem.Text       = R.Get("Menu_CommandPalette");
@@ -470,6 +462,7 @@ namespace XTimelineViewer.Views
             SearchPinBtn.Content = R.Get("Search_AddBtn");
             ToolTipService.SetToolTip(SearchCloseBtn, R.Get("Button_Close"));
             RefreshToolbarProfiles();
+            RefreshWorkspaceTabs();
             foreach (var pane in Panes) pane.RefreshLocalizedText();
         }
 

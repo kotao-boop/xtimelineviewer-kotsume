@@ -75,7 +75,7 @@
 
                 <StackPanel Grid.Column="4"
                             Orientation="Horizontal"
-                            Spacing="4"
+                            Spacing="2"
                             VerticalAlignment="Center">
                     <!-- ホーム自動更新インジケーター（#207）。ホームペインのみ表示 -->
                     <FontIcon x:Name="AutoLoadIcon"
@@ -86,6 +86,44 @@
                               Margin="0,0,2,0"
                               VerticalAlignment="Center"
                               Visibility="Collapsed"/>
+                    <Button x:Name="NewItemsBtn"
+                            Height="26"
+                            Padding="8,0"
+                            Visibility="Collapsed"
+                            Click="NewItemsBtn_Click"
+                            AutomationProperties.AutomationId="PaneNewItemsBtn">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <FontIcon Glyph="&#xE74A;" FontFamily="Segoe Fluent Icons" FontSize="11"/>
+                            <TextBlock x:Name="NewItemsText" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="RefreshBtn"
+                            Width="28"
+                            Height="26"
+                            Padding="0"
+                            Click="RefreshBtn_Click"
+                            AutomationProperties.AutomationId="PaneRefreshBtn">
+                        <FontIcon Glyph="&#xE72C;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
+                    </Button>
+                    <Button x:Name="TranslationBtn"
+                            Width="28"
+                            Height="26"
+                            Padding="0"
+                            Click="TranslationBtn_Click"
+                            AutomationProperties.AutomationId="PaneTranslationBtn">
+                        <FontIcon x:Name="TranslationIcon"
+                                  Glyph="&#xE774;"
+                                  FontFamily="Segoe Fluent Icons"
+                                  FontSize="14"/>
+                    </Button>
+                    <Button x:Name="FocusBtn"
+                            Width="28"
+                            Height="26"
+                            Padding="0"
+                            Click="FocusBtn_Click"
+                            AutomationProperties.AutomationId="PaneFocusBtn">
+                        <FontIcon Glyph="&#xE740;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
+                    </Button>
                     <Button x:Name="TemporaryHideBtn"
                             Width="28"
                             Height="26"

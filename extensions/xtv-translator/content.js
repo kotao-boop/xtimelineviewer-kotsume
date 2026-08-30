@@ -45,16 +45,21 @@
     }
 
     function refreshTranslationUi() {
-        const toggleBtn = document.getElementById('xtv-trans-toggle');
-        if (toggleBtn) {
-            toggleBtn.textContent = `🌐 自動翻訳: ${autoTranslateEnabled ? 'ON' : 'OFF'}`;
-            toggleBtn.classList.toggle('active', autoTranslateEnabled);
-        }
+        publishTranslationState();
         document.querySelectorAll('.xtv-translation-box, .xtv-manual-btn').forEach(el => el.remove());
         document.querySelectorAll('article[data-testid="tweet"]').forEach(tw => {
             tw.__xtvProcessing = false;
         });
         scanAndProcess();
+    }
+
+    // ON/OFF だけを DOM 属性へ公開する。投稿本文やアカウント情報は公開しない。
+    // WebView2 側はこの属性を監視し、列ヘッダーの地球アイコンへ状態を反映する。
+    function publishTranslationState() {
+        document.documentElement.setAttribute(
+            'data-xtv-translation-state',
+            autoTranslateEnabled ? 'on' : 'off'
+        );
     }
 
     // 外部送信の同意を、X側のUIと混同しない独立したモーダルで取得する。
@@ -278,42 +283,39 @@
         }
     }
 
-    // 自動翻訳トグルボタンのヘッダー注入
-    function injectHeaderToggle() {
-        if (document.getElementById('xtv-toggle-container')) return;
-
-        const container = document.createElement('div');
-        container.id = 'xtv-toggle-container';
-        container.className = 'xtv-toggle-container';
-        container.innerHTML = `
-            <button type="button" id="xtv-trans-toggle" class="xtv-header-toggle-btn ${autoTranslateEnabled ? 'active' : ''}" title="クリックで自動翻訳のON/OFFを切り替え">
-                🌐 自動翻訳: ${autoTranslateEnabled ? 'ON' : 'OFF'}
-            </button>
-            <button type="button" id="xtv-consent-settings" class="xtv-header-settings-btn" title="翻訳データ送信への同意を確認・取り消す">
-                🔒 同意設定
-            </button>
-        `;
-
-        document.body.appendChild(container);
-
-        const toggleBtn = document.getElementById('xtv-trans-toggle');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', async () => {
-                if (!autoTranslateEnabled && !await requestTranslationConsent()) return;
-                autoTranslateEnabled = !autoTranslateEnabled;
-                try {
-                    await writeStoredSettings({ [autoTranslateKey]: autoTranslateEnabled });
-                } catch (_) {
-                    autoTranslateEnabled = false;
-                }
-                refreshTranslationUi();
-            });
-        }
-
-        document.getElementById('xtv-consent-settings')?.addEventListener('click', () => {
+    // 画面へ重ねる固定ボタンは廃止し、アプリの列ヘッダーから指令を受ける。
+    // 指令は固定された2種類だけを受け付け、任意コードや文字列は実行しない。
+    document.addEventListener('xtv-translator-command', async () => {
+        const command = document.documentElement.getAttribute('data-xtv-translator-command');
+        document.documentElement.removeAttribute('data-xtv-translator-command');
+        if (command === 'settings') {
             showConsentSettings();
-        });
-    }
+            return;
+        }
+        if (command !== 'toggle') return;
+
+        if (!autoTranslateEnabled && !await requestTranslationConsent()) {
+            publishTranslationState();
+            return;
+        }
+        autoTranslateEnabled = !autoTranslateEnabled;
+        try {
+            await writeStoredSettings({ [autoTranslateKey]: autoTranslateEnabled });
+        } catch (_) {
+            autoTranslateEnabled = false;
+        }
+        refreshTranslationUi();
+    });
+
+    // 同じプロファイルの別タイムラインで切り替えた場合も、全列をすぐ同じ状態にする。
+    chrome.storage?.onChanged?.addListener(async (changes, areaName) => {
+        if (areaName !== 'local' ||
+            (!changes[translationConsentKey] && !changes[autoTranslateKey])) return;
+        const settings = await readStoredSettings();
+        translationConsent = settings.consent;
+        autoTranslateEnabled = settings.auto;
+        refreshTranslationUi();
+    });
 
     function showConsentSettings() {
         if (document.querySelector('.xtv-consent-overlay')) return;
@@ -383,7 +385,7 @@
             try { await writeStoredSettings({ [autoTranslateKey]: false }); } catch (_) { }
         }
 
-        injectHeaderToggle();
+        publishTranslationState();
         scanAndProcess();
 
         const observer = new MutationObserver(() => {
