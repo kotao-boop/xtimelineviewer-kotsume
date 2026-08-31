@@ -1,5 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Windowing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -108,8 +109,9 @@ namespace XTimelineViewer.Views
 
             this.InitializeComponent();
 
-            // ウィンドウサイズ・アイコン設定
-            AppWindow.Resize(new SizeInt32(900, 620));
+            // 設定項目が増えても窮屈にならない大きさで開く。
+            // 小さい画面では作業領域からはみ出さないよう余白を残して縮小する。
+            ResizeAndCenterWindow();
             var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
             if (File.Exists(iconPath)) AppWindow.SetIcon(iconPath);
 
@@ -122,6 +124,29 @@ namespace XTimelineViewer.Views
 
             // 初期ページを選択
             NavView.SelectedItem = NavGeneral;
+        }
+
+        private void ResizeAndCenterWindow()
+        {
+            const int preferredWidth = 1100;
+            const int preferredHeight = 760;
+            const int screenMargin = 48;
+
+            var displayArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
+            if (displayArea is null)
+            {
+                AppWindow.Resize(new SizeInt32(preferredWidth, preferredHeight));
+                return;
+            }
+
+            var workArea = displayArea.WorkArea;
+            var width = Math.Min(preferredWidth, Math.Max(1, workArea.Width - screenMargin * 2));
+            var height = Math.Min(preferredHeight, Math.Max(1, workArea.Height - screenMargin * 2));
+            var x = workArea.X + Math.Max(0, (workArea.Width - width) / 2);
+            var y = workArea.Y + Math.Max(0, (workArea.Height - height) / 2);
+
+            AppWindow.Resize(new SizeInt32(width, height));
+            AppWindow.Move(new PointInt32(x, y));
         }
 
         /// <summary>

@@ -56,4 +56,15 @@ public class ProductivityFeatureStructureTests
         Assert.DoesNotContain("injectHeaderToggle", source, StringComparison.Ordinal);
         Assert.DoesNotContain(".xtv-toggle-container", css, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void SettingsWindow_UsesRoomyScreenAwareInitialSize()
+    {
+        var source = ReadRepoFile("Views/SettingsWindow.xaml.cs");
+        Assert.Contains("const int preferredWidth = 1100", source);
+        Assert.Contains("const int preferredHeight = 760", source);
+        Assert.Contains("DisplayArea.GetFromWindowId", source);
+        Assert.Contains("AppWindow.Move", source);
+        Assert.DoesNotContain("AppWindow.Resize(new SizeInt32(900, 620))", source, StringComparison.Ordinal);
+    }
 }
