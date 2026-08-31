@@ -675,10 +675,10 @@ namespace XTimelineViewer.Views
             await webView.CoreWebView2.ExecuteScriptAsync(BuildHideComposeJs(hide));
         }
 
-        private async Task LoadExtensionsAsync(WebView2 webView)
+        private async Task LoadExtensionsAsync(WebView2 webView, string profileId)
         {
-            if (_extensionsLoaded) return;
-            _extensionsLoaded = true;
+            // 同じプロファイルを複数ペインで使う場合も、登録処理は一度だけ行う。
+            if (!_extensionsLoadedProfiles.Add(profileId)) return;
 
             // MSIX パッケージ内の extensions は WindowsApps 配下に置かれ WebView2 から直接アクセスできない。
             // LocalState へコピーしてから読み込む。アンパッケージド環境は BaseDirectory を使う。
@@ -686,7 +686,11 @@ namespace XTimelineViewer.Views
             if (!Directory.Exists(extensionsDir)) return;
 
             var errors = new System.Text.StringBuilder();
+            var currentExtensionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+            // 先に現在のアプリに同梱されている拡張機能を登録する。
+            // 同じ拡張 ID が既に入っていれば WebView2 が同じ登録を更新するため、
+            // 既存の同意状態をなるべく維持できる。
             foreach (var extDir in Directory.GetDirectories(extensionsDir))
             {
                 try
@@ -694,6 +698,7 @@ namespace XTimelineViewer.Views
                     if ((File.GetAttributes(extDir) & System.IO.FileAttributes.ReparsePoint) != 0)
                         throw new InvalidDataException("Reparse-point extension directories are not allowed.");
                     var ext = await webView.CoreWebView2.Profile.AddBrowserExtensionAsync(extDir);
+                    currentExtensionIds.Add(ext.Id);
                     AddExtensionButton(ext, extDir);
                 }
                 catch (Exception ex)
@@ -701,6 +706,36 @@ namespace XTimelineViewer.Views
                     errors.AppendLine($"・{Path.GetFileName(extDir)}");
                     errors.AppendLine($"  {ex}");
                 }
+            }
+
+            // 旧版はインストール場所が変わるたびに別の拡張 ID として残ることがあり、
+            // 同じページへ複数の翻訳スクリプトを注入してしまう。現在の拡張を残したまま、
+            // 同じ名前の古い登録だけをプロファイルから削除する。
+            try
+            {
+                var installed = await webView.CoreWebView2.Profile.GetBrowserExtensionsAsync();
+                foreach (var existing in installed)
+                {
+                    if (!IsXTimelineTranslator(existing) || currentExtensionIds.Contains(existing.Id))
+                        continue;
+
+                    try
+                    {
+                        await existing.RemoveAsync();
+                        Debug.WriteLine($"[Extensions] Removed stale X Timeline Translator: {existing.Id}");
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.AppendLine($"・古い拡張機能 {existing.Id} の削除");
+                        errors.AppendLine($"  {ex}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // 列挙に失敗しても、現在の拡張機能の読み込み自体は継続する。
+                errors.AppendLine("・古い拡張機能の確認");
+                errors.AppendLine($"  {ex}");
             }
 
             if (errors.Length > 0)
@@ -727,6 +762,9 @@ namespace XTimelineViewer.Views
                 await ShowDialogAsync(dlg);
             }
         }
+
+        private static bool IsXTimelineTranslator(CoreWebView2BrowserExtension extension) =>
+            string.Equals(extension.Name, "X Timeline Translator", StringComparison.OrdinalIgnoreCase);
 
         internal static ExtensionInfo ReadExtensionManifest(string extDir, string? extensionId = null, string? nameOverride = null)
         {
@@ -774,6 +812,9 @@ namespace XTimelineViewer.Views
         private void AddExtensionButton(CoreWebView2BrowserExtension ext, string extDir)
         {
             var info = ReadExtensionManifest(extDir, ext.Id, ext.Name);
+            if (_loadedExtensions.Any(existing =>
+                    string.Equals(existing.DirectoryPath, info.DirectoryPath, StringComparison.OrdinalIgnoreCase)))
+                return;
             _loadedExtensions.Add(info);
 
             if (info.OptionsPage is null) return;
@@ -993,7 +1034,7 @@ namespace XTimelineViewer.Views
                     CaptureVideoVariantsAsync(args).FireAndForget(nameof(CaptureVideoVariantsAsync));
                 };
 
-                await LoadExtensionsAsync(webView);
+                await LoadExtensionsAsync(webView, cfg.ProfileId);
                 ApplyThemeToWebViews();
             }
             catch (Exception ex)
