@@ -22,13 +22,13 @@
 
 ## GitHub Actions
 
-Pull Request作成後に記録する。
+Pull Request #23のソースコミット `8934ae9` で確認した。
 
-- CI / build-and-test: 未実施
-- CI / ui-smoke: 未実施
-- CI / dependency-review: 未実施
-- CodeQL / Analyze C#: 未実施
-- Dependabot: 未実施
+- CI / build-and-test: 合格（3分17秒）
+- CI / ui-smoke: 合格（2分17秒）
+- CI / dependency-review: 合格（7秒）
+- CodeQL / Analyze C#: 合格（4分48秒）
+- GitHub code scanning result: 合格
 
 ## Store提出パッケージ
 
