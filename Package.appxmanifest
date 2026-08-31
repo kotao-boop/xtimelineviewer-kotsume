@@ -10,7 +10,7 @@
   <Identity
     Name="A470ACCD.XTimelineViewerKotsumeEdition"
     Publisher="CN=C5C81B3B-7437-40C6-8063-CFDF8AAF44EC"
-    Version="2.5.1.0"
+    Version="2.5.2.0"
     ProcessorArchitecture="neutral" />
 
   <Properties>

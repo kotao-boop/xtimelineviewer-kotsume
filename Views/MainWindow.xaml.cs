@@ -138,7 +138,9 @@ namespace XTimelineViewer.Views
         // ペイン → ヘッダーの配色を再適用する処理。
         // 以前は List<Action> だったが、除去が参照一致になるため
         // デリゲート実体を持たない削除経路からは掃除できなかった（#362）。
-        private bool _extensionsLoaded = false;
+        // WebView2 の拡張機能はプロファイルごとに保存されるため、
+        // 「アプリ全体で一度だけ」ではなく、各プロファイルで一度だけ初期化する。
+        private readonly HashSet<string> _extensionsLoadedProfiles = [];
         private readonly List<ExtensionInfo> _loadedExtensions = [];
         // 環境そのものではなく「生成中の Task」をキャッシュする（#339）。
         // TryGetValue と await の間に隙間があると、同一プロファイルのペインを並行復元した
