@@ -164,6 +164,7 @@ namespace XTimelineViewer.Views
                 // そこから型で WebView2 を探していた（#345）。
                 foreach (var pane in Panes)
                 {
+                    pane.SetTranslationButtonPlacement(_appSettings.TranslationButtonPlacement);
                     if (pane.WebView.CoreWebView2 is not null)
                         ApplyHomeAutoLoadAsync(pane.WebView).FireAndForget(nameof(ApplyHomeAutoLoadAsync));
                     UpdateAutoLoadIndicator(pane, _appSettings.HomeAutoLoadEnabled ? "running" : "off");

@@ -30,5 +30,10 @@ namespace XTimelineViewer.Models
         public string? ActiveWorkspaceId     { get; set; } = null;      // 現在適用中のワークスペース
         public bool    BossModeButtonVisible { get; set; } = false;
         public string? BossModeImagePath    { get; set; } = null;
+        /// <summary>
+        /// 自動翻訳ボタンの表示場所。menu（列ヘッダーの「…」内）を既定にする。
+        /// 旧設定ファイルや不正値は画面側で menu にフォールバックする。
+        /// </summary>
+        public string  TranslationButtonPlacement { get; set; } = "menu";
     }
 }

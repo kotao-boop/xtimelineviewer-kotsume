@@ -583,6 +583,7 @@ namespace XTimelineViewer.Views
             // 繰り返し起きていたので TimelinePane.xaml へ移した（#345）。
             var pane       = new TimelinePane(cfg);
             pane.Visibility = cfg.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+            pane.SetTranslationButtonPlacement(_appSettings.TranslationButtonPlacement);
             var headerGrid = pane.Header;
             ApplyProfileBadge(pane);
 
@@ -644,7 +645,8 @@ namespace XTimelineViewer.Views
 
             // ── Settings dialog ───────────────────────────────────────────────
 
-            pane.SettingsButton.Click += async (s, e2) => await ShowPaneSettingsDialogAsync(pane);
+            pane.SettingsRequested += p =>
+                ShowPaneSettingsDialogAsync(p).FireAndForget(nameof(ShowPaneSettingsDialogAsync));
 
             pane.RetryRequested += p =>
             {

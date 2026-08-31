@@ -28,13 +28,16 @@ public class ProductivityFeatureStructureTests
     }
 
     [Fact]
-    public void TimelinePane_ExposesUnreadRefreshAndFocusControls()
+    public void TimelinePane_ExposesUnreadRefreshAndOverflowControls()
     {
         var xaml = ReadRepoFile("Views/Controls/TimelinePane.xaml");
         Assert.Contains("AutomationProperties.AutomationId=\"PaneNewItemsBtn\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"PaneRefreshBtn\"", xaml);
-        Assert.Contains("AutomationProperties.AutomationId=\"PaneFocusBtn\"", xaml);
-        Assert.Contains("AutomationProperties.AutomationId=\"PaneTranslationBtn\"", xaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"PaneActionsBtn\"", xaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"PaneTranslationMenuItem\"", xaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"PaneFocusMenuItem\"", xaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"PaneTemporaryHideMenuItem\"", xaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"PaneSettingsMenuItem\"", xaml);
     }
 
     [Fact]

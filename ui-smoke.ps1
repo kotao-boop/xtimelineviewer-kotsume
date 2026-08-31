@@ -169,8 +169,8 @@ if ($paneCount -eq 0) {
         }
     }
 
-    Test-Smoke "ペインの設定ボタン (PaneSettingsBtn)" {
-        Test-PaneId "PaneSettingsBtn"
+    Test-Smoke "ペインの操作メニュー (PaneActionsBtn)" {
+        Test-PaneId "PaneActionsBtn"
     }
 }
 
