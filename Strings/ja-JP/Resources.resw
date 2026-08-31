@@ -50,6 +50,11 @@
   <data name="Settings_ExportFolder" xml:space="preserve"><value>設定ファイルのエクスポート</value></data>
   <data name="Settings_Theme_Description" xml:space="preserve"><value>アプリの外観を変更します</value></data>
   <data name="Settings_Language_Description" xml:space="preserve"><value>アプリの表示言語を変更します</value></data>
+  <data name="Settings_TranslationButtonPlacement" xml:space="preserve"><value>自動翻訳ボタンの表示場所</value></data>
+  <data name="Settings_TranslationButtonPlacement_Description" xml:space="preserve"><value>列ヘッダーの自動翻訳ボタンを、三点メニュー内に入れるか、ヘッダーに常に表示するか、隠すかを選びます。</value></data>
+  <data name="TranslationButtonPlacement_Menu" xml:space="preserve"><value>三点メニュー内（推奨）</value></data>
+  <data name="TranslationButtonPlacement_Header" xml:space="preserve"><value>ヘッダーに表示</value></data>
+  <data name="TranslationButtonPlacement_Hidden" xml:space="preserve"><value>表示しない</value></data>
   <data name="Settings_OpenComposerInBrowser" xml:space="preserve"><value>新規投稿を外部ブラウザーで開く</value></data>
   <data name="Settings_OpenComposerInBrowser_Description" xml:space="preserve"><value>内蔵のコンポーザーの代わりに外部ブラウザーで新規投稿を開きます</value></data>
   <data name="Settings_OpenTimestampInBrowser" xml:space="preserve"><value>タイムスタンプリンクを外部ブラウザーで開く</value></data>
@@ -150,6 +155,7 @@
   <data name="Nav_About" xml:space="preserve"><value>バージョン情報</value></data>
   <data name="Pane_Settings_Tooltip" xml:space="preserve"><value>設定</value></data>
   <data name="Pane_TemporaryHide_Tooltip" xml:space="preserve"><value>このタイムラインを一時的に隠す</value></data>
+  <data name="Pane_Actions_Tooltip" xml:space="preserve"><value>タイムラインの操作</value></data>
   <data name="Tooltip_ActivateHotkey" xml:space="preserve"><value>Ctrl+{0} でアクティブ化</value></data>
   <data name="Pane_Delete" xml:space="preserve"><value>このタイムラインを削除</value></data>
   <data name="DragCaption" xml:space="preserve"><value>タイムラインを追加</value></data>

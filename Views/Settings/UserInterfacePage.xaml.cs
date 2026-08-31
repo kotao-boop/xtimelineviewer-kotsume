@@ -68,6 +68,16 @@ namespace XTimelineViewer.Views.Settings
                 R.Get("Language_EN"),
             };
 
+            // Translation button placement
+            TranslationButtonCard.Header = R.Get("Settings_TranslationButtonPlacement");
+            TranslationButtonCard.Description = R.Get("Settings_TranslationButtonPlacement_Description");
+            TranslationButtonPlacementCombo.ItemsSource = new List<string>
+            {
+                R.Get("TranslationButtonPlacement_Menu"),
+                R.Get("TranslationButtonPlacement_Header"),
+                R.Get("TranslationButtonPlacement_Hidden"),
+            };
+
             // ItemsSource 再設定で SelectedIndex が失われるため、バインディングを再評価して
             // ViewModel の値を反映し直す
             Bindings.Update();

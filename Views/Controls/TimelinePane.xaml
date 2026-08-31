@@ -105,10 +105,12 @@
                             AutomationProperties.AutomationId="PaneRefreshBtn">
                         <FontIcon Glyph="&#xE72C;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     </Button>
+                    <!-- 狭い列でも本文を圧迫しないよう、列操作は三点メニューへまとめる。 -->
                     <Button x:Name="TranslationBtn"
                             Width="28"
                             Height="26"
                             Padding="0"
+                            Visibility="Collapsed"
                             Click="TranslationBtn_Click"
                             AutomationProperties.AutomationId="PaneTranslationBtn">
                         <FontIcon x:Name="TranslationIcon"
@@ -116,32 +118,48 @@
                                   FontFamily="Segoe Fluent Icons"
                                   FontSize="14"/>
                     </Button>
-                    <Button x:Name="FocusBtn"
+                    <Button x:Name="ActionsBtn"
                             Width="28"
                             Height="26"
                             Padding="0"
-                            Click="FocusBtn_Click"
-                            AutomationProperties.AutomationId="PaneFocusBtn">
-                        <FontIcon Glyph="&#xE740;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
-                    </Button>
-                    <Button x:Name="TemporaryHideBtn"
-                            Width="28"
-                            Height="26"
-                            Padding="0"
-                            Click="TemporaryHideBtn_Click"
-                            AutomationProperties.AutomationId="PaneTemporaryHideBtn">
-                        <FontIcon Glyph="&#xED1A;"
-                                  FontFamily="Segoe Fluent Icons"
-                                  FontSize="14"/>
-                    </Button>
-                    <Button x:Name="SettingsBtn"
-                            Width="28"
-                            Height="26"
-                            Padding="0"
-                            AutomationProperties.AutomationId="PaneSettingsBtn">
-                        <FontIcon Glyph="&#xE712;"
-                                  FontFamily="Segoe Fluent Icons"
-                                  FontSize="14"/>
+                            AutomationProperties.AutomationId="PaneActionsBtn">
+                        <Button.Flyout>
+                            <MenuFlyout x:Name="ActionsFlyout"
+                                        Placement="BottomEdgeAlignedRight">
+                                <MenuFlyoutItem x:Name="TranslationMenuItem"
+                                                Click="TranslationMenuItem_Click"
+                                                AutomationProperties.AutomationId="PaneTranslationMenuItem">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon x:Name="TranslationMenuIcon"
+                                                  Glyph="&#xE774;"
+                                                  FontFamily="Segoe Fluent Icons"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem x:Name="FocusMenuItem"
+                                                Click="FocusMenuItem_Click"
+                                                AutomationProperties.AutomationId="PaneFocusMenuItem">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE740;" FontFamily="Segoe Fluent Icons"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem x:Name="TemporaryHideMenuItem"
+                                                Click="TemporaryHideMenuItem_Click"
+                                                AutomationProperties.AutomationId="PaneTemporaryHideMenuItem">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xED1A;" FontFamily="Segoe Fluent Icons"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutSeparator/>
+                                <MenuFlyoutItem x:Name="SettingsMenuItem"
+                                                Click="SettingsMenuItem_Click"
+                                                AutomationProperties.AutomationId="PaneSettingsMenuItem">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE713;" FontFamily="Segoe Fluent Icons"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                        <FontIcon Glyph="&#xE712;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     </Button>
                 </StackPanel>
             </Grid>

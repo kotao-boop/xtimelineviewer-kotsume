@@ -50,6 +50,11 @@
   <data name="Settings_ExportFolder" xml:space="preserve"><value>Export Settings</value></data>
   <data name="Settings_Theme_Description" xml:space="preserve"><value>Change the app's appearance</value></data>
   <data name="Settings_Language_Description" xml:space="preserve"><value>Change the display language</value></data>
+  <data name="Settings_TranslationButtonPlacement" xml:space="preserve"><value>Auto-translate button placement</value></data>
+  <data name="Settings_TranslationButtonPlacement_Description" xml:space="preserve"><value>Choose whether the auto-translate button stays in the column header, moves into the three-dot menu, or is hidden.</value></data>
+  <data name="TranslationButtonPlacement_Menu" xml:space="preserve"><value>Inside the three-dot menu (recommended)</value></data>
+  <data name="TranslationButtonPlacement_Header" xml:space="preserve"><value>Show in the header</value></data>
+  <data name="TranslationButtonPlacement_Hidden" xml:space="preserve"><value>Hide</value></data>
   <data name="Settings_OpenComposerInBrowser" xml:space="preserve"><value>Open Composer in External Browser</value></data>
   <data name="Settings_OpenComposerInBrowser_Description" xml:space="preserve"><value>Open new posts in an external browser instead of the built-in composer</value></data>
   <data name="Settings_OpenTimestampInBrowser" xml:space="preserve"><value>Open Timestamp Links in External Browser</value></data>
@@ -150,6 +155,7 @@
   <data name="Nav_About" xml:space="preserve"><value>About</value></data>
   <data name="Pane_Settings_Tooltip" xml:space="preserve"><value>Settings</value></data>
   <data name="Pane_TemporaryHide_Tooltip" xml:space="preserve"><value>Temporarily hide this timeline</value></data>
+  <data name="Pane_Actions_Tooltip" xml:space="preserve"><value>Timeline actions</value></data>
   <data name="Tooltip_ActivateHotkey" xml:space="preserve"><value>Activate with Ctrl+{0}</value></data>
   <data name="Pane_Delete" xml:space="preserve"><value>Remove This Timeline</value></data>
   <data name="DragCaption" xml:space="preserve"><value>Add Timeline</value></data>

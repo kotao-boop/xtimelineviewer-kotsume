@@ -135,6 +135,32 @@ public class SettingsViewModelTests
         Assert.True(s.DefaultHideListHeader);
     }
 
+    // ── 自動翻訳ボタンの表示場所 ───────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("menu",   0)]
+    [InlineData("header", 1)]
+    [InlineData("hidden", 2)]
+    [InlineData("bogus",  0)] // 不正値は既定（メニュー内）にフォールバック
+    public void TranslationButtonPlacementIndex_MapsFromSettings(string placement, int expected)
+    {
+        var vm = new SettingsViewModel(new AppSettings { TranslationButtonPlacement = placement });
+        Assert.Equal(expected, vm.TranslationButtonPlacementIndex);
+    }
+
+    [Fact]
+    public void TranslationButtonPlacementIndex_Set_UpdatesSettingsAndNotifies()
+    {
+        var settings = new AppSettings();
+        var notified = 0;
+        var vm = new SettingsViewModel(settings, () => notified++);
+
+        vm.TranslationButtonPlacementIndex = 1;
+
+        Assert.Equal("header", settings.TranslationButtonPlacement);
+        Assert.Equal(1, notified);
+    }
+
     [Theory]
     [InlineData("system", 0, false)]
     [InlineData("edge",   1, true)]

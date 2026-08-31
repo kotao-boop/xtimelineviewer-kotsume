@@ -71,6 +71,7 @@ namespace XTimelineViewer.Views.Controls
         internal event Action<TimelinePane>? TranslationToggleRequested;
         internal event Action<TimelinePane>? FocusModeRequested;
         internal event Action<TimelinePane>? JumpToNewestRequested;
+        internal event Action<TimelinePane>? SettingsRequested;
 
         private void InitializeResizeGrip()
         {
@@ -291,8 +292,6 @@ namespace XTimelineViewer.Views.Controls
         /// <summary>自動更新インジケーターのツールチップ。</summary>
         public ToolTip AutoLoadTooltip { get; }
 
-        public Button SettingsButton => SettingsBtn;
-
         /// <summary>ホームタイムラインかどうか。自動更新（#207）の対象判定に使う。</summary>
         public bool IsHome => UrlHelper.IsHomeUrl(Config.Url);
 
@@ -324,19 +323,19 @@ namespace XTimelineViewer.Views.Controls
         /// <summary>言語切り替え（#117）で呼び直す。</summary>
         public void RefreshLocalizedText()
         {
-            var tip = R.Get("Pane_Settings_Tooltip");
-            ToolTipService.SetToolTip(SettingsBtn, tip);
-            AutomationProperties.SetName(SettingsBtn, tip);
-            var hideTip = R.Get("Pane_TemporaryHide_Tooltip");
-            ToolTipService.SetToolTip(TemporaryHideBtn, hideTip);
-            AutomationProperties.SetName(TemporaryHideBtn, hideTip);
+            var actionsTip = R.Get("Pane_Actions_Tooltip");
+            ToolTipService.SetToolTip(ActionsBtn, actionsTip);
+            AutomationProperties.SetName(ActionsBtn, actionsTip);
+
+            TranslationMenuItem.Text = R.Get("Pane_Translation_Off");
+            FocusMenuItem.Text = R.Get("Pane_Focus_Tooltip");
+            TemporaryHideMenuItem.Text = R.Get("Pane_TemporaryHide_Tooltip");
+            SettingsMenuItem.Text = R.Get("Pane_Settings_Tooltip");
+
             var refreshTip = R.Get("Pane_Refresh_Tooltip");
             ToolTipService.SetToolTip(RefreshBtn, refreshTip);
             AutomationProperties.SetName(RefreshBtn, refreshTip);
             UpdateTranslationButtonVisual();
-            var focusTip = R.Get("Pane_Focus_Tooltip");
-            ToolTipService.SetToolTip(FocusBtn, focusTip);
-            AutomationProperties.SetName(FocusBtn, focusTip);
             var newItemsTip = R.Get("Pane_NewItems_Tooltip");
             ToolTipService.SetToolTip(NewItemsBtn, newItemsTip);
             AutomationProperties.SetName(NewItemsBtn, newItemsTip);
@@ -386,17 +385,23 @@ namespace XTimelineViewer.Views.Controls
         private void StatusBrowserBtn_Click(object sender, RoutedEventArgs e)
             => OpenInBrowserRequested?.Invoke(this);
 
-        private void TemporaryHideBtn_Click(object sender, RoutedEventArgs e)
-            => TemporaryHideRequested?.Invoke(this);
-
         private void RefreshBtn_Click(object sender, RoutedEventArgs e)
             => ReloadRequested?.Invoke(this);
 
         private void TranslationBtn_Click(object sender, RoutedEventArgs e)
             => TranslationToggleRequested?.Invoke(this);
 
-        private void FocusBtn_Click(object sender, RoutedEventArgs e)
+        private void TranslationMenuItem_Click(object sender, RoutedEventArgs e)
+            => TranslationToggleRequested?.Invoke(this);
+
+        private void FocusMenuItem_Click(object sender, RoutedEventArgs e)
             => FocusModeRequested?.Invoke(this);
+
+        private void TemporaryHideMenuItem_Click(object sender, RoutedEventArgs e)
+            => TemporaryHideRequested?.Invoke(this);
+
+        private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
+            => SettingsRequested?.Invoke(this);
 
         private void NewItemsBtn_Click(object sender, RoutedEventArgs e)
             => JumpToNewestRequested?.Invoke(this);
@@ -421,19 +426,48 @@ namespace XTimelineViewer.Views.Controls
 
         private void UpdateTranslationButtonVisual()
         {
-            if (TranslationBtn is null || TranslationIcon is null) return;
             var key = _translationEnabled ? "Pane_Translation_On" : "Pane_Translation_Off";
             var tip = R.Get(key);
-            ToolTipService.SetToolTip(TranslationBtn, tip);
-            AutomationProperties.SetName(TranslationBtn, tip);
-            TranslationIcon.Opacity = _translationEnabled ? 1.0 : 0.55;
-            TranslationIcon.Foreground = _translationEnabled
+            if (TranslationBtn is not null)
+            {
+                ToolTipService.SetToolTip(TranslationBtn, tip);
+                AutomationProperties.SetName(TranslationBtn, tip);
+            }
+            TranslationMenuItem.Text = tip;
+            AutomationProperties.SetName(TranslationMenuItem, tip);
+
+            var opacity = _translationEnabled ? 1.0 : 0.55;
+            var foreground = _translationEnabled
                 ? (Brush)Application.Current.Resources["SystemAccentColor"]
                 : null;
+            TranslationIcon.Opacity = opacity;
+            TranslationIcon.Foreground = foreground;
+            TranslationMenuIcon.Opacity = opacity;
+            TranslationMenuIcon.Foreground = foreground;
         }
 
         public void SetTemporaryHideAvailable(bool available)
-            => TemporaryHideBtn.IsEnabled = available;
+            => TemporaryHideMenuItem.IsEnabled = available;
+
+        /// <summary>
+        /// 自動翻訳ボタンの表示場所を反映する。既定は列ヘッダーの三点メニュー内。
+        /// </summary>
+        public void SetTranslationButtonPlacement(string? placement)
+        {
+            var normalized = placement?.ToLowerInvariant() switch
+            {
+                "header" => "header",
+                "hidden" => "hidden",
+                _ => "menu",
+            };
+
+            TranslationBtn.Visibility = normalized == "header"
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            TranslationMenuItem.Visibility = normalized == "menu"
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
 
         /// <summary>
         /// 番号バッジ（#225）。表示順の 1..9 を受け取る。9 を超えるペインは null。

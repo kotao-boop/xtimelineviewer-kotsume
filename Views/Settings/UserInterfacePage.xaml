@@ -29,6 +29,16 @@
                           MinWidth="160"
                           SelectedIndex="{x:Bind VM.LanguageIndex, Mode=TwoWay}"/>
             </controls:SettingsCard>
+
+            <!-- Translation button placement -->
+            <controls:SettingsCard x:Name="TranslationButtonCard">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE774;" FontFamily="Segoe Fluent Icons"/>
+                </controls:SettingsCard.HeaderIcon>
+                <ComboBox x:Name="TranslationButtonPlacementCombo"
+                          MinWidth="240"
+                          SelectedIndex="{x:Bind VM.TranslationButtonPlacementIndex, Mode=TwoWay}"/>
+            </controls:SettingsCard>
         </StackPanel>
     </ScrollViewer>
 </Page>

@@ -23,6 +23,7 @@ namespace XTimelineViewer.ViewModels
         internal static readonly string[] ThemeValues   = ["Default", "Light", "Dark"];
         internal static readonly string[] LangValues    = ["system", "ja-JP", "en-US"];
         internal static readonly string[] BrowserValues = ["system", "edge"];
+        internal static readonly string[] TranslationButtonPlacementValues = ["menu", "header", "hidden"];
 
         private readonly AppSettings _settings;
         private readonly Action?     _settingsChanged;
@@ -101,6 +102,28 @@ namespace XTimelineViewer.ViewModels
                 if (_settings.DefaultHideListHeader == !value) return;
                 _settings.DefaultHideListHeader = !value;
                 Notify(nameof(ShowListHeaderByDefault));
+            }
+        }
+
+        /// <summary>
+        /// 自動翻訳ボタンの表示場所。狭い列でも本文を広く使えるよう、メニュー内を既定にする。
+        /// </summary>
+        public int TranslationButtonPlacementIndex
+        {
+            get
+            {
+                var index = Array.IndexOf(TranslationButtonPlacementValues,
+                    _settings.TranslationButtonPlacement);
+                return index >= 0 ? index : 0;
+            }
+            set
+            {
+                if (value < 0 || value >= TranslationButtonPlacementValues.Length) return;
+                var placement = TranslationButtonPlacementValues[value];
+                if (string.Equals(_settings.TranslationButtonPlacement, placement,
+                    StringComparison.OrdinalIgnoreCase)) return;
+                _settings.TranslationButtonPlacement = placement;
+                Notify(nameof(TranslationButtonPlacementIndex));
             }
         }
 
