@@ -145,6 +145,9 @@
   <data name="Settings_BossMode_Description" xml:space="preserve"><value>選んだ画像を画面いっぱいに表示し、タイムラインを一時的に隠します。Escキーまたは閉じるボタンで戻れます。画像はこのPC内にだけ保存されます。</value></data>
   <data name="Settings_BossMode_SelectImage" xml:space="preserve"><value>表示画像を選ぶ</value></data>
   <data name="Settings_BossMode_NoImage" xml:space="preserve"><value>画像はまだ選ばれていません</value></data>
+  <data name="BossMode_Tooltip" xml:space="preserve"><value>タイムラインを画像で一時的に隠す</value></data>
+  <data name="BossMode_Close" xml:space="preserve"><value>タイムラインに戻る</value></data>
+  <data name="BossMode_NoImage" xml:space="preserve"><value>表示する画像を設定から選んでください</value></data>
   <data name="Settings_PriorRepostSearch" xml:space="preserve"><value>タイムスタンプの隣に「直前のポスト・リポストを検索」ボタンを表示する</value></data>
   <data name="Settings_PriorRepostSearch_Description" xml:space="preserve"><value>ポストのタイムスタンプの隣に虫メガネボタンを表示します（ホバーで出現）。押すと、その投稿者が投稿時刻の直前に行ったポストとリポストを時系列で表示し、発言の文脈をたどれます（いわゆる空リプの対象も追えます）。既存の検索ダイアログで開き、検索履歴は汚しません。</value></data>
   <data name="PriorRepostSearch_ButtonLabel" xml:space="preserve"><value>直前のポスト・リポストを検索</value></data>
@@ -156,6 +159,8 @@
   <data name="Pane_Settings_Tooltip" xml:space="preserve"><value>設定</value></data>
   <data name="Pane_TemporaryHide_Tooltip" xml:space="preserve"><value>このタイムラインを一時的に隠す</value></data>
   <data name="Pane_Actions_Tooltip" xml:space="preserve"><value>タイムラインの操作</value></data>
+  <data name="Pane_ResizeWidth" xml:space="preserve"><value>左右の境界。選択して左右キーで幅を調整</value></data>
+  <data name="Pane_ResizeHeight" xml:space="preserve"><value>上下の境界。選択して上下キーで高さを調整</value></data>
   <data name="Tooltip_ActivateHotkey" xml:space="preserve"><value>Ctrl+{0} でアクティブ化</value></data>
   <data name="Pane_Delete" xml:space="preserve"><value>このタイムラインを削除</value></data>
   <data name="DragCaption" xml:space="preserve"><value>タイムラインを追加</value></data>
@@ -272,6 +277,9 @@
   <data name="Layout_Grid2x3" xml:space="preserve"><value>▦  2 × 3 グリッド</value></data>
   <data name="Layout_VerticalSplit" xml:space="preserve"><value>▤  上下 2 分割</value></data>
   <data name="Layout_Focus" xml:space="preserve"><value>▣  フォーカス</value></data>
+  <data name="FocusMode_Exit" xml:space="preserve"><value>集中表示を終了</value></data>
+  <data name="FocusMode_Active" xml:space="preserve"><value>「{0}」を集中表示しています</value></data>
+  <data name="Layout_CapacityFallback" xml:space="preserve"><value>この本数では選んだ固定配置に収まらないため、重ならない自動配置へ切り替えました。</value></data>
   <data name="Menu_TimelineManager" xml:space="preserve"><value>タイムラインを管理</value></data>
   <data name="Menu_Workspaces" xml:space="preserve"><value>ワークスペース</value></data>
   <data name="Menu_Shortcuts" xml:space="preserve"><value>キーボードショートカット</value></data>
@@ -306,6 +314,11 @@
   <data name="Workspace_Empty" xml:space="preserve"><value>保存済みのワークスペースはありません。</value></data>
   <data name="Workspace_Apply" xml:space="preserve"><value>開く</value></data>
   <data name="Workspace_Delete" xml:space="preserve"><value>削除</value></data>
+  <data name="Workspace_DeleteConfirmTitle" xml:space="preserve"><value>ワークスペースを削除しますか？</value></data>
+  <data name="Workspace_DeleteConfirmBody" xml:space="preserve"><value>「{0}」に保存した配置を削除します。タイムライン本体やアカウントは削除されません。</value></data>
+  <data name="Workspace_DeleteConfirm" xml:space="preserve"><value>削除する</value></data>
+  <data name="Workspace_EmptySave" xml:space="preserve"><value>現在の配置をワークスペースとして保存</value></data>
+  <data name="Workspace_TabMore" xml:space="preserve"><value>「{0}」の操作</value></data>
   <data name="Command_Title" xml:space="preserve"><value>操作を検索</value></data>
   <data name="Command_Placeholder" xml:space="preserve"><value>例：タイムライン、設定、レイアウト</value></data>
   <data name="Shortcuts_Title" xml:space="preserve"><value>キーボードショートカット</value></data>
@@ -381,6 +394,8 @@
   <data name="Shortcut_Reorder" xml:space="preserve"><value>タイムラインを並べ替え</value></data>
   <data name="Shortcut_Reload" xml:space="preserve"><value>現在のタイムラインを再読み込み</value></data>
   <data name="Shortcut_TopBottom" xml:space="preserve"><value>タイムラインの先頭・末尾へ移動</value></data>
+  <data name="Shortcut_ExitTemporaryView" xml:space="preserve"><value>集中表示または画像による一時非表示を終了</value></data>
+  <data name="Shortcut_ResizeBoundary" xml:space="preserve"><value>現在の列・行の境界をキーボードで調整</value></data>
   <data name="Layout_Suggestion4" xml:space="preserve"><value>4個のタイムラインには、2 × 2 グリッドが見やすくおすすめです。</value></data>
   <data name="Layout_Suggestion6" xml:space="preserve"><value>6個のタイムラインには、2 × 3 グリッドが見やすくおすすめです。</value></data>
   <data name="Layout_UseSuggestion" xml:space="preserve"><value>このレイアウトを使う</value></data>

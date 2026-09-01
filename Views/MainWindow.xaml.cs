@@ -135,6 +135,8 @@ namespace XTimelineViewer.Views
 
         private TimelinePane? _draggingPane;
         private TimelinePane? _focusedPane;
+        private bool _focusModeActive;
+        private string _layoutModeBeforeFocus = "Classic";
         // ペイン → ヘッダーの配色を再適用する処理。
         // 以前は List<Action> だったが、除去が参照一致になるため
         // デリゲート実体を持たない削除経路からは掃除できなかった（#362）。
@@ -236,6 +238,13 @@ namespace XTimelineViewer.Views
                     if (c && s && !a && ni) {
                         if (k === 'ArrowRight') { e.preventDefault(); window.chrome.webview.postMessage('movePaneNext'); return; }
                         if (k === 'ArrowLeft')  { e.preventDefault(); window.chrome.webview.postMessage('movePanePrev'); return; }
+                    }
+                    // Alt+Shift+矢印で、WebView2 にフォーカスがある時も列・行の境界を調整する。
+                    if (!c && s && a && ni) {
+                        if (k === 'ArrowLeft')  { e.preventDefault(); window.chrome.webview.postMessage('resizePaneLeft'); return; }
+                        if (k === 'ArrowRight') { e.preventDefault(); window.chrome.webview.postMessage('resizePaneRight'); return; }
+                        if (k === 'ArrowUp')    { e.preventDefault(); window.chrome.webview.postMessage('resizePaneUp'); return; }
+                        if (k === 'ArrowDown')  { e.preventDefault(); window.chrome.webview.postMessage('resizePaneDown'); return; }
                     }
                     if (!c && !s && !a) {
                         if (k === 'F3')              { e.preventDefault(); window.chrome.webview.postMessage('focusSearch'); return; } // #228
@@ -430,6 +439,16 @@ namespace XTimelineViewer.Views
             AutomationProperties.SetName(LayoutBtn, R.Get("Layout_Tooltip"));
             ToolTipService.SetToolTip(AutoArrangeBtn, R.Get("Layout_Auto_Tooltip"));
             AutomationProperties.SetName(AutoArrangeBtn, R.Get("Layout_Auto_Tooltip"));
+            var bossModeTip = R.Get("BossMode_Tooltip");
+            ToolTipService.SetToolTip(BossModeBtn, bossModeTip);
+            AutomationProperties.SetName(BossModeBtn, bossModeTip);
+            BossModeCloseBtn.Content = R.Get("BossMode_Close");
+            AutomationProperties.SetName(BossModeCloseBtn, R.Get("BossMode_Close"));
+            BossModeEmptyText.Text = R.Get("BossMode_NoImage");
+            ExitFocusModeLabel.Text = R.Get("FocusMode_Exit");
+            ToolTipService.SetToolTip(ExitFocusModeBtn, R.Get("FocusMode_Exit"));
+            AutomationProperties.SetName(ExitFocusModeBtn, R.Get("FocusMode_Exit"));
+            LayoutSafetyBar.Message = R.Get("Layout_CapacityFallback");
             UpdateLayoutMenuState();
             RefreshTemporaryVisibilityUi();
             ThemeSubMenu.Text       = R.Get("Menu_Theme");

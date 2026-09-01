@@ -7,9 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Windows.Graphics;
 using Windows.UI;
 using XTimelineViewer.Models;
+using XTimelineViewer.Services;
 
 namespace XTimelineViewer.Views
 {
@@ -19,6 +19,10 @@ namespace XTimelineViewer.Views
         private static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
 
         private readonly IntPtr _ownerHwnd;
+        private const double MinimumLogicalWidth = 780;
+        private const double MinimumLogicalHeight = 560;
+        private bool _correctingWindowSize;
+        private WindowSizingService.LogicalSize _lastRestoredSize;
 
         /// <summary>親ウィンドウから渡されたアプリ設定。ページが直接読み書きする。</summary>
         internal AppSettings Settings { get; }
@@ -109,9 +113,16 @@ namespace XTimelineViewer.Views
 
             this.InitializeComponent();
 
-            // 設定項目が増えても窮屈にならない大きさで開く。
-            // 小さい画面では作業領域からはみ出さないよう余白を残して縮小する。
-            ResizeAndCenterWindow();
+            // AppWindow は物理ピクセル指定なので、Windows の表示倍率を考慮して
+            // 前回の見た目の大きさを復元する。
+            WindowSizingService.ResizeAndCenter(
+                this,
+                NormalizeSavedSize(Settings.SettingsWindowWidth, 1000),
+                NormalizeSavedSize(Settings.SettingsWindowHeight, 720),
+                MinimumLogicalWidth,
+                MinimumLogicalHeight);
+            _lastRestoredSize = WindowSizingService.GetLogicalSize(this);
+            AppWindow.Changed += SettingsAppWindow_Changed;
             var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
             if (File.Exists(iconPath)) AppWindow.SetIcon(iconPath);
 
@@ -120,33 +131,37 @@ namespace XTimelineViewer.Views
 
             // モーダル化: 親ウィンドウを無効化
             EnableWindow(_ownerHwnd, false);
-            Closed += (_, _) => EnableWindow(_ownerHwnd, true);
+            Closed += (_, _) =>
+            {
+                Settings.SettingsWindowWidth = Math.Max(MinimumLogicalWidth, _lastRestoredSize.Width);
+                Settings.SettingsWindowHeight = Math.Max(MinimumLogicalHeight, _lastRestoredSize.Height);
+                SaveSettingsOnly?.Invoke();
+                EnableWindow(_ownerHwnd, true);
+            };
 
             // 初期ページを選択
             NavView.SelectedItem = NavGeneral;
         }
 
-        private void ResizeAndCenterWindow()
+        private static double NormalizeSavedSize(double value, double fallback)
+            => double.IsFinite(value) && value > 0 ? value : fallback;
+
+        private void SettingsAppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
         {
-            const int preferredWidth = 1100;
-            const int preferredHeight = 760;
-            const int screenMargin = 48;
+            if (!args.DidSizeChange || _correctingWindowSize) return;
+            if (sender.Presenter is OverlappedPresenter presenter
+                && presenter.State != OverlappedPresenterState.Restored) return;
 
-            var displayArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
-            if (displayArea is null)
+            _correctingWindowSize = true;
+            try
             {
-                AppWindow.Resize(new SizeInt32(preferredWidth, preferredHeight));
-                return;
+                if (!WindowSizingService.EnsureMinimumSize(this, MinimumLogicalWidth, MinimumLogicalHeight))
+                    _lastRestoredSize = WindowSizingService.GetLogicalSize(this);
             }
-
-            var workArea = displayArea.WorkArea;
-            var width = Math.Min(preferredWidth, Math.Max(1, workArea.Width - screenMargin * 2));
-            var height = Math.Min(preferredHeight, Math.Max(1, workArea.Height - screenMargin * 2));
-            var x = workArea.X + Math.Max(0, (workArea.Width - width) / 2);
-            var y = workArea.Y + Math.Max(0, (workArea.Height - height) / 2);
-
-            AppWindow.Resize(new SizeInt32(width, height));
-            AppWindow.Move(new PointInt32(x, y));
+            finally
+            {
+                _correctingWindowSize = false;
+            }
         }
 
         /// <summary>

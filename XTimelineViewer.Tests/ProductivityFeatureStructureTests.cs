@@ -33,6 +33,7 @@ public class ProductivityFeatureStructureTests
         var xaml = ReadRepoFile("Views/Controls/TimelinePane.xaml");
         Assert.Contains("AutomationProperties.AutomationId=\"PaneNewItemsBtn\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"PaneRefreshBtn\"", xaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"PaneRefreshMenuItem\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"PaneActionsBtn\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"PaneTranslationMenuItem\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"PaneFocusMenuItem\"", xaml);
@@ -61,13 +62,44 @@ public class ProductivityFeatureStructureTests
     }
 
     [Fact]
-    public void SettingsWindow_UsesRoomyScreenAwareInitialSize()
+    public void SecondaryWindows_UseDpiAwareSizingAndSettingsSizePersistence()
     {
-        var source = ReadRepoFile("Views/SettingsWindow.xaml.cs");
-        Assert.Contains("const int preferredWidth = 1100", source);
-        Assert.Contains("const int preferredHeight = 760", source);
-        Assert.Contains("DisplayArea.GetFromWindowId", source);
-        Assert.Contains("AppWindow.Move", source);
-        Assert.DoesNotContain("AppWindow.Resize(new SizeInt32(900, 620))", source, StringComparison.Ordinal);
+        var settings = ReadRepoFile("Views/SettingsWindow.xaml.cs");
+        var onboarding = ReadRepoFile("Views/OnboardingWindow.xaml.cs");
+        var addProfile = ReadRepoFile("Views/AddProfileWindow.xaml.cs");
+        var sizing = ReadRepoFile("Services/WindowSizingService.cs");
+        Assert.Contains("WindowSizingService.ResizeAndCenter", settings);
+        Assert.Contains("Settings.SettingsWindowWidth", settings);
+        Assert.Contains("AppWindow.Changed", settings);
+        Assert.Contains("SaveSettingsOnly?.Invoke()", settings);
+        Assert.Contains("WindowSizingService.ResizeAndCenter", onboarding);
+        Assert.Contains("WindowSizingService.ResizeAndCenter", addProfile);
+        Assert.Contains("GetDpiForWindow", sizing);
+        Assert.Contains("DisplayArea.GetFromWindowId", sizing);
+    }
+
+    [Fact]
+    public void Layouts_PreventOverlapAndTreatFocusAsTemporary()
+    {
+        var timeline = ReadRepoFile("Views/MainWindow.Timeline.cs");
+        var planner = ReadRepoFile("Services/LayoutPlanner.cs");
+        Assert.Contains("LayoutPlanner.GetSafeMode", timeline);
+        Assert.Contains("Grid2x2\" when visibleCount > 4", planner);
+        Assert.Contains("Grid2x3\" when visibleCount > 6", planner);
+        Assert.Contains("VerticalSplit\" when visibleCount > 2", planner);
+        Assert.Contains("_layoutModeBeforeFocus", timeline);
+        Assert.DoesNotContain("_appSettings.LayoutMode = \"Focus\"", timeline, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TimelinePane_ExposesModeAwareMouseAndKeyboardResizeBoundaries()
+    {
+        var xaml = ReadRepoFile("Views/Controls/TimelinePane.xaml");
+        var source = ReadRepoFile("Views/Controls/TimelinePane.xaml.cs");
+        Assert.Contains("PaneWidthResizeGrip", xaml);
+        Assert.Contains("PaneHeightResizeGrip", xaml);
+        Assert.Contains("ConfigureResizeAffordances", source);
+        Assert.Contains("ResizeGrip.KeyDown", source);
+        Assert.Contains("VerticalResizeGrip.KeyDown", source);
     }
 }

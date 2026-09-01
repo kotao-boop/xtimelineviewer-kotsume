@@ -30,7 +30,9 @@ if (-not $AllowDevelopmentIdentity -and
     throw "Development Identity is still present. Replace it with the exact Partner Center Product identity before submission."
 }
 
-if ($name -eq "4275.XTimelineViewer" -or $publisher -match "B73FDB0C" -or $publisherDisplayName -eq "だるやなぎ") {
+# Name and Publisher are the immutable upstream identity fields. Checking both
+# avoids non-ASCII source text so this preflight also runs on Windows PowerShell 5.1.
+if ($name -eq "4275.XTimelineViewer" -or $publisher -match "B73FDB0C") {
     throw "The upstream Store identity must not be reused."
 }
 

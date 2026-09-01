@@ -20,7 +20,11 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Grid x:Name="HeaderGrid" Grid.Row="0" Padding="8,4,4,4">
+            <Grid x:Name="HeaderGrid"
+                  Grid.Row="0"
+                  Padding="8,4,4,4"
+                  PointerEntered="HeaderGrid_PointerEntered"
+                  PointerExited="HeaderGrid_PointerExited">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>  <!-- 0: 番号バッジ (#225) -->
                     <ColumnDefinition Width="Auto"/>  <!-- 1: 種別アイコン -->
@@ -102,6 +106,7 @@
                             Height="26"
                             Padding="0"
                             Click="RefreshBtn_Click"
+                            Visibility="Collapsed"
                             AutomationProperties.AutomationId="PaneRefreshBtn">
                         <FontIcon Glyph="&#xE72C;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     </Button>
@@ -126,6 +131,13 @@
                         <Button.Flyout>
                             <MenuFlyout x:Name="ActionsFlyout"
                                         Placement="BottomEdgeAlignedRight">
+                                <MenuFlyoutItem x:Name="RefreshMenuItem"
+                                                Click="RefreshBtn_Click"
+                                                AutomationProperties.AutomationId="PaneRefreshMenuItem">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE72C;" FontFamily="Segoe Fluent Icons"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
                                 <MenuFlyoutItem x:Name="TranslationMenuItem"
                                                 Click="TranslationMenuItem_Click"
                                                 AutomationProperties.AutomationId="PaneTranslationMenuItem">
@@ -191,12 +203,16 @@
         </Grid>
 
         <!-- 右端のドラッグリサイズ用スプリッターハンドル -->
-        <Border x:Name="ResizeGrip"
+        <Button x:Name="ResizeGrip"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Stretch"
                 Width="8"
                 Margin="0,0,-4,0"
                 Background="Transparent"
+                BorderThickness="0"
+                Padding="0"
+                IsTabStop="True"
+                AutomationProperties.AutomationId="PaneWidthResizeGrip"
                 Canvas.ZIndex="100">
             <Rectangle x:Name="ResizeGripBar"
                        Width="3"
@@ -206,14 +222,19 @@
                        Opacity="0"
                        RadiusX="1.5"
                        RadiusY="1.5"/>
-        </Border>
+        </Button>
 
-        <Border x:Name="VerticalResizeGrip"
+        <Button x:Name="VerticalResizeGrip"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom"
                 Height="8"
                 Margin="0,0,0,-4"
                 Background="Transparent"
+                BorderThickness="0"
+                Padding="0"
+                IsTabStop="True"
+                AutomationProperties.AutomationId="PaneHeightResizeGrip"
+                Visibility="Collapsed"
                 Canvas.ZIndex="100">
             <Rectangle x:Name="VerticalResizeGripBar"
                        Height="3"
@@ -223,6 +244,6 @@
                        Opacity="0"
                        RadiusX="1.5"
                        RadiusY="1.5"/>
-        </Border>
+        </Button>
     </Grid>
 </UserControl>

@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
-using Windows.Graphics;
 using XTimelineViewer.Models;
 using XTimelineViewer.Services;
 
@@ -22,7 +21,7 @@ namespace XTimelineViewer.Views
         private OnboardingWindow()
         {
             this.InitializeComponent();
-            AppWindow.Resize(new SizeInt32(520, 680));
+            WindowSizingService.ResizeAndCenter(this, 640, 760, 480, 560, 24);
             Title = R.Get("App_Title");
 
             // Step 1 テキスト

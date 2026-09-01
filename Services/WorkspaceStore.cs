@@ -14,7 +14,14 @@ namespace XTimelineViewer.Services
             try
             {
                 var json = File.ReadAllText(filePath);
-                return JsonSerializer.Deserialize<List<WorkspaceConfig>>(json) ?? [];
+                var workspaces = JsonSerializer.Deserialize<List<WorkspaceConfig>>(json) ?? [];
+                foreach (var workspace in workspaces)
+                {
+                    workspace.Timelines ??= [];
+                    workspace.ColumnWeights ??= [];
+                    workspace.RowWeights ??= [];
+                }
+                return workspaces;
             }
             catch
             {

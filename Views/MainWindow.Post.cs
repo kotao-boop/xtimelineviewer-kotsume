@@ -701,6 +701,10 @@ namespace XTimelineViewer.Views
                 // Ctrl+Shift+←/→ でペインを並べ替える（#344）
                 case "movePaneNext": MoveTimelinePane(senderWebView, +1); break;
                 case "movePanePrev": MoveTimelinePane(senderWebView, -1); break;
+                case "resizePaneLeft": ResizePaneByKeyboard(PaneOf(senderWebView), -24, 0); break;
+                case "resizePaneRight": ResizePaneByKeyboard(PaneOf(senderWebView), 24, 0); break;
+                case "resizePaneUp": ResizePaneByKeyboard(PaneOf(senderWebView), 0, -24); break;
+                case "resizePaneDown": ResizePaneByKeyboard(PaneOf(senderWebView), 0, 24); break;
                 case "newPost":
                     if (_appSettings.OpenComposerInBrowser)
                         LaunchUriByEdgeProfileAsync(new Uri("https://x.com/compose/post")).FireAndForget(nameof(LaunchUriByEdgeProfileAsync));

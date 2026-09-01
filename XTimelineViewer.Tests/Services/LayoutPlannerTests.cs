@@ -23,4 +23,16 @@ public class LayoutPlannerTests
         Assert.Equal(expectedRows, plan.Rows);
         Assert.Equal(expectedColumns, plan.Columns);
     }
+
+    [Theory]
+    [InlineData("Grid2x2", 4, "Grid2x2")]
+    [InlineData("Grid2x2", 5, "Auto")]
+    [InlineData("Grid2x3", 6, "Grid2x3")]
+    [InlineData("Grid2x3", 7, "Auto")]
+    [InlineData("VerticalSplit", 2, "VerticalSplit")]
+    [InlineData("VerticalSplit", 3, "Auto")]
+    [InlineData("Focus", 12, "Focus")]
+    [InlineData("unknown", 2, "Classic")]
+    public void GetSafeMode_NeverOverfillsFixedTemplates(string requested, int visibleCount, string expected)
+        => Assert.Equal(expected, LayoutPlanner.GetSafeMode(requested, visibleCount));
 }
