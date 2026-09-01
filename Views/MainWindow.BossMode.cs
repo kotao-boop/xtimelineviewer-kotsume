@@ -39,8 +39,16 @@ public sealed partial class MainWindow
 
     private void BossModeEscape_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (!_bossModeActive) return;
-        CloseBossMode();
-        args.Handled = true;
+        if (_bossModeActive)
+        {
+            CloseBossMode();
+            args.Handled = true;
+            return;
+        }
+        if (_focusModeActive)
+        {
+            ExitFocusMode();
+            args.Handled = true;
+        }
     }
 }

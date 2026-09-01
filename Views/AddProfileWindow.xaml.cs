@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
-using Windows.Graphics;
 using XTimelineViewer.Models;
 using XTimelineViewer.Services;
 
@@ -16,7 +15,7 @@ namespace XTimelineViewer.Views
         {
             this.InitializeComponent();
             if (existingProfile is not null) LoginControl.UseExistingProfile(existingProfile);
-            AppWindow.Resize(new SizeInt32(500, 700));
+            WindowSizingService.ResizeAndCenter(this, 640, 760, 480, 560, 24);
             Title = R.Get(existingProfile is null ? "AddProfile_Title" : "Profile_Relogin");
             CancelBtn.Content = R.Get("Button_Cancel");
             CreateBtn.Content = R.Get(existingProfile is null ? "AddProfile_CreateBtn" : "Profile_SaveLogin");

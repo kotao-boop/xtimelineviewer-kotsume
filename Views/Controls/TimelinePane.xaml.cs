@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Web.WebView2.Core;
 using System;
@@ -41,6 +42,7 @@ namespace XTimelineViewer.Views.Controls
             RefreshLocalizedText();
             UpdateUrlHeader();
             InitializeResizeGrip();
+            SizeChanged += (_, _) => UpdateHeaderDensity();
 
             // ヘッダーをクリックしたら自分をアクティブにする。
             // 以前は MainWindow が headerGrid に直接購読していた。
@@ -57,12 +59,18 @@ namespace XTimelineViewer.Views.Controls
         private int _unreadCount;
         private double _resizeStartPointerX;
         private double _resizeStartWidth;
+        private double _lastRequestedWidth;
         private bool _isResizingHeight;
         private double _resizeStartPointerY;
         private double _resizeStartHeight;
+        private double _lastRequestedHeight;
+        private bool _gridResizeMode;
+        private bool _headerPointerOver;
 
         /// <summary>横幅がドラッグによって変更・確定された時のイベント</summary>
+        internal event Action<TimelinePane, double>? WidthResizing;
         internal event Action<TimelinePane, double>? WidthResized;
+        internal event Action<TimelinePane, double>? HeightResizing;
         internal event Action<TimelinePane, double>? HeightResized;
         internal event Action<TimelinePane>? RetryRequested;
         internal event Action<TimelinePane>? OpenInBrowserRequested;
@@ -72,6 +80,27 @@ namespace XTimelineViewer.Views.Controls
         internal event Action<TimelinePane>? FocusModeRequested;
         internal event Action<TimelinePane>? JumpToNewestRequested;
         internal event Action<TimelinePane>? SettingsRequested;
+
+        private void HeaderGrid_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            _headerPointerOver = true;
+            UpdateHeaderDensity();
+        }
+
+        private void HeaderGrid_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            _headerPointerOver = false;
+            UpdateHeaderDensity();
+        }
+
+        private void UpdateHeaderDensity()
+        {
+            var compact = ActualWidth > 0 && ActualWidth < 520;
+            UrlLabel.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            RefreshBtn.Visibility = _headerPointerOver && ActualWidth >= 420
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
 
         private void InitializeResizeGrip()
         {
@@ -101,6 +130,7 @@ namespace XTimelineViewer.Views.Controls
                     _isResizing = true;
                     _resizeStartPointerX = pt.Position.X;
                     _resizeStartWidth = this.ActualWidth > 0 ? this.ActualWidth : (double.IsNaN(this.Width) ? Config.Width : this.Width);
+                    _lastRequestedWidth = _resizeStartWidth;
                     ResizeGrip.CapturePointer(e.Pointer);
                     ResizeGripBar.Opacity = 1.0;
                     e.Handled = true;
@@ -114,8 +144,13 @@ namespace XTimelineViewer.Views.Controls
                     var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
                     var deltaX = pt.Position.X - _resizeStartPointerX;
                     var newWidth = Math.Clamp(_resizeStartWidth + deltaX, 220, 1600);
-                    this.Width = newWidth;
-                    Config.Width = newWidth;
+                    _lastRequestedWidth = newWidth;
+                    if (_gridResizeMode) WidthResizing?.Invoke(this, newWidth);
+                    else
+                    {
+                        Width = newWidth;
+                        Config.Width = newWidth;
+                    }
                     e.Handled = true;
                 }
             };
@@ -128,7 +163,9 @@ namespace XTimelineViewer.Views.Controls
                     ResizeGrip.ReleasePointerCapture(e.Pointer);
                     ResizeGripBar.Opacity = 0.0;
                     try { this.ProtectedCursor = null; } catch { }
-                    WidthResized?.Invoke(this, this.Width);
+                    WidthResized?.Invoke(this, _gridResizeMode
+                        ? _lastRequestedWidth
+                        : Width);
                     e.Handled = true;
                 }
             };
@@ -140,7 +177,7 @@ namespace XTimelineViewer.Views.Controls
                     _isResizing = false;
                     ResizeGripBar.Opacity = 0.0;
                     try { this.ProtectedCursor = null; } catch { }
-                    WidthResized?.Invoke(this, this.Width);
+                    WidthResized?.Invoke(this, _gridResizeMode ? _lastRequestedWidth : Width);
                 }
             };
 
@@ -167,6 +204,7 @@ namespace XTimelineViewer.Views.Controls
                 _isResizingHeight = true;
                 _resizeStartPointerY = pt.Position.Y;
                 _resizeStartHeight = ActualHeight > 0 ? ActualHeight : (double.IsNaN(Height) ? 600 : Height);
+                _lastRequestedHeight = _resizeStartHeight;
                 VerticalResizeGrip.CapturePointer(e.Pointer);
                 VerticalResizeGripBar.Opacity = 1.0;
                 e.Handled = true;
@@ -177,8 +215,13 @@ namespace XTimelineViewer.Views.Controls
                 var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
                 var deltaY = pt.Position.Y - _resizeStartPointerY;
                 var newHeight = Math.Clamp(_resizeStartHeight + deltaY, 180, 1600);
-                Height = newHeight;
-                Config.Height = newHeight;
+                _lastRequestedHeight = newHeight;
+                if (_gridResizeMode) HeightResizing?.Invoke(this, newHeight);
+                else
+                {
+                    Height = newHeight;
+                    Config.Height = newHeight;
+                }
                 e.Handled = true;
             };
             VerticalResizeGrip.PointerReleased += (s, e) =>
@@ -188,7 +231,9 @@ namespace XTimelineViewer.Views.Controls
                 VerticalResizeGrip.ReleasePointerCapture(e.Pointer);
                 VerticalResizeGripBar.Opacity = 0.0;
                 try { ProtectedCursor = null; } catch { }
-                HeightResized?.Invoke(this, Height);
+                HeightResized?.Invoke(this, _gridResizeMode
+                    ? _lastRequestedHeight
+                    : Height);
                 e.Handled = true;
             };
             VerticalResizeGrip.PointerCaptureLost += (s, e) =>
@@ -197,8 +242,65 @@ namespace XTimelineViewer.Views.Controls
                 _isResizingHeight = false;
                 VerticalResizeGripBar.Opacity = 0.0;
                 try { ProtectedCursor = null; } catch { }
-                HeightResized?.Invoke(this, Height);
+                HeightResized?.Invoke(this, _gridResizeMode ? _lastRequestedHeight : Height);
             };
+
+            ResizeGrip.KeyDown += ResizeGrip_KeyDown;
+            VerticalResizeGrip.KeyDown += VerticalResizeGrip_KeyDown;
+        }
+
+        private void ResizeGrip_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            var delta = e.Key switch
+            {
+                Windows.System.VirtualKey.Left => -24,
+                Windows.System.VirtualKey.Right => 24,
+                _ => 0,
+            };
+            if (delta == 0) return;
+
+            var current = ActualWidth > 0 ? ActualWidth : (double.IsNaN(Width) ? Config.Width : Width);
+            var desired = Math.Clamp(current + delta, _gridResizeMode ? 160 : 220, 1600);
+            if (_gridResizeMode) WidthResizing?.Invoke(this, desired);
+            else
+            {
+                Width = desired;
+                Config.Width = desired;
+            }
+            WidthResized?.Invoke(this, desired);
+            e.Handled = true;
+        }
+
+        private void VerticalResizeGrip_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            var delta = e.Key switch
+            {
+                Windows.System.VirtualKey.Up => -24,
+                Windows.System.VirtualKey.Down => 24,
+                _ => 0,
+            };
+            if (delta == 0) return;
+
+            var current = ActualHeight > 0 ? ActualHeight : (double.IsNaN(Height) ? 600 : Height);
+            var desired = Math.Clamp(current + delta, _gridResizeMode ? 140 : 180, 1600);
+            if (_gridResizeMode) HeightResizing?.Invoke(this, desired);
+            else
+            {
+                Height = desired;
+                Config.Height = desired;
+            }
+            HeightResized?.Invoke(this, desired);
+            e.Handled = true;
+        }
+
+        /// <summary>現在の配置で実際に働く境界だけを表示する。</summary>
+        internal void ConfigureResizeAffordances(bool horizontal, bool vertical, bool gridMode)
+        {
+            _gridResizeMode = gridMode;
+            ResizeGrip.Visibility = horizontal ? Visibility.Visible : Visibility.Collapsed;
+            VerticalResizeGrip.Visibility = vertical ? Visibility.Visible : Visibility.Collapsed;
+            ResizeGrip.IsTabStop = horizontal;
+            VerticalResizeGrip.IsTabStop = vertical;
         }
 
         // ── フォーカス ───────────────────────────────────────
@@ -326,6 +428,12 @@ namespace XTimelineViewer.Views.Controls
             var actionsTip = R.Get("Pane_Actions_Tooltip");
             ToolTipService.SetToolTip(ActionsBtn, actionsTip);
             AutomationProperties.SetName(ActionsBtn, actionsTip);
+            var widthResize = R.Get("Pane_ResizeWidth");
+            var heightResize = R.Get("Pane_ResizeHeight");
+            ToolTipService.SetToolTip(ResizeGrip, widthResize);
+            ToolTipService.SetToolTip(VerticalResizeGrip, heightResize);
+            AutomationProperties.SetName(ResizeGrip, widthResize);
+            AutomationProperties.SetName(VerticalResizeGrip, heightResize);
 
             TranslationMenuItem.Text = R.Get("Pane_Translation_Off");
             FocusMenuItem.Text = R.Get("Pane_Focus_Tooltip");
@@ -335,6 +443,8 @@ namespace XTimelineViewer.Views.Controls
             var refreshTip = R.Get("Pane_Refresh_Tooltip");
             ToolTipService.SetToolTip(RefreshBtn, refreshTip);
             AutomationProperties.SetName(RefreshBtn, refreshTip);
+            RefreshMenuItem.Text = refreshTip;
+            AutomationProperties.SetName(RefreshMenuItem, refreshTip);
             UpdateTranslationButtonVisual();
             var newItemsTip = R.Get("Pane_NewItems_Tooltip");
             ToolTipService.SetToolTip(NewItemsBtn, newItemsTip);

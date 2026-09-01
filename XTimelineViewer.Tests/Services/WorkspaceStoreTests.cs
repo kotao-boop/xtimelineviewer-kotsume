@@ -55,5 +55,26 @@ namespace XTimelineViewer.Tests.Services
                 File.Delete(path);
             }
         }
+
+        [Fact]
+        public void Load_NullCollections_AreRecoveredAsEmpty()
+        {
+            var path = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(path,
+                    """[{"Name":"Legacy","Timelines":null,"ColumnWeights":null,"RowWeights":null}]""");
+
+                var workspace = Assert.Single(WorkspaceStore.Load(path));
+
+                Assert.Empty(workspace.Timelines);
+                Assert.Empty(workspace.ColumnWeights);
+                Assert.Empty(workspace.RowWeights);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
     }
 }

@@ -22,5 +22,27 @@ namespace XTimelineViewer.Services
             var rows = (int)Math.Ceiling((double)visibleCount / columns);
             return new GridPlan(rows, columns);
         }
+
+        /// <summary>
+        /// 固定テンプレートのマス数を超えた場合は Auto へ退避する。
+        /// 同じ Grid セルへ複数のタイムラインを重ねて見失うことを防ぐ。
+        /// Focus は選択中の1本だけを表示する一時モードなので本数制限はない。
+        /// </summary>
+        internal static string GetSafeMode(string? requestedMode, int visibleCount)
+        {
+            var mode = requestedMode switch
+            {
+                "Auto" or "Grid2x2" or "Grid2x3" or "VerticalSplit" or "Focus" => requestedMode,
+                _ => "Classic",
+            };
+
+            return mode switch
+            {
+                "Grid2x2" when visibleCount > 4 => "Auto",
+                "Grid2x3" when visibleCount > 6 => "Auto",
+                "VerticalSplit" when visibleCount > 2 => "Auto",
+                _ => mode,
+            };
+        }
     }
 }

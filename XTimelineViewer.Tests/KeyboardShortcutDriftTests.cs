@@ -47,6 +47,7 @@ namespace XTimelineViewer.Tests
             { "Ctrl+K",     "=== 'k'",            new[] { "Key=\"K\"" } },
             { "F1",         "=== 'F1'",           new[] { "Key=\"F1\"" } },
             { "Ctrl+1-9",   ">= '1' && k <= '9'", new[] { "Key=\"Number1\"", "Key=\"Number9\"" } },
+            { "Alt+Shift+Arrows", "resizePaneLeft", new[] { "Modifiers=\"Menu,Shift\"", "ResizeActiveTimeline_Invoked" } },
         };
 
         [Theory]

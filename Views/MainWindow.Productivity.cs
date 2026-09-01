@@ -37,13 +37,15 @@ namespace XTimelineViewer.Views
 
             if (_workspaces.Count == 0)
             {
-                WorkspaceTabsPanel.Children.Add(new TextBlock
+                var saveFirstWorkspace = new Button
                 {
-                    Text = R.Get("Workspace_TabEmpty"),
-                    Opacity = 0.65,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(4, 0, 0, 0),
-                });
+                    Content = R.Get("Workspace_EmptySave"),
+                    Height = 28,
+                    Padding = new Thickness(12, 0, 12, 0),
+                };
+                saveFirstWorkspace.Click += OpenWorkspaces_Click;
+                AutomationProperties.SetName(saveFirstWorkspace, R.Get("Workspace_EmptySave"));
+                WorkspaceTabsPanel.Children.Add(saveFirstWorkspace);
             }
 
             foreach (var workspace in _workspaces)
@@ -53,7 +55,7 @@ namespace XTimelineViewer.Views
                 {
                     Content = workspace.Name,
                     Height = 28,
-                    Padding = new Thickness(12, 0, 12, 0),
+                    Padding = new Thickness(12, 0, 8, 0),
                     Tag = workspace.Id,
                 };
                 if (active && Application.Current.Resources["AccentButtonStyle"] is Style accent)
@@ -72,6 +74,7 @@ namespace XTimelineViewer.Views
                 {
                     workspace.LayoutMode = _appSettings.LayoutMode;
                     workspace.Timelines = _configs.Select(c => c.Clone()).ToList();
+                    CopyCurrentLayoutWeightsToWorkspace(workspace);
                     _appSettings.ActiveWorkspaceId = workspace.Id;
                     SaveWorkspaces();
                     SaveSettings();
@@ -88,8 +91,9 @@ namespace XTimelineViewer.Views
                     RefreshWorkspaceTabs();
                 };
                 var delete = new MenuFlyoutItem { Text = R.Get("Workspace_Delete") };
-                delete.Click += (_, _) =>
+                delete.Click += async (_, _) =>
                 {
+                    if (!await ConfirmWorkspaceDeletionAsync(workspace)) return;
                     _workspaces.Remove(workspace);
                     if (_appSettings.ActiveWorkspaceId == workspace.Id) _appSettings.ActiveWorkspaceId = null;
                     SaveWorkspaces();
@@ -100,12 +104,56 @@ namespace XTimelineViewer.Views
                 menu.Items.Add(duplicate);
                 menu.Items.Add(new MenuFlyoutSeparator());
                 menu.Items.Add(delete);
-                tab.ContextFlyout = menu;
-                WorkspaceTabsPanel.Children.Add(tab);
+                var more = new Button
+                {
+                    Width = 28,
+                    Height = 28,
+                    Padding = new Thickness(0),
+                    Flyout = menu,
+                    Content = new FontIcon
+                    {
+                        Glyph = "\uE712",
+                        FontFamily = new FontFamily("Segoe Fluent Icons"),
+                        FontSize = 12,
+                    },
+                };
+                var moreName = string.Format(R.Get("Workspace_TabMore"), workspace.Name);
+                ToolTipService.SetToolTip(more, moreName);
+                AutomationProperties.SetName(more, moreName);
+
+                var tabGroup = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+                tabGroup.Children.Add(tab);
+                tabGroup.Children.Add(more);
+                WorkspaceTabsPanel.Children.Add(tabGroup);
             }
 
             ToolTipService.SetToolTip(WorkspaceAddBtn, R.Get("Workspace_AddOrManage"));
             AutomationProperties.SetName(WorkspaceAddBtn, R.Get("Workspace_AddOrManage"));
+        }
+
+        private async Task<bool> ConfirmWorkspaceDeletionAsync(WorkspaceConfig workspace)
+        {
+            if (Content?.XamlRoot is null) return false;
+            var dialog = new ContentDialog
+            {
+                Title = R.Get("Workspace_DeleteConfirmTitle"),
+                Content = string.Format(R.Get("Workspace_DeleteConfirmBody"), workspace.Name),
+                PrimaryButtonText = R.Get("Workspace_DeleteConfirm"),
+                CloseButtonText = R.Get("Button_Cancel"),
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = Content.XamlRoot,
+            };
+            return await ShowDialogAsync(dialog) == ContentDialogResult.Primary;
+        }
+
+        private void CopyCurrentLayoutWeightsToWorkspace(WorkspaceConfig workspace)
+        {
+            workspace.ColumnWeights = _appSettings.LayoutColumnWeights.TryGetValue(workspace.LayoutMode, out var columns)
+                ? [.. columns]
+                : [];
+            workspace.RowWeights = _appSettings.LayoutRowWeights.TryGetValue(workspace.LayoutMode, out var rows)
+                ? [.. rows]
+                : [];
         }
 
         private void RefreshToolbarProfiles()
@@ -405,7 +453,31 @@ namespace XTimelineViewer.Views
                         await ApplyWorkspaceAsync(workspace);
                     };
                     var delete = new Button { Content = R.Get("Workspace_Delete") };
+                    var confirmDelete = new Button
+                    {
+                        Content = R.Get("Workspace_DeleteConfirm"),
+                        Visibility = Visibility.Collapsed,
+                    };
+                    var cancelDelete = new Button
+                    {
+                        Content = R.Get("Button_Cancel"),
+                        Visibility = Visibility.Collapsed,
+                    };
                     delete.Click += (_, _) =>
+                    {
+                        open.Visibility = Visibility.Collapsed;
+                        delete.Visibility = Visibility.Collapsed;
+                        confirmDelete.Visibility = Visibility.Visible;
+                        cancelDelete.Visibility = Visibility.Visible;
+                    };
+                    cancelDelete.Click += (_, _) =>
+                    {
+                        confirmDelete.Visibility = Visibility.Collapsed;
+                        cancelDelete.Visibility = Visibility.Collapsed;
+                        open.Visibility = Visibility.Visible;
+                        delete.Visibility = Visibility.Visible;
+                    };
+                    confirmDelete.Click += (_, _) =>
                     {
                         _workspaces.Remove(workspace);
                         if (_appSettings.ActiveWorkspaceId == workspace.Id) _appSettings.ActiveWorkspaceId = null;
@@ -416,6 +488,8 @@ namespace XTimelineViewer.Views
                     };
                     buttons.Children.Add(open);
                     buttons.Children.Add(delete);
+                    buttons.Children.Add(confirmDelete);
+                    buttons.Children.Add(cancelDelete);
                     row.Children.Add(buttons);
                     list.Children.Add(row);
                 }
@@ -434,6 +508,7 @@ namespace XTimelineViewer.Views
                 workspace.Name = name;
                 workspace.LayoutMode = _appSettings.LayoutMode;
                 workspace.Timelines = _configs.Select(c => c.Clone()).ToList();
+                CopyCurrentLayoutWeightsToWorkspace(workspace);
                 _appSettings.ActiveWorkspaceId = workspace.Id;
                 SaveWorkspaces();
                 SaveSettings();
@@ -455,6 +530,10 @@ namespace XTimelineViewer.Views
 
             _appSettings.LayoutMode = workspace.LayoutMode;
             _appSettings.ActiveWorkspaceId = workspace.Id;
+            if (workspace.ColumnWeights.Count > 0)
+                _appSettings.LayoutColumnWeights[workspace.LayoutMode] = [.. workspace.ColumnWeights];
+            if (workspace.RowWeights.Count > 0)
+                _appSettings.LayoutRowWeights[workspace.LayoutMode] = [.. workspace.RowWeights];
             foreach (var config in workspace.Timelines.Select(t => t.Clone())) AddTimeline(config);
             ViewModel.HasTimelines = _configs.Count > 0;
             if (_configs.Count > 0) ApplyLayoutMode();
@@ -532,15 +611,27 @@ namespace XTimelineViewer.Views
 
         private void SetLayoutFromCommand(string mode)
         {
-            _appSettings.LayoutMode = mode;
+            if (mode == "Focus")
+            {
+                EnterFocusMode(_focusedPane);
+                return;
+            }
+            if (_focusModeActive) ExitFocusMode();
+            var safeMode = LayoutPlanner.GetSafeMode(mode, Panes.Count(IsPaneEffectivelyVisible));
+            if (safeMode != mode)
+            {
+                LayoutSafetyBar.Message = R.Get("Layout_CapacityFallback");
+                LayoutSafetyBar.IsOpen = true;
+            }
+            _appSettings.LayoutMode = safeMode;
             SaveSettings();
-            ApplyLayoutMode(mode);
+            ApplyLayoutMode(safeMode);
             UpdateLayoutSuggestion();
         }
 
         private void UpdateLayoutSuggestion()
         {
-            if (_appSettings.LayoutMode != "Classic")
+            if (_focusModeActive || _appSettings.LayoutMode != "Classic")
             {
                 LayoutSuggestionBar.IsOpen = false;
                 return;
@@ -594,6 +685,8 @@ namespace XTimelineViewer.Views
                 ("F1", R.Get("Menu_Shortcuts")),
                 ("F5", R.Get("Shortcut_Reload")),
                 ("Home / End", R.Get("Shortcut_TopBottom")),
+                ("Esc", R.Get("Shortcut_ExitTemporaryView")),
+                ("Alt + Shift + ← / → / ↑ / ↓", R.Get("Shortcut_ResizeBoundary")),
             };
             var grid = new Grid { ColumnSpacing = 24, RowSpacing = 10 };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });

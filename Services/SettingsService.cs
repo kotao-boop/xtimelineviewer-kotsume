@@ -22,7 +22,10 @@ namespace XTimelineViewer.Services
             try
             {
                 var json = File.ReadAllText(filePath);
-                return JsonSerializer.Deserialize<AppSettings>(json) ?? new();
+                var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new();
+                settings.LayoutColumnWeights ??= [];
+                settings.LayoutRowWeights ??= [];
+                return settings;
             }
             catch
             {

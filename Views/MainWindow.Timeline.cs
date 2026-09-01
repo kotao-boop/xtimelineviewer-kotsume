@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
@@ -202,28 +203,25 @@ namespace XTimelineViewer.Views
         {
             if (sender is MenuFlyoutItem item && item.Tag is string mode)
             {
-                _appSettings.LayoutMode = mode;
-                SaveSettings();
-                ApplyLayoutMode(mode);
-                UpdateLayoutSuggestion();
+                if (mode == "Focus") EnterFocusMode(_focusedPane);
+                else SetLayoutFromCommand(mode);
             }
         }
 
         private void UpdateLayoutMenuState()
         {
-            var mode = _appSettings.LayoutMode ?? "Classic";
+            var mode = _focusModeActive ? "Focus" : _appSettings.LayoutMode ?? "Classic";
             LayoutAutoItem.IsChecked = mode == "Auto";
             LayoutClassicItem.IsChecked = mode == "Classic";
             LayoutGrid2x2Item.IsChecked = mode == "Grid2x2";
             LayoutGrid2x3Item.IsChecked = mode == "Grid2x3";
             LayoutVerticalSplitItem.IsChecked = mode == "VerticalSplit";
-            LayoutFocusItem.IsChecked = mode == "Focus";
+            LayoutFocusItem.IsChecked = _focusModeActive;
         }
 
         private void ApplyLayoutMode(string? mode = null)
         {
-            mode ??= _appSettings.LayoutMode ?? "Classic";
-
+            mode ??= _focusModeActive ? "Focus" : _appSettings.LayoutMode ?? "Classic";
             var panes = Panes.ToList();
             if (panes.Count == 0) return;
             _temporarilyHiddenTimelines.RemoveWhere(c => !_configs.Contains(c));
@@ -234,6 +232,20 @@ namespace XTimelineViewer.Views
                 _temporarilyHiddenTimelines.Clear();
                 visiblePanes = panes.Where(IsPaneEffectivelyVisible).ToList();
             }
+
+            // 旧版で Focus が永続化されていても、一時モードとして扱い直す。
+            if (!_focusModeActive && mode == "Focus") mode = "Auto";
+            var safeMode = _focusModeActive
+                ? "Focus"
+                : LayoutPlanner.GetSafeMode(mode, visiblePanes.Count);
+            if (!_focusModeActive && safeMode != mode)
+            {
+                _appSettings.LayoutMode = safeMode;
+                LayoutSafetyBar.Message = R.Get("Layout_CapacityFallback");
+                LayoutSafetyBar.IsOpen = true;
+                SaveSettings();
+            }
+            mode = safeMode;
             UpdateLayoutMenuState();
 
             if (mode == "Classic")
@@ -251,8 +263,10 @@ namespace XTimelineViewer.Views
                     ResetGridPlacement(pane);
                     pane.Visibility = IsPaneEffectivelyVisible(pane) ? Visibility.Visible : Visibility.Collapsed;
                     pane.Width = double.IsNaN(pane.Config.Width) || pane.Config.Width <= 0 ? 350 : pane.Config.Width;
+                    pane.Height = double.NaN;
                     pane.HorizontalAlignment = HorizontalAlignment.Left;
                     pane.VerticalAlignment = VerticalAlignment.Stretch;
+                    pane.ConfigureResizeAffordances(horizontal: IsPaneEffectivelyVisible(pane), vertical: false, gridMode: false);
                     TimelinePanel.Children.Add(pane);
                 }
             }
@@ -268,171 +282,143 @@ namespace XTimelineViewer.Views
 
                 foreach (var pane in panes) ResetGridPlacement(pane);
 
-                if (mode == "Auto")
+                if (mode == "Focus")
                 {
-                    var plan = LayoutPlanner.GetAutoGrid(visiblePanes.Count);
-                    for (var row = 0; row < plan.Rows; row++)
-                        TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    for (var column = 0; column < plan.Columns; column++)
-                        TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    _focusedPane = _focusedPane is not null && visiblePanes.Contains(_focusedPane)
+                        ? _focusedPane
+                        : visiblePanes.FirstOrDefault();
+                    AddGridDefinitions("Focus", rows: 1, columns: 1, useSavedWeights: false);
+                    foreach (var pane in panes)
+                    {
+                        pane.Width = double.NaN;
+                        pane.Height = double.NaN;
+                        pane.HorizontalAlignment = HorizontalAlignment.Stretch;
+                        pane.VerticalAlignment = VerticalAlignment.Stretch;
+                        pane.Visibility = pane == _focusedPane ? Visibility.Visible : Visibility.Collapsed;
+                        pane.ConfigureResizeAffordances(horizontal: false, vertical: false, gridMode: true);
+                        TimelineGrid.Children.Add(pane);
+                    }
+                }
+                else
+                {
+                    var plan = mode switch
+                    {
+                        "Grid2x2" => new LayoutPlanner.GridPlan(2, 2),
+                        "Grid2x3" => new LayoutPlanner.GridPlan(2, 3),
+                        "VerticalSplit" => new LayoutPlanner.GridPlan(2, 1),
+                        _ => LayoutPlanner.GetAutoGrid(visiblePanes.Count),
+                    };
+                    AddGridDefinitions(mode, plan.Rows, plan.Columns, useSavedWeights: true);
 
                     foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
                     {
                         hidden.Visibility = Visibility.Collapsed;
+                        hidden.ConfigureResizeAffordances(false, false, gridMode: true);
                         TimelineGrid.Children.Add(hidden);
                     }
                     for (var i = 0; i < visiblePanes.Count; i++)
                     {
                         var pane = visiblePanes[i];
+                        var row = i / plan.Columns;
+                        var column = i % plan.Columns;
                         pane.Visibility = Visibility.Visible;
                         pane.Width = double.NaN;
+                        pane.Height = double.NaN;
                         pane.HorizontalAlignment = HorizontalAlignment.Stretch;
                         pane.VerticalAlignment = VerticalAlignment.Stretch;
-                        Grid.SetRow(pane, i / plan.Columns);
-                        Grid.SetColumn(pane, i % plan.Columns);
+                        Grid.SetRow(pane, row);
+                        Grid.SetColumn(pane, column);
+                        pane.ConfigureResizeAffordances(
+                            horizontal: column < plan.Columns - 1,
+                            vertical: row < plan.Rows - 1,
+                            gridMode: true);
                         TimelineGrid.Children.Add(pane);
-                    }
-                }
-                else if (mode == "Grid2x2")
-                {
-                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
-                    {
-                        hidden.Visibility = Visibility.Collapsed;
-                        TimelineGrid.Children.Add(hidden);
-                    }
-                    for (int i = 0; i < visiblePanes.Count; i++)
-                    {
-                        var p = visiblePanes[i];
-                        p.Visibility = Visibility.Visible;
-                        p.Width = double.NaN;
-                        p.HorizontalAlignment = HorizontalAlignment.Stretch;
-                        p.VerticalAlignment = VerticalAlignment.Stretch;
-                        int r = (i / 2) % 2;
-                        int c = i % 2;
-                        Grid.SetRow(p, r);
-                        Grid.SetColumn(p, c);
-                        TimelineGrid.Children.Add(p);
-                    }
-                }
-                else if (mode == "Grid2x3")
-                {
-                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
-                    {
-                        hidden.Visibility = Visibility.Collapsed;
-                        TimelineGrid.Children.Add(hidden);
-                    }
-                    for (int i = 0; i < visiblePanes.Count; i++)
-                    {
-                        var p = visiblePanes[i];
-                        p.Visibility = Visibility.Visible;
-                        p.Width = double.NaN;
-                        p.HorizontalAlignment = HorizontalAlignment.Stretch;
-                        p.VerticalAlignment = VerticalAlignment.Stretch;
-                        int r = (i / 3) % 2;
-                        int c = i % 3;
-                        Grid.SetRow(p, r);
-                        Grid.SetColumn(p, c);
-                        TimelineGrid.Children.Add(p);
-                    }
-                }
-                else if (mode == "VerticalSplit")
-                {
-                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
-                    {
-                        hidden.Visibility = Visibility.Collapsed;
-                        TimelineGrid.Children.Add(hidden);
-                    }
-                    for (int i = 0; i < visiblePanes.Count; i++)
-                    {
-                        var p = visiblePanes[i];
-                        p.Visibility = Visibility.Visible;
-                        p.Width = double.NaN;
-                        p.HorizontalAlignment = HorizontalAlignment.Stretch;
-                        p.VerticalAlignment = VerticalAlignment.Stretch;
-                        int r = i % 2;
-                        Grid.SetRow(p, r);
-                        Grid.SetColumn(p, 0);
-                        TimelineGrid.Children.Add(p);
-                    }
-                }
-                else if (mode == "Focus")
-                {
-                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.4, GridUnitType.Star) });
-                    TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
-                    {
-                        hidden.Visibility = Visibility.Collapsed;
-                        TimelineGrid.Children.Add(hidden);
-                    }
-                    for (int i = 0; i < visiblePanes.Count; i++)
-                    {
-                        var p = visiblePanes[i];
-                        p.Visibility = Visibility.Visible;
-                        p.Width = double.NaN;
-                        p.HorizontalAlignment = HorizontalAlignment.Stretch;
-                        p.VerticalAlignment = VerticalAlignment.Stretch;
-                        if (i == 0)
-                        {
-                            Grid.SetRow(p, 0);
-                            Grid.SetRowSpan(p, 2);
-                            Grid.SetColumn(p, 0);
-                        }
-                        else
-                        {
-                            int r = (i - 1) % 2;
-                            Grid.SetRow(p, r);
-                            Grid.SetRowSpan(p, 1);
-                            Grid.SetColumn(p, 1);
-                        }
-                        TimelineGrid.Children.Add(p);
                     }
                 }
             }
 
             RefreshTimelineNumbers();
             RefreshTemporaryVisibilityUi();
-
-            if (_appSettings.LayoutMode != "Classic")
-            {
-                foreach (var row in TimelineGrid.RowDefinitions)
-                    row.Height = new GridLength(1, GridUnitType.Star);
-                foreach (var pane in Panes.Where(IsPaneEffectivelyVisible))
-                {
-                    var row = Grid.GetRow(pane);
-                    if (Grid.GetRowSpan(pane) == 1 && pane.Config.Height >= 180 && row < TimelineGrid.RowDefinitions.Count)
-                        TimelineGrid.RowDefinitions[row].Height = new GridLength(pane.Config.Height, GridUnitType.Pixel);
-                }
-            }
+            ExitFocusModeBtn.Visibility = _focusModeActive ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private void OnPaneHeightResized(TimelinePane pane, double height)
+        private void AddGridDefinitions(string mode, int rows, int columns, bool useSavedWeights)
         {
-            pane.Config.Height = Math.Clamp(height, 180, 1600);
-            if (_appSettings.LayoutMode != "Classic")
+            var rowWeights = useSavedWeights
+                ? GetSavedWeights(_appSettings.LayoutRowWeights, mode, rows)
+                : Enumerable.Repeat(1.0, rows).ToList();
+            var columnWeights = useSavedWeights
+                ? GetSavedWeights(_appSettings.LayoutColumnWeights, mode, columns)
+                : Enumerable.Repeat(1.0, columns).ToList();
+            foreach (var weight in rowWeights)
+                TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(weight, GridUnitType.Star) });
+            foreach (var weight in columnWeights)
+                TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(weight, GridUnitType.Star) });
+        }
+
+        private static List<double> GetSavedWeights(
+            Dictionary<string, List<double>> saved,
+            string mode,
+            int count)
+        {
+            if (saved.TryGetValue(mode, out var weights)
+                && weights.Count == count
+                && weights.All(w => double.IsFinite(w) && w > 0))
+                return [.. weights];
+            return Enumerable.Repeat(1.0, count).ToList();
+        }
+
+        private void OnPaneWidthResizing(TimelinePane pane, double desiredWidth)
+        {
+            if (TimelineGrid.Visibility != Visibility.Visible || _focusModeActive) return;
+            var column = Grid.GetColumn(pane);
+            if (column < 0 || column >= TimelineGrid.ColumnDefinitions.Count - 1) return;
+            var current = TimelineGrid.ColumnDefinitions[column];
+            var next = TimelineGrid.ColumnDefinitions[column + 1];
+            var total = current.ActualWidth + next.ActualWidth;
+            if (total <= 2) return;
+            var minimum = Math.Min(160, total / 3);
+            var width = Math.Clamp(desiredWidth, minimum, total - minimum);
+            current.Width = new GridLength(width, GridUnitType.Star);
+            next.Width = new GridLength(total - width, GridUnitType.Star);
+        }
+
+        private void OnPaneHeightResizing(TimelinePane pane, double desiredHeight)
+        {
+            if (TimelineGrid.Visibility != Visibility.Visible || _focusModeActive) return;
+            var row = Grid.GetRow(pane);
+            if (row < 0 || row >= TimelineGrid.RowDefinitions.Count - 1) return;
+            var current = TimelineGrid.RowDefinitions[row];
+            var next = TimelineGrid.RowDefinitions[row + 1];
+            var total = current.ActualHeight + next.ActualHeight;
+            if (total <= 2) return;
+            var minimum = Math.Min(140, total / 3);
+            var height = Math.Clamp(desiredHeight, minimum, total - minimum);
+            current.Height = new GridLength(height, GridUnitType.Star);
+            next.Height = new GridLength(total - height, GridUnitType.Star);
+        }
+
+        private void OnPaneResizeCompleted(TimelinePane pane, double value, bool horizontal)
+        {
+            if (TimelineGrid.Visibility == Visibility.Visible && !_focusModeActive)
             {
-                var row = Grid.GetRow(pane);
-                if (Grid.GetRowSpan(pane) == 1 && row < TimelineGrid.RowDefinitions.Count)
-                    TimelineGrid.RowDefinitions[row].Height = new GridLength(pane.Config.Height, GridUnitType.Pixel);
+                if (horizontal) OnPaneWidthResizing(pane, value);
+                else OnPaneHeightResizing(pane, value);
+                SaveCurrentGridWeights();
+                return;
             }
+
             SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
+        }
+
+        private void SaveCurrentGridWeights()
+        {
+            var mode = _appSettings.LayoutMode;
+            _appSettings.LayoutColumnWeights[mode] = TimelineGrid.ColumnDefinitions
+                .Select(c => Math.Max(1, c.ActualWidth)).ToList();
+            _appSettings.LayoutRowWeights[mode] = TimelineGrid.RowDefinitions
+                .Select(r => Math.Max(1, r.ActualHeight)).ToList();
+            SaveSettings();
         }
 
         private static void ResetGridPlacement(TimelinePane pane)
@@ -446,11 +432,15 @@ namespace XTimelineViewer.Views
         private bool IsPaneEffectivelyVisible(TimelinePane pane)
             => pane.Config.IsVisible && !_temporarilyHiddenTimelines.Contains(pane.Config);
 
+        private bool IsPaneDisplayed(TimelinePane pane)
+            => IsPaneEffectivelyVisible(pane) && (!_focusModeActive || pane == _focusedPane);
+
         private void TemporaryHideTimeline(TimelinePane pane)
         {
             if (!IsPaneEffectivelyVisible(pane)) return;
             if (Panes.Count(IsPaneEffectivelyVisible) <= 1) return;
 
+            if (_focusModeActive) ExitFocusMode();
             _temporarilyHiddenTimelines.Add(pane.Config);
             ApplyLayoutMode();
         }
@@ -481,6 +471,36 @@ namespace XTimelineViewer.Views
         private void RestoreHiddenBtn_Click(object sender, RoutedEventArgs e)
             => RestoreTemporarilyHiddenTimelines();
 
+        private void ExitFocusModeBtn_Click(object sender, RoutedEventArgs e) => ExitFocusMode();
+
+        private void EnterFocusMode(TimelinePane? pane)
+        {
+            pane ??= _focusedPane ?? Panes.FirstOrDefault(IsPaneEffectivelyVisible);
+            if (pane is null || !IsPaneEffectivelyVisible(pane)) return;
+            if (!_focusModeActive)
+                _layoutModeBeforeFocus = _appSettings.LayoutMode == "Focus" ? "Auto" : _appSettings.LayoutMode;
+            _focusModeActive = true;
+            _focusedPane = pane;
+            LayoutSafetyBar.IsOpen = false;
+            ExitFocusModeBtn.Visibility = Visibility.Visible;
+            ToolTipService.SetToolTip(ExitFocusModeBtn,
+                string.Format(R.Get("FocusMode_Active"), TimelineLabelHelper.GetFriendlyName(pane.Config, R.Get)));
+            RefreshPaneThemes();
+            ApplyLayoutMode("Focus");
+            pane.SetFocus();
+        }
+
+        private void ExitFocusMode()
+        {
+            if (!_focusModeActive) return;
+            _focusModeActive = false;
+            ExitFocusModeBtn.Visibility = Visibility.Collapsed;
+            _appSettings.LayoutMode = LayoutPlanner.GetSafeMode(_layoutModeBeforeFocus, Panes.Count(IsPaneEffectivelyVisible));
+            SaveSettings();
+            ApplyLayoutMode(_appSettings.LayoutMode);
+            _focusedPane?.SetFocus();
+        }
+
         // ── タイムライン番号バッジ / 番号フォーカス（#225）──────────────────────
         // 表示順に従って 1..9 を割り当てる。10 個目以降はバッジ非表示。
         private void RefreshTimelineNumbers()
@@ -488,7 +508,7 @@ namespace XTimelineViewer.Views
             int n = 1;
             foreach (var pane in Panes)
             {
-                if (!IsPaneEffectivelyVisible(pane))
+                if (!IsPaneDisplayed(pane))
                 {
                     pane.SetNumber(null);
                     continue;
@@ -501,7 +521,7 @@ namespace XTimelineViewer.Views
         // Ctrl+数字 で、表示順 oneBased 番目のタイムラインをアクティブ化する。
         private void FocusTimelineByIndex(int oneBased)
         {
-            var panes = Panes.Where(IsPaneEffectivelyVisible).ToList();
+            var panes = Panes.Where(IsPaneDisplayed).ToList();
             int i = oneBased - 1;
             if (i < 0 || i >= panes.Count) return;
             {
@@ -513,7 +533,7 @@ namespace XTimelineViewer.Views
         // Ctrl+←/→（WebView2 非フォーカス時）。現在アクティブなペインを基準に隣へ移動する。
         private void FocusAdjacentFromActive(int direction)
         {
-            var panes = Panes.Where(IsPaneEffectivelyVisible).ToList();
+            var panes = Panes.Where(IsPaneDisplayed).ToList();
             if (panes.Count == 0) return;
 
             int cur = _focusedPane is null ? -1 : panes.IndexOf(_focusedPane);
@@ -561,6 +581,76 @@ namespace XTimelineViewer.Views
             MovePaneAdjacent(_focusedPane, direction);
         }
 
+        private void ResizeActiveTimeline_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            var (dx, dy) = sender.Key switch
+            {
+                Windows.System.VirtualKey.Left => (-24, 0),
+                Windows.System.VirtualKey.Right => (24, 0),
+                Windows.System.VirtualKey.Up => (0, -24),
+                Windows.System.VirtualKey.Down => (0, 24),
+                _ => (0, 0),
+            };
+            args.Handled = ResizePaneByKeyboard(_focusedPane, dx, dy);
+        }
+
+        private bool ResizePaneByKeyboard(TimelinePane? pane, int deltaX, int deltaY)
+        {
+            if (pane is null || _focusModeActive || !IsPaneEffectivelyVisible(pane)) return false;
+            _focusedPane = pane;
+
+            if (TimelineGrid.Visibility != Visibility.Visible)
+            {
+                if (deltaX == 0) return false;
+                pane.Width = Math.Clamp(pane.ActualWidth + deltaX, 220, 1600);
+                pane.Config.Width = pane.Width;
+                SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
+                return true;
+            }
+
+            var changed = false;
+            if (deltaX != 0 && TimelineGrid.ColumnDefinitions.Count > 1)
+            {
+                var paneColumn = Grid.GetColumn(pane);
+                var boundary = paneColumn < TimelineGrid.ColumnDefinitions.Count - 1
+                    ? paneColumn
+                    : paneColumn - 1;
+                if (boundary >= 0)
+                {
+                    var boundaryPane = Panes.FirstOrDefault(p => IsPaneDisplayed(p) && Grid.GetColumn(p) == boundary);
+                    if (boundaryPane is not null)
+                    {
+                        var desired = TimelineGrid.ColumnDefinitions[boundary].ActualWidth
+                            + (paneColumn == boundary ? deltaX : -deltaX);
+                        OnPaneWidthResizing(boundaryPane, desired);
+                        changed = true;
+                    }
+                }
+            }
+
+            if (deltaY != 0 && TimelineGrid.RowDefinitions.Count > 1)
+            {
+                var paneRow = Grid.GetRow(pane);
+                var boundary = paneRow < TimelineGrid.RowDefinitions.Count - 1
+                    ? paneRow
+                    : paneRow - 1;
+                if (boundary >= 0)
+                {
+                    var boundaryPane = Panes.FirstOrDefault(p => IsPaneDisplayed(p) && Grid.GetRow(p) == boundary);
+                    if (boundaryPane is not null)
+                    {
+                        var desired = TimelineGrid.RowDefinitions[boundary].ActualHeight
+                            + (paneRow == boundary ? deltaY : -deltaY);
+                        OnPaneHeightResizing(boundaryPane, desired);
+                        changed = true;
+                    }
+                }
+            }
+
+            if (changed) SaveCurrentGridWeights();
+            return changed;
+        }
+
         // ── AddTimeline ───────────────────────────────────────────────────────
 
         private void AddTimeline(TimelineConfig cfg)
@@ -599,8 +689,10 @@ namespace XTimelineViewer.Views
             };
 
             // 手動ドラッグによる幅変更を保存する
-            pane.WidthResized += (p, w) => SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
-            pane.HeightResized += OnPaneHeightResized;
+            pane.WidthResizing += OnPaneWidthResizing;
+            pane.HeightResizing += OnPaneHeightResizing;
+            pane.WidthResized += (p, value) => OnPaneResizeCompleted(p, value, horizontal: true);
+            pane.HeightResized += (p, value) => OnPaneResizeCompleted(p, value, horizontal: false);
 
             TimelinePanel.Children.Add(pane);
             ApplyPaneTheme(pane);
@@ -683,11 +775,7 @@ namespace XTimelineViewer.Views
                 SendTranslationCommandAsync(p, "toggle").FireAndForget(nameof(SendTranslationCommandAsync));
             pane.FocusModeRequested += p =>
             {
-                _focusedPane = p;
-                RefreshPaneThemes();
-                _appSettings.LayoutMode = "Focus";
-                SaveSettings();
-                ApplyLayoutMode("Focus");
+                EnterFocusMode(p);
             };
             pane.JumpToNewestRequested += p =>
             {

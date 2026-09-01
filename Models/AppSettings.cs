@@ -30,6 +30,12 @@ namespace XTimelineViewer.Models
         public string? ActiveWorkspaceId     { get; set; } = null;      // 現在適用中のワークスペース
         public bool    BossModeButtonVisible { get; set; } = false;
         public string? BossModeImagePath    { get; set; } = null;
+        /// <summary>設定ウィンドウの前回サイズ（Windows の表示倍率に依存しない論理ピクセル）。</summary>
+        public double  SettingsWindowWidth  { get; set; } = 1000;
+        public double  SettingsWindowHeight { get; set; } = 720;
+        /// <summary>グリッド配置ごとの列・行の比率。キーはレイアウト名。</summary>
+        public Dictionary<string, List<double>> LayoutColumnWeights { get; set; } = [];
+        public Dictionary<string, List<double>> LayoutRowWeights { get; set; } = [];
         /// <summary>
         /// 自動翻訳ボタンの表示場所。menu（列ヘッダーの「…」内）を既定にする。
         /// 旧設定ファイルや不正値は画面側で menu にフォールバックする。

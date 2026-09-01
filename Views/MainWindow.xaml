@@ -21,6 +21,10 @@
             <!-- Ctrl+Shift+←/→ でアクティブなタイムラインを左右へ移動（並べ替え）#344 -->
             <KeyboardAccelerator Key="Left"  Modifiers="Control,Shift" Invoked="MovePaneAdjacent_Invoked"/>
             <KeyboardAccelerator Key="Right" Modifiers="Control,Shift" Invoked="MovePaneAdjacent_Invoked"/>
+            <KeyboardAccelerator Key="Left" Modifiers="Menu,Shift" Invoked="ResizeActiveTimeline_Invoked"/>
+            <KeyboardAccelerator Key="Right" Modifiers="Menu,Shift" Invoked="ResizeActiveTimeline_Invoked"/>
+            <KeyboardAccelerator Key="Up" Modifiers="Menu,Shift" Invoked="ResizeActiveTimeline_Invoked"/>
+            <KeyboardAccelerator Key="Down" Modifiers="Menu,Shift" Invoked="ResizeActiveTimeline_Invoked"/>
             <!-- Ctrl+1〜9 でタイムラインのフォーカス切り替え（WebView2 非フォーカス時もカバー）#225 -->
             <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="FocusTimelineByNumber_Invoked"/>
             <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="FocusTimelineByNumber_Invoked"/>
@@ -39,11 +43,61 @@
         </Grid.RowDefinitions>
 
         <!-- Toolbar -->
-        <Grid Grid.Row="0"
+        <Grid x:Name="ToolbarRoot"
+              Grid.Row="0"
               Background="{ThemeResource LayerFillColorDefaultBrush}"
               BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
               BorderThickness="0,0,0,1"
               Padding="8,4">
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="ToolbarWidthStates">
+                    <VisualState x:Name="CompactToolbar">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="0"/>
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Collapsed"/>
+                            <Setter Target="PostLabel.Visibility" Value="Collapsed"/>
+                            <Setter Target="ExitFocusModeLabel.Visibility" Value="Collapsed"/>
+                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="140"/>
+                            <Setter Target="SearchBox.MaxWidth" Value="360"/>
+                            <Setter Target="AddTimelineToolbarBtn.Padding" Value="8,0"/>
+                            <Setter Target="PostBtn.Padding" Value="9,0"/>
+                            <Setter Target="ExitFocusModeBtn.Padding" Value="9,0"/>
+                            <Setter Target="WorkspaceSectionIcon.Visibility" Value="Collapsed"/>
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="MediumToolbar">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="900"/>
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Visible"/>
+                            <Setter Target="PostLabel.Visibility" Value="Visible"/>
+                            <Setter Target="ExitFocusModeLabel.Visibility" Value="Visible"/>
+                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="200"/>
+                            <Setter Target="SearchBox.MaxWidth" Value="480"/>
+                            <Setter Target="AddTimelineToolbarBtn.Padding" Value="10,0"/>
+                            <Setter Target="PostBtn.Padding" Value="12,0"/>
+                            <Setter Target="ExitFocusModeBtn.Padding" Value="10,0"/>
+                            <Setter Target="WorkspaceSectionIcon.Visibility" Value="Visible"/>
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="WideToolbar">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="1400"/>
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Visible"/>
+                            <Setter Target="PostLabel.Visibility" Value="Visible"/>
+                            <Setter Target="ExitFocusModeLabel.Visibility" Value="Visible"/>
+                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="280"/>
+                            <Setter Target="SearchBox.MaxWidth" Value="720"/>
+                            <Setter Target="WorkspaceSectionIcon.Visibility" Value="Visible"/>
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
             <!-- 重なり防止のため 3 列に分ける（#342）。以前は 1 セルに
                  左寄せ・中央・右寄せを重ねており、狭めると互いに重なっていた。 -->
             <Grid.ColumnDefinitions>
@@ -114,7 +168,7 @@
                         Spacing="4"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
-                <Button x:Name="BossModeBtn" Width="32" Height="32" Padding="0" Click="BossModeBtn_Click" Visibility="Collapsed" AutomationProperties.AutomationId="BossModeBtn" ToolTipService.ToolTip="ボスが来たモード"><FontIcon Glyph="&#xE7B7;" FontFamily="Segoe Fluent Icons" FontSize="14"/></Button>
+                <Button x:Name="BossModeBtn" Width="32" Height="32" Padding="0" Click="BossModeBtn_Click" Visibility="Collapsed" AutomationProperties.AutomationId="BossModeBtn"><FontIcon Glyph="&#xE7B7;" FontFamily="Segoe Fluent Icons" FontSize="14"/></Button>
                 <Button x:Name="AutoArrangeBtn"
                         Width="32"
                         Height="32"
@@ -278,7 +332,8 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <FontIcon Grid.Column="0"
+                <FontIcon x:Name="WorkspaceSectionIcon"
+                          Grid.Column="0"
                           Glyph="&#xE8F1;"
                           FontFamily="Segoe Fluent Icons"
                           FontSize="14"
@@ -301,6 +356,18 @@
                         Click="OpenWorkspaces_Click"
                         AutomationProperties.AutomationId="WorkspaceAddBtn">
                     <FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                </Button>
+
+                <Button x:Name="ExitFocusModeBtn"
+                        Height="32"
+                        Padding="10,0"
+                        Visibility="Collapsed"
+                        Click="ExitFocusModeBtn_Click"
+                        AutomationProperties.AutomationId="ExitFocusModeBtn">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                        <TextBlock x:Name="ExitFocusModeLabel"/>
+                    </StackPanel>
                 </Button>
             </Grid>
         </Border>
@@ -392,9 +459,9 @@
                 <Grid>
                     <Image x:Name="BossModeImage" Stretch="UniformToFill"/>
                     <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Orientation="Horizontal" Spacing="8" Margin="16">
-                        <Button x:Name="BossModeCloseBtn" Click="BossModeCloseBtn_Click" Content="戻る"/>
+                        <Button x:Name="BossModeCloseBtn" Click="BossModeCloseBtn_Click"/>
                     </StackPanel>
-                    <TextBlock x:Name="BossModeEmptyText" Text="表示画像を設定から選んでください" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                    <TextBlock x:Name="BossModeEmptyText" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                 </Grid>
             </Border>
             <InfoBar x:Name="LayoutSuggestionBar"
@@ -410,6 +477,15 @@
                     <Button x:Name="LayoutSuggestionApplyBtn" Click="LayoutSuggestionApplyBtn_Click"/>
                 </InfoBar.ActionButton>
             </InfoBar>
+            <InfoBar x:Name="LayoutSafetyBar"
+                     Grid.Column="0"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Top"
+                     Margin="12"
+                     IsOpen="False"
+                     IsClosable="True"
+                     Severity="Warning"
+                     Canvas.ZIndex="51"/>
 
             <Border x:Name="SearchSidePanel"
                     Grid.Column="1"

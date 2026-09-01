@@ -112,6 +112,20 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
+    public void LoadSettings_NullLayoutWeights_AreRecoveredAsEmpty()
+    {
+        File.WriteAllText(At("settings.json"),
+            """{"LayoutColumnWeights":null,"LayoutRowWeights":null}""");
+
+        var s = SettingsService.LoadSettings(At("settings.json"));
+
+        Assert.NotNull(s.LayoutColumnWeights);
+        Assert.Empty(s.LayoutColumnWeights);
+        Assert.NotNull(s.LayoutRowWeights);
+        Assert.Empty(s.LayoutRowWeights);
+    }
+
+    [Fact]
     public void SaveAndLoadSettings_RoundTrip_AllProperties()
     {
         var path = At("settings.json");
