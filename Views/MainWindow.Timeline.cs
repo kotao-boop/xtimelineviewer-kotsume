@@ -645,7 +645,13 @@ namespace XTimelineViewer.Views
                 var visible = Panes.Where(IsPaneEffectivelyVisible).ToList();
                 if (visible.Count == 0) return;
                 var available = TimelineScroll.ActualWidth > 0 ? TimelineScroll.ActualWidth : 1200;
-                var equalWidth = Math.Clamp(available / visible.Count, 280, 600);
+                // StackPanel の内側余白と各ペインの Margin を先に引く。
+                // 上限を設けると広いワークスペースで右側に空白が残るため、
+                // 画面が十分広いときは残り幅を最後まで使い切る。
+                var reserved = TimelinePanel.Padding.Left + TimelinePanel.Padding.Right
+                    + visible.Sum(pane => pane.Margin.Left + pane.Margin.Right);
+                var usableWidth = Math.Max(0, available - reserved);
+                var equalWidth = Math.Max(220, usableWidth / visible.Count);
                 foreach (var pane in visible)
                 {
                     pane.Width = equalWidth;

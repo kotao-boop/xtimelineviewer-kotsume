@@ -12,7 +12,14 @@
          複数箇所に手書きされ、片方だけ直す事故が実際に起きている
          （#337 / #341 のバッジ重複）。ここに一度だけ宣言する。 -->
     <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- WebView とドラッグ境界を別の列に分離する。境界は重ねず、
+                 常に実体のある専用スペースとして確保する。 -->
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="18"/>
+        </Grid.ColumnDefinitions>
         <Grid x:Name="PaneRoot"
+              Grid.Column="0"
               BorderThickness="1"
               CornerRadius="8">
             <Grid.RowDefinitions>
@@ -31,7 +38,6 @@
                     <ColumnDefinition Width="Auto"/>  <!-- 2: プロファイルバッジ -->
                     <ColumnDefinition Width="*"/>     <!-- 3: URL -->
                     <ColumnDefinition Width="Auto"/>  <!-- 4: ボタン -->
-                    <ColumnDefinition Width="18"/>    <!-- 5: 幅変更 -->
                 </Grid.ColumnDefinitions>
 
                 <!-- 表示順に 1..9 を割り当てる。AutomationId は RefreshTimelineNumbers が
@@ -176,22 +182,6 @@
                     </Button>
                 </StackPanel>
 
-                <!-- WebView の外側ではなく、ヘッダー自身の専用列に置く。
-                     これにより X の WebView にマウス入力を奪われない。 -->
-                <Thumb x:Name="ResizeGrip"
-                       Grid.Column="5"
-                       HorizontalAlignment="Stretch"
-                       VerticalAlignment="Stretch"
-                       MinWidth="18"
-                       Background="#01000000"
-                       IsTabStop="True"
-                       AutomationProperties.AutomationId="PaneWidthResizeGrip">
-                    <Thumb.Template>
-                        <ControlTemplate TargetType="Thumb">
-                            <Border Background="{TemplateBinding Background}"/>
-                        </ControlTemplate>
-                    </Thumb.Template>
-                </Thumb>
             </Grid>
 
             <controls:WebView2 x:Name="WebViewHost"
@@ -220,8 +210,23 @@
             </Border>
         </Grid>
 
-        <!-- 右端の境界線。実際のドラッグ面は HeaderGrid の第5列。 -->
+        <!-- WebView と重ならない右端専用列。上から下までどこでもドラッグできる。 -->
+        <Thumb x:Name="ResizeGrip"
+               Grid.Column="1"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Stretch"
+               MinWidth="18"
+               Background="#01000000"
+               IsTabStop="True"
+               AutomationProperties.AutomationId="PaneWidthResizeGrip">
+            <Thumb.Template>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Background="{TemplateBinding Background}"/>
+                </ControlTemplate>
+            </Thumb.Template>
+        </Thumb>
         <Rectangle x:Name="ResizeGripBar"
+                   Grid.Column="1"
                    Width="2"
                    HorizontalAlignment="Right"
                    VerticalAlignment="Stretch"
