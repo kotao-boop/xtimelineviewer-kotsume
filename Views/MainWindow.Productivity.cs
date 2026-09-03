@@ -617,6 +617,7 @@ namespace XTimelineViewer.Views
                 return;
             }
             if (_focusModeActive) ExitFocusMode();
+            if (mode == "Auto") _autoLayoutPage = 0;
             var safeMode = LayoutPlanner.GetSafeMode(mode, Panes.Count(IsPaneEffectivelyVisible));
             if (safeMode != mode)
             {

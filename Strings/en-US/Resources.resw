@@ -37,6 +37,7 @@
   <data name="Theme_Light" xml:space="preserve"><value>Light</value></data>
   <data name="Theme_Dark" xml:space="preserve"><value>Dark</value></data>
   <data name="Theme_Cyberpunk" xml:space="preserve"><value>Cyberpunk</value></data>
+  <data name="Theme_NeonContrast" xml:space="preserve"><value>Neon Contrast</value></data>
   <data name="Theme_Ocean" xml:space="preserve"><value>Midnight Ocean</value></data>
   <data name="Theme_Forest" xml:space="preserve"><value>Forest</value></data>
   <data name="Theme_Sakura" xml:space="preserve"><value>Sakura</value></data>
@@ -275,6 +276,8 @@
   <data name="Layout_Tooltip" xml:space="preserve"><value>Change layout</value></data>
   <data name="Layout_Auto" xml:space="preserve"><value>Auto arrange</value></data>
   <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>Automatically arrange visible timelines</value></data>
+  <data name="Layout_PagePrevious" xml:space="preserve"><value>Show previous timelines</value></data>
+  <data name="Layout_PageNext" xml:space="preserve"><value>Show next timelines</value></data>
   <data name="Timeline_RestoreHidden" xml:space="preserve"><value>Restore temporarily hidden timelines ({0})</value></data>
   <data name="Layout_Classic" xml:space="preserve"><value>▥  Classic columns</value></data>
   <data name="Layout_Grid2x2" xml:space="preserve"><value>▦  2 × 2 grid</value></data>

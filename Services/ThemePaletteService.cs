@@ -19,21 +19,32 @@ namespace XTimelineViewer.Services
             Color FocusedHeader,
             Color Accent,
             Color AccentText,
-            ElementTheme BaseTheme);
+            ElementTheme BaseTheme,
+            bool OutlineFocusedPane = false);
 
         internal static bool TryGetPalette(string? theme, out Palette palette)
         {
             palette = theme switch
             {
                 "Cyberpunk" => new(
-                    ColorHelper.FromArgb(255, 7, 11, 20),
-                    ColorHelper.FromArgb(255, 15, 23, 42),
-                    ColorHelper.FromArgb(255, 34, 211, 238),
-                    ColorHelper.FromArgb(255, 24, 36, 62),
-                    ColorHelper.FromArgb(255, 109, 40, 217),
-                    ColorHelper.FromArgb(255, 34, 211, 238),
-                    ColorHelper.FromArgb(255, 3, 12, 20),
+                    ColorHelper.FromArgb(255, 5, 3, 10),
+                    ColorHelper.FromArgb(255, 13, 6, 24),
+                    ColorHelper.FromArgb(255, 255, 43, 214),
+                    ColorHelper.FromArgb(255, 19, 9, 38),
+                    ColorHelper.FromArgb(255, 76, 12, 112),
+                    ColorHelper.FromArgb(255, 0, 240, 255),
+                    ColorHelper.FromArgb(255, 1, 15, 18),
                     ElementTheme.Dark),
+                "NeonContrast" => new(
+                    Colors.Black,
+                    ColorHelper.FromArgb(255, 2, 5, 7),
+                    ColorHelper.FromArgb(255, 73, 210, 245),
+                    ColorHelper.FromArgb(255, 0, 0, 0),
+                    ColorHelper.FromArgb(255, 255, 145, 0),
+                    ColorHelper.FromArgb(255, 73, 210, 245),
+                    ColorHelper.FromArgb(255, 0, 12, 16),
+                    ElementTheme.Dark,
+                    OutlineFocusedPane: true),
                 "Ocean" => new(
                     ColorHelper.FromArgb(255, 5, 23, 37),
                     ColorHelper.FromArgb(255, 8, 38, 58),
@@ -108,5 +119,8 @@ namespace XTimelineViewer.Services
             };
             return new SolidColorBrush(color);
         }
+
+        internal static bool UsesOutlineFocus(string? theme)
+            => TryGetPalette(theme, out var palette) && palette.OutlineFocusedPane;
     }
 }

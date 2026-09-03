@@ -300,6 +300,7 @@
                                 <RadioMenuFlyoutItem x:Name="ThemeLightItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Light"/>
                                 <RadioMenuFlyoutItem x:Name="ThemeDarkItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Dark"/>
                                 <RadioMenuFlyoutItem x:Name="ThemeCyberpunkItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Cyberpunk"/>
+                                <RadioMenuFlyoutItem x:Name="ThemeNeonContrastItem" GroupName="Theme" Click="ThemeItem_Click" Tag="NeonContrast"/>
                                 <RadioMenuFlyoutItem x:Name="ThemeOceanItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Ocean"/>
                                 <RadioMenuFlyoutItem x:Name="ThemeForestItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Forest"/>
                                 <RadioMenuFlyoutItem x:Name="ThemeSakuraItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Sakura"/>
@@ -453,7 +454,32 @@
             <Grid x:Name="TimelineGrid"
                   Grid.Column="0"
                   Visibility="Collapsed"
+                  SizeChanged="TimelineGrid_SizeChanged"
                   Padding="4"/>
+
+            <!-- 小さい画面で自動整列した列が消えたように見えないよう、表示範囲を明示する。 -->
+            <Border x:Name="AutoPageNavigator"
+                    Grid.Column="0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="12"
+                    Padding="6,4"
+                    CornerRadius="8"
+                    Background="{ThemeResource AppChromeBrush}"
+                    BorderBrush="{ThemeResource AppBorderBrush}"
+                    BorderThickness="1"
+                    Visibility="Collapsed"
+                    Canvas.ZIndex="60">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Button x:Name="AutoPagePreviousBtn" Width="30" Height="28" Padding="0" Click="AutoPagePreviousBtn_Click">
+                        <FontIcon Glyph="&#xE76B;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                    </Button>
+                    <TextBlock x:Name="AutoPageStatusText" MinWidth="76" TextAlignment="Center" VerticalAlignment="Center"/>
+                    <Button x:Name="AutoPageNextBtn" Width="30" Height="28" Padding="0" Click="AutoPageNextBtn_Click">
+                        <FontIcon Glyph="&#xE76C;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                    </Button>
+                </StackPanel>
+            </Border>
 
             <Border x:Name="BossModeOverlay"
                     Grid.Column="0"

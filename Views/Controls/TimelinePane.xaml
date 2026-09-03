@@ -206,8 +206,8 @@
         <Button x:Name="ResizeGrip"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Stretch"
-                Width="8"
-                Margin="0,0,-4,0"
+                Width="14"
+                Margin="0,0,-2,0"
                 Background="Transparent"
                 BorderThickness="0"
                 Padding="0"
@@ -215,11 +215,11 @@
                 AutomationProperties.AutomationId="PaneWidthResizeGrip"
                 Canvas.ZIndex="100">
             <Rectangle x:Name="ResizeGripBar"
-                       Width="3"
+                       Width="2"
                        HorizontalAlignment="Right"
                        VerticalAlignment="Stretch"
                        Fill="{ThemeResource TimelinePaneBorderBrush}"
-                       Opacity="0"
+                       Opacity="0.28"
                        RadiusX="1.5"
                        RadiusY="1.5"/>
         </Button>
@@ -227,8 +227,8 @@
         <Button x:Name="VerticalResizeGrip"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom"
-                Height="8"
-                Margin="0,0,0,-4"
+                Height="14"
+                Margin="0,0,0,-2"
                 Background="Transparent"
                 BorderThickness="0"
                 Padding="0"
@@ -237,11 +237,11 @@
                 Visibility="Collapsed"
                 Canvas.ZIndex="100">
             <Rectangle x:Name="VerticalResizeGripBar"
-                       Height="3"
+                       Height="2"
                        HorizontalAlignment="Stretch"
                        VerticalAlignment="Bottom"
                        Fill="{ThemeResource TimelinePaneBorderBrush}"
-                       Opacity="0"
+                       Opacity="0.28"
                        RadiusX="1.5"
                        RadiusY="1.5"/>
         </Button>

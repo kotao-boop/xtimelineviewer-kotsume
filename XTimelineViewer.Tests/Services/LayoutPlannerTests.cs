@@ -35,4 +35,13 @@ public class LayoutPlannerTests
     [InlineData("unknown", 2, "Classic")]
     public void GetSafeMode_NeverOverfillsFixedTemplates(string requested, int visibleCount, string expected)
         => Assert.Equal(expected, LayoutPlanner.GetSafeMode(requested, visibleCount));
+
+    [Theory]
+    [InlineData(640, 500, 2)]
+    [InlineData(900, 700, 4)]
+    [InlineData(1200, 700, 6)]
+    [InlineData(1920, 1080, 9)]
+    [InlineData(0, 0, 6)]
+    public void GetAutoPageCapacity_KeepsPanesUsable(double width, double height, int expected)
+        => Assert.Equal(expected, LayoutPlanner.GetAutoPageCapacity(width, height));
 }

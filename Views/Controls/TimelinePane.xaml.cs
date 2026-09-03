@@ -108,7 +108,7 @@ namespace XTimelineViewer.Views.Controls
             {
                 if (!_isResizing)
                 {
-                    ResizeGripBar.Opacity = 0.6;
+                    ResizeGripBar.Opacity = 0.9;
                     try { this.ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast); } catch { }
                 }
             };
@@ -117,7 +117,7 @@ namespace XTimelineViewer.Views.Controls
             {
                 if (!_isResizing)
                 {
-                    ResizeGripBar.Opacity = 0.0;
+                    ResizeGripBar.Opacity = 0.28;
                     try { this.ProtectedCursor = null; } catch { }
                 }
             };
@@ -143,7 +143,8 @@ namespace XTimelineViewer.Views.Controls
                 {
                     var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
                     var deltaX = pt.Position.X - _resizeStartPointerX;
-                    var newWidth = Math.Clamp(_resizeStartWidth + deltaX, 220, 1600);
+                    var minimumWidth = _gridResizeMode ? 160 : 220;
+                    var newWidth = Math.Clamp(_resizeStartWidth + deltaX, minimumWidth, 1600);
                     _lastRequestedWidth = newWidth;
                     if (_gridResizeMode) WidthResizing?.Invoke(this, newWidth);
                     else
@@ -161,7 +162,7 @@ namespace XTimelineViewer.Views.Controls
                 {
                     _isResizing = false;
                     ResizeGrip.ReleasePointerCapture(e.Pointer);
-                    ResizeGripBar.Opacity = 0.0;
+                    ResizeGripBar.Opacity = 0.28;
                     try { this.ProtectedCursor = null; } catch { }
                     WidthResized?.Invoke(this, _gridResizeMode
                         ? _lastRequestedWidth
@@ -175,7 +176,7 @@ namespace XTimelineViewer.Views.Controls
                 if (_isResizing)
                 {
                     _isResizing = false;
-                    ResizeGripBar.Opacity = 0.0;
+                    ResizeGripBar.Opacity = 0.28;
                     try { this.ProtectedCursor = null; } catch { }
                     WidthResized?.Invoke(this, _gridResizeMode ? _lastRequestedWidth : Width);
                 }
@@ -185,7 +186,7 @@ namespace XTimelineViewer.Views.Controls
             {
                 if (!_isResizingHeight)
                 {
-                    VerticalResizeGripBar.Opacity = 0.6;
+                    VerticalResizeGripBar.Opacity = 0.9;
                     try { ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth); } catch { }
                 }
             };
@@ -193,7 +194,7 @@ namespace XTimelineViewer.Views.Controls
             {
                 if (!_isResizingHeight)
                 {
-                    VerticalResizeGripBar.Opacity = 0.0;
+                    VerticalResizeGripBar.Opacity = 0.28;
                     try { ProtectedCursor = null; } catch { }
                 }
             };
@@ -214,7 +215,8 @@ namespace XTimelineViewer.Views.Controls
                 if (!_isResizingHeight) return;
                 var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
                 var deltaY = pt.Position.Y - _resizeStartPointerY;
-                var newHeight = Math.Clamp(_resizeStartHeight + deltaY, 180, 1600);
+                var minimumHeight = _gridResizeMode ? 140 : 180;
+                var newHeight = Math.Clamp(_resizeStartHeight + deltaY, minimumHeight, 1600);
                 _lastRequestedHeight = newHeight;
                 if (_gridResizeMode) HeightResizing?.Invoke(this, newHeight);
                 else
@@ -229,7 +231,7 @@ namespace XTimelineViewer.Views.Controls
                 if (!_isResizingHeight) return;
                 _isResizingHeight = false;
                 VerticalResizeGrip.ReleasePointerCapture(e.Pointer);
-                VerticalResizeGripBar.Opacity = 0.0;
+                VerticalResizeGripBar.Opacity = 0.28;
                 try { ProtectedCursor = null; } catch { }
                 HeightResized?.Invoke(this, _gridResizeMode
                     ? _lastRequestedHeight
@@ -240,7 +242,7 @@ namespace XTimelineViewer.Views.Controls
             {
                 if (!_isResizingHeight) return;
                 _isResizingHeight = false;
-                VerticalResizeGripBar.Opacity = 0.0;
+                VerticalResizeGripBar.Opacity = 0.28;
                 try { ProtectedCursor = null; } catch { }
                 HeightResized?.Invoke(this, _gridResizeMode ? _lastRequestedHeight : Height);
             };
@@ -301,6 +303,8 @@ namespace XTimelineViewer.Views.Controls
             VerticalResizeGrip.Visibility = vertical ? Visibility.Visible : Visibility.Collapsed;
             ResizeGrip.IsTabStop = horizontal;
             VerticalResizeGrip.IsTabStop = vertical;
+            ResizeGripBar.Opacity = horizontal ? 0.28 : 0;
+            VerticalResizeGripBar.Opacity = vertical ? 0.28 : 0;
         }
 
         // ── フォーカス ───────────────────────────────────────
@@ -341,7 +345,7 @@ namespace XTimelineViewer.Views.Controls
             // コントラストテーマではフォーカスを「塗り」ではなく「枠」で示す（#341）。
             // ヘッダーを Highlight 色で塗ると、中の文字色までこちらで揃えない限り
             // 地と衝突する。枠なら子要素の配色に一切干渉せずに済む。
-            bool outlineFocus = highContrast && focused;
+            bool outlineFocus = focused && (highContrast || ThemePaletteService.UsesOutlineFocus(appTheme));
             var borderRole = outlineFocus
                 ? "TimelineHeaderFocusedBackgroundBrush"
                 : "TimelinePaneBorderBrush";
@@ -350,12 +354,18 @@ namespace XTimelineViewer.Views.Controls
                 : ThemePaletteService.GetPaneBrush(appTheme, borderRole, themeDict);
             PaneRoot.BorderThickness = new Thickness(outlineFocus ? 2 : 1);
 
-            var headerRole = focused && !highContrast
+            var headerRole = focused && !outlineFocus
                 ? "TimelineHeaderFocusedBackgroundBrush"
                 : "TimelineHeaderBackgroundBrush";
             HeaderGrid.Background = highContrast
                 ? (Brush)themeDict[headerRole]
                 : ThemePaletteService.GetPaneBrush(appTheme, headerRole, themeDict);
+
+            var resizeBrush = highContrast
+                ? (Brush)themeDict["TimelinePaneBorderBrush"]
+                : ThemePaletteService.GetPaneBrush(appTheme, "TimelinePaneBorderBrush", themeDict);
+            ResizeGripBar.Fill = resizeBrush;
+            VerticalResizeGripBar.Fill = resizeBrush;
         }
 
         // ── 外から触る要素 ────────────────────────────────────────────────────

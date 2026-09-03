@@ -57,6 +57,7 @@ namespace XTimelineViewer.Views.Settings
                 R.Get("Theme_Light"),
                 R.Get("Theme_Dark"),
                 R.Get("Theme_Cyberpunk"),
+                R.Get("Theme_NeonContrast"),
                 R.Get("Theme_Ocean"),
                 R.Get("Theme_Forest"),
                 R.Get("Theme_Sakura"),

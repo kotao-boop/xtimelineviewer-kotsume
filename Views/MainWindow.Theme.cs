@@ -104,6 +104,7 @@ namespace XTimelineViewer.Views
             ThemeLightItem.IsChecked  = _appSettings.Theme == "Light";
             ThemeDarkItem.IsChecked   = _appSettings.Theme == "Dark";
             ThemeCyberpunkItem.IsChecked = _appSettings.Theme == "Cyberpunk";
+            ThemeNeonContrastItem.IsChecked = _appSettings.Theme == "NeonContrast";
             ThemeOceanItem.IsChecked = _appSettings.Theme == "Ocean";
             ThemeForestItem.IsChecked = _appSettings.Theme == "Forest";
             ThemeSakuraItem.IsChecked = _appSettings.Theme == "Sakura";

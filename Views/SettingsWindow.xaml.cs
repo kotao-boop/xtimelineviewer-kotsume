@@ -230,7 +230,7 @@ namespace XTimelineViewer.Views
             new(R.Get("Settings_DefaultTimeline"), "General", "timeline sidebar compose list default タイムライン サイドバー 投稿 リスト 既定"),
             new(R.Get("Settings_HomeAutoLoad"), "General", "home auto refresh interval ホーム 自動更新 間隔"),
             new(R.Get("Settings_ExternalBrowser"), "General", "browser edge link external ブラウザー Edge リンク 外部"),
-            new(R.Get("Settings_Theme"), "UserInterface", "theme light dark cyberpunk ocean forest sakura appearance テーマ ライト ダーク サイバーパンク オーシャン フォレスト サクラ 表示"),
+            new(R.Get("Settings_Theme"), "UserInterface", "theme light dark cyberpunk neon contrast ocean forest sakura appearance テーマ ライト ダーク サイバーパンク ネオン コントラスト オーシャン フォレスト サクラ 表示"),
             new(R.Get("Settings_Language"), "UserInterface", "language japanese english 言語 日本語 英語"),
             new(R.Get("Settings_ExportFolder"), "Data", "data folder export backup データ フォルダー エクスポート バックアップ"),
             new(R.Get("Settings_SavedQueries"), "Data", "search query history 検索 クエリ 履歴"),

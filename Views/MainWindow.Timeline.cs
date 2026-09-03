@@ -34,6 +34,8 @@ namespace XTimelineViewer.Views
         // 一時非表示は「しばらく2本だけに集中したい」用途のため、保存しない。
         // アプリを再起動すれば必ず元の表示状態に戻る。
         private readonly HashSet<TimelineConfig> _temporarilyHiddenTimelines = [];
+        private int _autoLayoutPage;
+        private int _autoLayoutPageSize = 6;
 
         // ── Persistence ───────────────────────────────────────────
         // 実体は Services/TimelineStore.cs（#368）。ここは例外を握って記録するだけ。
@@ -250,6 +252,7 @@ namespace XTimelineViewer.Views
 
             if (mode == "Classic")
             {
+                AutoPageNavigator.Visibility = Visibility.Collapsed;
                 TimelineGrid.Visibility = Visibility.Collapsed;
                 TimelineScroll.Visibility = Visibility.Visible;
 
@@ -284,6 +287,7 @@ namespace XTimelineViewer.Views
 
                 if (mode == "Focus")
                 {
+                    AutoPageNavigator.Visibility = Visibility.Collapsed;
                     _focusedPane = _focusedPane is not null && visiblePanes.Contains(_focusedPane)
                         ? _focusedPane
                         : visiblePanes.FirstOrDefault();
@@ -301,24 +305,43 @@ namespace XTimelineViewer.Views
                 }
                 else
                 {
+                    var arrangedPanes = visiblePanes;
+                    if (mode == "Auto")
+                    {
+                        _autoLayoutPageSize = LayoutPlanner.GetAutoPageCapacity(
+                            TimelineGrid.ActualWidth,
+                            TimelineGrid.ActualHeight);
+                        var pageCount = Math.Max(1, (int)Math.Ceiling((double)visiblePanes.Count / _autoLayoutPageSize));
+                        _autoLayoutPage = Math.Clamp(_autoLayoutPage, 0, pageCount - 1);
+                        arrangedPanes = visiblePanes
+                            .Skip(_autoLayoutPage * _autoLayoutPageSize)
+                            .Take(_autoLayoutPageSize)
+                            .ToList();
+                        UpdateAutoPageNavigator(visiblePanes.Count, pageCount);
+                    }
+                    else
+                    {
+                        _autoLayoutPage = 0;
+                        AutoPageNavigator.Visibility = Visibility.Collapsed;
+                    }
                     var plan = mode switch
                     {
                         "Grid2x2" => new LayoutPlanner.GridPlan(2, 2),
                         "Grid2x3" => new LayoutPlanner.GridPlan(2, 3),
                         "VerticalSplit" => new LayoutPlanner.GridPlan(2, 1),
-                        _ => LayoutPlanner.GetAutoGrid(visiblePanes.Count),
+                        _ => LayoutPlanner.GetAutoGrid(arrangedPanes.Count),
                     };
                     AddGridDefinitions(mode, plan.Rows, plan.Columns, useSavedWeights: true);
 
-                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
+                    foreach (var hidden in panes.Where(p => !arrangedPanes.Contains(p)))
                     {
                         hidden.Visibility = Visibility.Collapsed;
                         hidden.ConfigureResizeAffordances(false, false, gridMode: true);
                         TimelineGrid.Children.Add(hidden);
                     }
-                    for (var i = 0; i < visiblePanes.Count; i++)
+                    for (var i = 0; i < arrangedPanes.Count; i++)
                     {
-                        var pane = visiblePanes[i];
+                        var pane = arrangedPanes[i];
                         var row = i / plan.Columns;
                         var column = i % plan.Columns;
                         pane.Visibility = Visibility.Visible;
@@ -433,7 +456,9 @@ namespace XTimelineViewer.Views
             => pane.Config.IsVisible && !_temporarilyHiddenTimelines.Contains(pane.Config);
 
         private bool IsPaneDisplayed(TimelinePane pane)
-            => IsPaneEffectivelyVisible(pane) && (!_focusModeActive || pane == _focusedPane);
+            => IsPaneEffectivelyVisible(pane)
+               && pane.Visibility == Visibility.Visible
+               && (!_focusModeActive || pane == _focusedPane);
 
         private void TemporaryHideTimeline(TimelinePane pane)
         {
@@ -466,7 +491,47 @@ namespace XTimelineViewer.Views
         }
 
         private void AutoArrangeBtn_Click(object sender, RoutedEventArgs e)
-            => SetLayoutFromCommand("Auto");
+        {
+            _autoLayoutPage = 0;
+            SetLayoutFromCommand("Auto");
+        }
+
+        private void UpdateAutoPageNavigator(int total, int pageCount)
+        {
+            if (pageCount <= 1)
+            {
+                AutoPageNavigator.Visibility = Visibility.Collapsed;
+                return;
+            }
+            var first = _autoLayoutPage * _autoLayoutPageSize + 1;
+            var last = Math.Min(total, first + _autoLayoutPageSize - 1);
+            AutoPageStatusText.Text = string.Format(CultureInfo.CurrentCulture, "{0}–{1} / {2}", first, last, total);
+            AutoPagePreviousBtn.IsEnabled = _autoLayoutPage > 0;
+            AutoPageNextBtn.IsEnabled = _autoLayoutPage < pageCount - 1;
+            AutoPageNavigator.Visibility = Visibility.Visible;
+        }
+
+        private void AutoPagePreviousBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (_autoLayoutPage <= 0) return;
+            _autoLayoutPage--;
+            ApplyLayoutMode("Auto");
+        }
+
+        private void AutoPageNextBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _autoLayoutPage++;
+            ApplyLayoutMode("Auto");
+        }
+
+        private void TimelineGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_focusModeActive || _appSettings.LayoutMode != "Auto") return;
+            var capacity = LayoutPlanner.GetAutoPageCapacity(e.NewSize.Width, e.NewSize.Height);
+            if (capacity == _autoLayoutPageSize) return;
+            _autoLayoutPageSize = capacity;
+            ApplyLayoutMode("Auto");
+        }
 
         private void RestoreHiddenBtn_Click(object sender, RoutedEventArgs e)
             => RestoreTemporarilyHiddenTimelines();

@@ -101,5 +101,7 @@ public class ProductivityFeatureStructureTests
         Assert.Contains("ConfigureResizeAffordances", source);
         Assert.Contains("ResizeGrip.KeyDown", source);
         Assert.Contains("VerticalResizeGrip.KeyDown", source);
+        Assert.Contains("_gridResizeMode ? 160 : 220", source);
+        Assert.Contains("_gridResizeMode ? 140 : 180", source);
     }
 }

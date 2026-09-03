@@ -37,6 +37,7 @@
   <data name="Theme_Light" xml:space="preserve"><value>ライト</value></data>
   <data name="Theme_Dark" xml:space="preserve"><value>ダーク</value></data>
   <data name="Theme_Cyberpunk" xml:space="preserve"><value>サイバーパンク</value></data>
+  <data name="Theme_NeonContrast" xml:space="preserve"><value>ネオン・コントラスト</value></data>
   <data name="Theme_Ocean" xml:space="preserve"><value>ミッドナイト・オーシャン</value></data>
   <data name="Theme_Forest" xml:space="preserve"><value>フォレスト</value></data>
   <data name="Theme_Sakura" xml:space="preserve"><value>サクラ</value></data>
@@ -275,6 +276,8 @@
   <data name="Layout_Tooltip" xml:space="preserve"><value>レイアウトを変更</value></data>
   <data name="Layout_Auto" xml:space="preserve"><value>自動整列</value></data>
   <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>表示中のタイムラインを自動整列</value></data>
+  <data name="Layout_PagePrevious" xml:space="preserve"><value>前のタイムラインを表示</value></data>
+  <data name="Layout_PageNext" xml:space="preserve"><value>次のタイムラインを表示</value></data>
   <data name="Timeline_RestoreHidden" xml:space="preserve"><value>一時的に隠したタイムラインを戻す（{0}個）</value></data>
   <data name="Layout_Classic" xml:space="preserve"><value>▥  クラシック（横並び）</value></data>
   <data name="Layout_Grid2x2" xml:space="preserve"><value>▦  2 × 2 グリッド</value></data>
