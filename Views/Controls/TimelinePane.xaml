@@ -77,6 +77,7 @@
                     <TextBlock x:Name="TitleLabel"
                                FontSize="12"
                                FontWeight="SemiBold"
+                               VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>
                     <TextBlock x:Name="UrlLabel"
                                FontSize="9"

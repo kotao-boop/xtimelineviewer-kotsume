@@ -59,7 +59,7 @@
                             <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Collapsed"/>
                             <Setter Target="PostLabel.Visibility" Value="Collapsed"/>
                             <Setter Target="ExitFocusModeLabel.Visibility" Value="Collapsed"/>
-                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="140"/>
+                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="180"/>
                             <Setter Target="SearchBox.MaxWidth" Value="360"/>
                             <Setter Target="AddTimelineToolbarBtn.Padding" Value="8,0"/>
                             <Setter Target="PostBtn.Padding" Value="9,0"/>
@@ -75,7 +75,7 @@
                             <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Visible"/>
                             <Setter Target="PostLabel.Visibility" Value="Visible"/>
                             <Setter Target="ExitFocusModeLabel.Visibility" Value="Visible"/>
-                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="200"/>
+                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="240"/>
                             <Setter Target="SearchBox.MaxWidth" Value="480"/>
                             <Setter Target="AddTimelineToolbarBtn.Padding" Value="10,0"/>
                             <Setter Target="PostBtn.Padding" Value="12,0"/>
@@ -91,7 +91,7 @@
                             <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Visible"/>
                             <Setter Target="PostLabel.Visibility" Value="Visible"/>
                             <Setter Target="ExitFocusModeLabel.Visibility" Value="Visible"/>
-                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="280"/>
+                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="320"/>
                             <Setter Target="SearchBox.MaxWidth" Value="720"/>
                             <Setter Target="WorkspaceSectionIcon.Visibility" Value="Visible"/>
                         </VisualState.Setters>
@@ -110,12 +110,14 @@
                         Spacing="6"
                         VerticalAlignment="Center">
                 <ComboBox x:Name="ToolbarProfileCombo"
-                          MinWidth="120"
-                          MaxWidth="180"
-                          Height="28"
+                          MinWidth="150"
+                          MaxWidth="240"
+                          Height="30"
+                          VerticalContentAlignment="Center"
                           SelectionChanged="ToolbarProfileCombo_SelectionChanged"/>
                 <Button x:Name="AddTimelineToolbarBtn"
-                        Height="28"
+                        Height="30"
+                        VerticalContentAlignment="Center"
                         Padding="10,0"
                         Click="AddTimelineToolbarBtn_Click"
                         IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}">
@@ -127,7 +129,8 @@
                 <Button x:Name="PostBtn"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
-                        Height="28"
+                        Height="30"
+                        VerticalContentAlignment="Center"
                         Padding="12,0"
                         FontSize="14"
                         Style="{StaticResource AccentButtonStyle}"
@@ -146,7 +149,8 @@
                             Grid.Column="1"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
-                            Height="28"
+                            Height="30"
+                            VerticalContentAlignment="Center"
                             MaxWidth="300"
                             Margin="8,0"
                             QueryIcon="Find"
@@ -170,6 +174,16 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
                 <Button x:Name="BossModeBtn" Width="28" Height="28" Padding="0" Click="BossModeBtn_Click" Visibility="Collapsed" AutomationProperties.AutomationId="BossModeBtn"><FontIcon Glyph="&#xE7B7;" FontFamily="Segoe Fluent Icons" FontSize="13"/></Button>
+                <!-- ワークスペースが0件でも保存・管理へ入れる常設ボタン。
+                     空のワークスペース行を1段表示しないため、上部操作列へ置く。 -->
+                <Button x:Name="WorkspaceAddBtn"
+                        Width="28"
+                        Height="28"
+                        Padding="0"
+                        Click="OpenWorkspaces_Click"
+                        AutomationProperties.AutomationId="WorkspaceAddBtn">
+                    <FontIcon Glyph="&#xE8F1;" FontFamily="Segoe Fluent Icons" FontSize="13"/>
+                </Button>
                 <Button x:Name="AutoArrangeBtn"
                         Width="28"
                         Height="28"
@@ -328,6 +342,7 @@
 
         <!-- 保存済みワークスペースを、ブラウザーのタブのように即座に切り替える。 -->
         <Border x:Name="WorkspaceBar" Grid.Row="1"
+                Visibility="Collapsed"
                 Background="{ThemeResource AppChromeBrush}"
                 BorderBrush="{ThemeResource AppBorderBrush}"
                 BorderThickness="0,0,0,1"
@@ -354,16 +369,6 @@
                                 Orientation="Horizontal"
                                 Spacing="4"/>
                 </ScrollViewer>
-                <Button x:Name="WorkspaceAddBtn"
-                        Grid.Column="2"
-                        Width="28"
-                        Height="24"
-                        Padding="0"
-                        Click="OpenWorkspaces_Click"
-                        AutomationProperties.AutomationId="WorkspaceAddBtn">
-                    <FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
-                </Button>
-
                 <Button x:Name="ExitFocusModeBtn"
                         Height="32"
                         Padding="10,0"

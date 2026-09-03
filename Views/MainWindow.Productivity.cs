@@ -34,19 +34,9 @@ namespace XTimelineViewer.Views
         {
             if (WorkspaceTabsPanel is null) return;
             WorkspaceTabsPanel.Children.Clear();
-
-            if (_workspaces.Count == 0)
-            {
-                var saveFirstWorkspace = new Button
-                {
-                    Content = R.Get("Workspace_EmptySave"),
-                    Height = 24,
-                    Padding = new Thickness(12, 0, 12, 0),
-                };
-                saveFirstWorkspace.Click += OpenWorkspaces_Click;
-                AutomationProperties.SetName(saveFirstWorkspace, R.Get("Workspace_EmptySave"));
-                WorkspaceTabsPanel.Children.Add(saveFirstWorkspace);
-            }
+            WorkspaceBar.Visibility = _workspaces.Count == 0
+                ? Visibility.Collapsed
+                : Visibility.Visible;
 
             foreach (var workspace in _workspaces)
             {

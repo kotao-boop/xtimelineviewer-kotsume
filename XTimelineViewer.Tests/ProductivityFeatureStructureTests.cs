@@ -22,9 +22,11 @@ public class ProductivityFeatureStructureTests
     public void MainWindow_ExposesWorkspaceTabsAndUnifiedColumnCreator()
     {
         var xaml = ReadRepoFile("Views/MainWindow.xaml");
+        var productivity = ReadRepoFile("Views/MainWindow.Productivity.cs");
         Assert.Contains("x:Name=\"WorkspaceTabsPanel\"", xaml);
         Assert.Contains("Click=\"AddTimelineToolbarBtn_Click\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"WorkspaceAddBtn\"", xaml);
+        Assert.Contains("WorkspaceBar.Visibility = _workspaces.Count == 0", productivity);
     }
 
     [Fact]
