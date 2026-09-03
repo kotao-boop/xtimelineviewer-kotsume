@@ -127,8 +127,7 @@ namespace XTimelineViewer.Views
             };
 
             // 親ウィンドウのテーマを引き継ぐ
-            var theme = ((FrameworkElement)Content).RequestedTheme;
-            settingsWin.ApplyTheme(theme);
+            settingsWin.ApplyTheme(_appSettings.Theme);
 
             // 設定変更を即時反映
             settingsWin.SettingsChanged += () =>

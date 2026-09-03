@@ -24,6 +24,19 @@ namespace XTimelineViewer.Services
         }
 
         /// <summary>
+        /// 小さいウィンドウへ列を詰め込みすぎないため、1ページに表示できる列数を求める。
+        /// 横は最大3列、縦は最大3行とし、各列の操作領域を保つ。
+        /// </summary>
+        internal static int GetAutoPageCapacity(double availableWidth, double availableHeight)
+        {
+            if (!double.IsFinite(availableWidth) || availableWidth <= 0) availableWidth = 1200;
+            if (!double.IsFinite(availableHeight) || availableHeight <= 0) availableHeight = 700;
+            var columns = Math.Clamp((int)(availableWidth / 320), 1, 3);
+            var rows = Math.Clamp((int)(availableHeight / 280), 1, 3);
+            return columns * rows;
+        }
+
+        /// <summary>
         /// 固定テンプレートのマス数を超えた場合は Auto へ退避する。
         /// 同じ Grid セルへ複数のタイムラインを重ねて見失うことを防ぐ。
         /// Focus は選択中の1本だけを表示する一時モードなので本数制限はない。

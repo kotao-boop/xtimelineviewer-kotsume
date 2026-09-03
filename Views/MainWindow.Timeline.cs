@@ -34,6 +34,9 @@ namespace XTimelineViewer.Views
         // 一時非表示は「しばらく2本だけに集中したい」用途のため、保存しない。
         // アプリを再起動すれば必ず元の表示状態に戻る。
         private readonly HashSet<TimelineConfig> _temporarilyHiddenTimelines = [];
+        private int _autoLayoutPage;
+        private int _autoLayoutPageSize = 6;
+        private readonly List<Microsoft.UI.Xaml.Shapes.Rectangle> _gridResizeBars = [];
 
         // ── Persistence ───────────────────────────────────────────
         // 実体は Services/TimelineStore.cs（#368）。ここは例外を握って記録するだけ。
@@ -204,6 +207,7 @@ namespace XTimelineViewer.Views
             if (sender is MenuFlyoutItem item && item.Tag is string mode)
             {
                 if (mode == "Focus") EnterFocusMode(_focusedPane);
+                else if (mode == "Auto") NormalizeCurrentLayout();
                 else SetLayoutFromCommand(mode);
             }
         }
@@ -250,10 +254,12 @@ namespace XTimelineViewer.Views
 
             if (mode == "Classic")
             {
+                AutoPageNavigator.Visibility = Visibility.Collapsed;
                 TimelineGrid.Visibility = Visibility.Collapsed;
                 TimelineScroll.Visibility = Visibility.Visible;
 
                 TimelineGrid.Children.Clear();
+                _gridResizeBars.Clear();
                 TimelineGrid.RowDefinitions.Clear();
                 TimelineGrid.ColumnDefinitions.Clear();
 
@@ -277,6 +283,7 @@ namespace XTimelineViewer.Views
 
                 TimelinePanel.Children.Clear();
                 TimelineGrid.Children.Clear();
+                _gridResizeBars.Clear();
                 TimelineGrid.RowDefinitions.Clear();
                 TimelineGrid.ColumnDefinitions.Clear();
 
@@ -284,6 +291,7 @@ namespace XTimelineViewer.Views
 
                 if (mode == "Focus")
                 {
+                    AutoPageNavigator.Visibility = Visibility.Collapsed;
                     _focusedPane = _focusedPane is not null && visiblePanes.Contains(_focusedPane)
                         ? _focusedPane
                         : visiblePanes.FirstOrDefault();
@@ -301,24 +309,43 @@ namespace XTimelineViewer.Views
                 }
                 else
                 {
+                    var arrangedPanes = visiblePanes;
+                    if (mode == "Auto")
+                    {
+                        _autoLayoutPageSize = LayoutPlanner.GetAutoPageCapacity(
+                            TimelineGrid.ActualWidth,
+                            TimelineGrid.ActualHeight);
+                        var pageCount = Math.Max(1, (int)Math.Ceiling((double)visiblePanes.Count / _autoLayoutPageSize));
+                        _autoLayoutPage = Math.Clamp(_autoLayoutPage, 0, pageCount - 1);
+                        arrangedPanes = visiblePanes
+                            .Skip(_autoLayoutPage * _autoLayoutPageSize)
+                            .Take(_autoLayoutPageSize)
+                            .ToList();
+                        UpdateAutoPageNavigator(visiblePanes.Count, pageCount);
+                    }
+                    else
+                    {
+                        _autoLayoutPage = 0;
+                        AutoPageNavigator.Visibility = Visibility.Collapsed;
+                    }
                     var plan = mode switch
                     {
                         "Grid2x2" => new LayoutPlanner.GridPlan(2, 2),
                         "Grid2x3" => new LayoutPlanner.GridPlan(2, 3),
                         "VerticalSplit" => new LayoutPlanner.GridPlan(2, 1),
-                        _ => LayoutPlanner.GetAutoGrid(visiblePanes.Count),
+                        _ => LayoutPlanner.GetAutoGrid(arrangedPanes.Count),
                     };
                     AddGridDefinitions(mode, plan.Rows, plan.Columns, useSavedWeights: true);
 
-                    foreach (var hidden in panes.Where(p => !IsPaneEffectivelyVisible(p)))
+                    foreach (var hidden in panes.Where(p => !arrangedPanes.Contains(p)))
                     {
                         hidden.Visibility = Visibility.Collapsed;
                         hidden.ConfigureResizeAffordances(false, false, gridMode: true);
                         TimelineGrid.Children.Add(hidden);
                     }
-                    for (var i = 0; i < visiblePanes.Count; i++)
+                    for (var i = 0; i < arrangedPanes.Count; i++)
                     {
-                        var pane = visiblePanes[i];
+                        var pane = arrangedPanes[i];
                         var row = i / plan.Columns;
                         var column = i % plan.Columns;
                         pane.Visibility = Visibility.Visible;
@@ -329,11 +356,12 @@ namespace XTimelineViewer.Views
                         Grid.SetRow(pane, row);
                         Grid.SetColumn(pane, column);
                         pane.ConfigureResizeAffordances(
-                            horizontal: column < plan.Columns - 1,
-                            vertical: row < plan.Rows - 1,
+                            horizontal: false,
+                            vertical: false,
                             gridMode: true);
                         TimelineGrid.Children.Add(pane);
                     }
+                    AddGridResizeHandles(plan.Rows, plan.Columns);
                 }
             }
 
@@ -354,6 +382,137 @@ namespace XTimelineViewer.Views
                 TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(weight, GridUnitType.Star) });
             foreach (var weight in columnWeights)
                 TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(weight, GridUnitType.Star) });
+        }
+
+        /// <summary>
+        /// WebView2を含む各ペインの内側ではなく、TimelineGrid直下に境界線を置く。
+        /// これにより隣のWebViewに覆われず、境界のどこをつかんでも行・列を変更できる。
+        /// </summary>
+        private void AddGridResizeHandles(int rows, int columns)
+        {
+            var brush = ThemePaletteService.GetResizeBrush(_appSettings.Theme, IsHighContrast());
+            for (var column = 0; column < columns - 1; column++)
+                AddGridResizeHandle(verticalBoundary: true, column, rows, columns, brush);
+            for (var row = 0; row < rows - 1; row++)
+                AddGridResizeHandle(verticalBoundary: false, row, rows, columns, brush);
+        }
+
+        private void AddGridResizeHandle(bool verticalBoundary, int boundaryIndex, int rows, int columns, Brush brush)
+        {
+            var bar = new Microsoft.UI.Xaml.Shapes.Rectangle
+            {
+                Fill = brush,
+                Opacity = 0.38,
+                HorizontalAlignment = verticalBoundary ? HorizontalAlignment.Center : HorizontalAlignment.Stretch,
+                VerticalAlignment = verticalBoundary ? VerticalAlignment.Stretch : VerticalAlignment.Center,
+                Width = verticalBoundary ? 2 : double.NaN,
+                Height = verticalBoundary ? double.NaN : 2,
+                IsHitTestVisible = false,
+            };
+            var handle = new GridResizeHandle(bar)
+            {
+                HorizontalAlignment = verticalBoundary ? HorizontalAlignment.Right : HorizontalAlignment.Stretch,
+                VerticalAlignment = verticalBoundary ? VerticalAlignment.Stretch : VerticalAlignment.Bottom,
+                Width = verticalBoundary ? 16 : double.NaN,
+                Height = verticalBoundary ? double.NaN : 16,
+            };
+            Grid.SetColumn(handle, verticalBoundary ? boundaryIndex : 0);
+            Grid.SetRow(handle, verticalBoundary ? 0 : boundaryIndex);
+            Grid.SetColumnSpan(handle, verticalBoundary ? 1 : columns);
+            Grid.SetRowSpan(handle, verticalBoundary ? rows : 1);
+            Canvas.SetZIndex(handle, 1000);
+            AutomationProperties.SetName(handle, R.Get(verticalBoundary ? "Pane_ResizeWidth" : "Pane_ResizeHeight"));
+
+            var resizing = false;
+            double startPointer = 0;
+            double firstStart = 0;
+            double secondStart = 0;
+            handle.PointerEntered += (_, _) =>
+            {
+                if (!resizing) bar.Opacity = 1;
+                try
+                {
+                    handle.SetCursor(Microsoft.UI.Input.InputSystemCursor.Create(
+                        verticalBoundary
+                            ? Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast
+                            : Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth));
+                }
+                catch { }
+            };
+            handle.PointerExited += (_, _) =>
+            {
+                if (!resizing) bar.Opacity = 0.38;
+            };
+            handle.PointerPressed += (_, e) =>
+            {
+                var point = e.GetCurrentPoint(TimelineGrid);
+                if (!point.Properties.IsLeftButtonPressed) return;
+                resizing = true;
+                startPointer = verticalBoundary ? point.Position.X : point.Position.Y;
+                firstStart = verticalBoundary
+                    ? TimelineGrid.ColumnDefinitions[boundaryIndex].ActualWidth
+                    : TimelineGrid.RowDefinitions[boundaryIndex].ActualHeight;
+                secondStart = verticalBoundary
+                    ? TimelineGrid.ColumnDefinitions[boundaryIndex + 1].ActualWidth
+                    : TimelineGrid.RowDefinitions[boundaryIndex + 1].ActualHeight;
+                handle.CapturePointer(e.Pointer);
+                bar.Opacity = 1;
+                e.Handled = true;
+            };
+            handle.PointerMoved += (_, e) =>
+            {
+                if (!resizing) return;
+                var point = e.GetCurrentPoint(TimelineGrid);
+                var current = verticalBoundary ? point.Position.X : point.Position.Y;
+                var total = firstStart + secondStart;
+                var minimum = verticalBoundary ? Math.Min(160, total / 3) : Math.Min(140, total / 3);
+                var first = Math.Clamp(firstStart + current - startPointer, minimum, total - minimum);
+                if (verticalBoundary)
+                {
+                    TimelineGrid.ColumnDefinitions[boundaryIndex].Width = new GridLength(first, GridUnitType.Star);
+                    TimelineGrid.ColumnDefinitions[boundaryIndex + 1].Width = new GridLength(total - first, GridUnitType.Star);
+                }
+                else
+                {
+                    TimelineGrid.RowDefinitions[boundaryIndex].Height = new GridLength(first, GridUnitType.Star);
+                    TimelineGrid.RowDefinitions[boundaryIndex + 1].Height = new GridLength(total - first, GridUnitType.Star);
+                }
+                e.Handled = true;
+            };
+            handle.PointerReleased += (_, e) => FinishResize(e);
+            handle.PointerCaptureLost += (_, _) => FinishResize(null);
+
+            void FinishResize(PointerRoutedEventArgs? args)
+            {
+                if (!resizing) return;
+                resizing = false;
+                if (args is not null) handle.ReleasePointerCapture(args.Pointer);
+                bar.Opacity = 0.38;
+                SaveCurrentGridWeights();
+            }
+
+            _gridResizeBars.Add(bar);
+            TimelineGrid.Children.Add(handle);
+        }
+
+        private void RefreshGridResizeHandleBrushes()
+        {
+            var brush = ThemePaletteService.GetResizeBrush(_appSettings.Theme, IsHighContrast());
+            foreach (var bar in _gridResizeBars) bar.Fill = brush;
+        }
+
+        private sealed class GridResizeHandle : UserControl
+        {
+            internal GridResizeHandle(UIElement child)
+            {
+                Content = new Border
+                {
+                    Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                    Child = child,
+                };
+            }
+
+            internal void SetCursor(Microsoft.UI.Input.InputCursor cursor) => ProtectedCursor = cursor;
         }
 
         private static List<double> GetSavedWeights(
@@ -433,7 +592,9 @@ namespace XTimelineViewer.Views
             => pane.Config.IsVisible && !_temporarilyHiddenTimelines.Contains(pane.Config);
 
         private bool IsPaneDisplayed(TimelinePane pane)
-            => IsPaneEffectivelyVisible(pane) && (!_focusModeActive || pane == _focusedPane);
+            => IsPaneEffectivelyVisible(pane)
+               && pane.Visibility == Visibility.Visible
+               && (!_focusModeActive || pane == _focusedPane);
 
         private void TemporaryHideTimeline(TimelinePane pane)
         {
@@ -466,7 +627,91 @@ namespace XTimelineViewer.Views
         }
 
         private void AutoArrangeBtn_Click(object sender, RoutedEventArgs e)
-            => SetLayoutFromCommand("Auto");
+        {
+            NormalizeCurrentLayout();
+        }
+
+        /// <summary>
+        /// レイアウトの種類を変えず、現在の配置内の大きさだけを均等に戻す。
+        /// 「自動整列」ボタンが Classic から Auto（4本なら2x2）へ切り替えてしまうと、
+        /// 利用者が選んだ配置を破壊するため、レイアウト切替とは明確に分離する。
+        /// </summary>
+        private void NormalizeCurrentLayout()
+        {
+            if (_focusModeActive) return;
+            var mode = _appSettings.LayoutMode ?? "Classic";
+            if (mode == "Classic")
+            {
+                var visible = Panes.Where(IsPaneEffectivelyVisible).ToList();
+                if (visible.Count == 0) return;
+                var available = TimelineScroll.ActualWidth > 0 ? TimelineScroll.ActualWidth : 1200;
+                // StackPanel の内側余白と各ペインの Margin を先に引く。
+                // 上限を設けると広いワークスペースで右側に空白が残るため、
+                // 画面が十分広いときは残り幅を最後まで使い切る。
+                var reserved = TimelinePanel.Padding.Left + TimelinePanel.Padding.Right
+                    + visible.Sum(pane => pane.Margin.Left + pane.Margin.Right);
+                var usableWidth = Math.Max(0, available - reserved);
+                var equalWidth = Math.Max(220, usableWidth / visible.Count);
+                foreach (var pane in visible)
+                {
+                    pane.Width = equalWidth;
+                    pane.Config.Width = equalWidth;
+                    // 直前にグリッド／集中表示を使っていた場合、ペイン内の幅変更境界が
+                    // Collapsed のまま残ることがある。幅をそろえるだけでなく、Classic
+                    // で必要なマウス・キーボード操作も必ず復元する。
+                    pane.ConfigureResizeAffordances(horizontal: true, vertical: false, gridMode: false);
+                }
+                SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
+                UpdateLayoutMenuState();
+                return;
+            }
+
+            var columnCount = TimelineGrid.ColumnDefinitions.Count;
+            var rowCount = TimelineGrid.RowDefinitions.Count;
+            if (columnCount == 0 || rowCount == 0) return;
+            _appSettings.LayoutColumnWeights[mode] = Enumerable.Repeat(1.0, columnCount).ToList();
+            _appSettings.LayoutRowWeights[mode] = Enumerable.Repeat(1.0, rowCount).ToList();
+            SaveSettings();
+            ApplyLayoutMode(mode);
+            UpdateLayoutMenuState();
+        }
+
+        private void UpdateAutoPageNavigator(int total, int pageCount)
+        {
+            if (pageCount <= 1)
+            {
+                AutoPageNavigator.Visibility = Visibility.Collapsed;
+                return;
+            }
+            var first = _autoLayoutPage * _autoLayoutPageSize + 1;
+            var last = Math.Min(total, first + _autoLayoutPageSize - 1);
+            AutoPageStatusText.Text = string.Format(CultureInfo.CurrentCulture, "{0}–{1} / {2}", first, last, total);
+            AutoPagePreviousBtn.IsEnabled = _autoLayoutPage > 0;
+            AutoPageNextBtn.IsEnabled = _autoLayoutPage < pageCount - 1;
+            AutoPageNavigator.Visibility = Visibility.Visible;
+        }
+
+        private void AutoPagePreviousBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (_autoLayoutPage <= 0) return;
+            _autoLayoutPage--;
+            ApplyLayoutMode("Auto");
+        }
+
+        private void AutoPageNextBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _autoLayoutPage++;
+            ApplyLayoutMode("Auto");
+        }
+
+        private void TimelineGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_focusModeActive || _appSettings.LayoutMode != "Auto") return;
+            var capacity = LayoutPlanner.GetAutoPageCapacity(e.NewSize.Width, e.NewSize.Height);
+            if (capacity == _autoLayoutPageSize) return;
+            _autoLayoutPageSize = capacity;
+            ApplyLayoutMode("Auto");
+        }
 
         private void RestoreHiddenBtn_Click(object sender, RoutedEventArgs e)
             => RestoreTemporarilyHiddenTimelines();

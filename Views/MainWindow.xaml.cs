@@ -390,7 +390,11 @@ namespace XTimelineViewer.Views
                 foreach (var wv in Panes.Select(p => p.WebView).ToList())
                     CleanupWebView(wv);
             };
-            ((FrameworkElement)Content).ActualThemeChanged += (s, e) => ApplyThemeToWebViews();
+            ((FrameworkElement)Content).ActualThemeChanged += (s, e) =>
+            {
+                ApplySavedTheme();
+                ApplyThemeToWebViews();
+            };
             LoadSettings();
             InitializeBossMode();
             LoadProfiles();
@@ -439,6 +443,10 @@ namespace XTimelineViewer.Views
             AutomationProperties.SetName(LayoutBtn, R.Get("Layout_Tooltip"));
             ToolTipService.SetToolTip(AutoArrangeBtn, R.Get("Layout_Auto_Tooltip"));
             AutomationProperties.SetName(AutoArrangeBtn, R.Get("Layout_Auto_Tooltip"));
+            ToolTipService.SetToolTip(AutoPagePreviousBtn, R.Get("Layout_PagePrevious"));
+            ToolTipService.SetToolTip(AutoPageNextBtn, R.Get("Layout_PageNext"));
+            AutomationProperties.SetName(AutoPagePreviousBtn, R.Get("Layout_PagePrevious"));
+            AutomationProperties.SetName(AutoPageNextBtn, R.Get("Layout_PageNext"));
             var bossModeTip = R.Get("BossMode_Tooltip");
             ToolTipService.SetToolTip(BossModeBtn, bossModeTip);
             AutomationProperties.SetName(BossModeBtn, bossModeTip);
@@ -455,6 +463,11 @@ namespace XTimelineViewer.Views
             ThemeSystemItem.Text    = R.Get("Theme_System");
             ThemeLightItem.Text     = R.Get("Theme_Light");
             ThemeDarkItem.Text      = R.Get("Theme_Dark");
+            ThemeCyberpunkItem.Text = R.Get("Theme_Cyberpunk");
+            ThemeNeonContrastItem.Text = R.Get("Theme_NeonContrast");
+            ThemeOceanItem.Text     = R.Get("Theme_Ocean");
+            ThemeForestItem.Text    = R.Get("Theme_Forest");
+            ThemeSakuraItem.Text    = R.Get("Theme_Sakura");
             UpdateThemeRadioState();
             AppSettingsMenuItem.Text = R.Get("Menu_Settings");
 

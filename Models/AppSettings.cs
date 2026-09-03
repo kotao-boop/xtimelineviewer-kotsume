@@ -6,7 +6,7 @@ namespace XTimelineViewer.Models
     {
         public bool    OpenComposerInBrowser { get; set; } = false;
         public bool    OpenTimestampInBrowser{ get; set; } = false;
-        public string  Theme                 { get; set; } = "Default"; // "Light" | "Dark" | "Default"
+        public string  Theme                 { get; set; } = "Default"; // Default | Light | Dark | Cyberpunk | NeonContrast | Ocean | Forest | Sakura
         public string  Language              { get; set; } = "system";  // "system" | "ja-JP" | "en-US"
         public string? CachedLatestVersion   { get; set; } = null;      // "v1.4.0" など
         public bool    DefaultHideSidebar   { get; set; } = false;     // 新規タイムラインの既定値

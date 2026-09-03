@@ -36,6 +36,11 @@
   <data name="Theme_System" xml:space="preserve"><value>System</value></data>
   <data name="Theme_Light" xml:space="preserve"><value>Light</value></data>
   <data name="Theme_Dark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Theme_Cyberpunk" xml:space="preserve"><value>Cyberpunk</value></data>
+  <data name="Theme_NeonContrast" xml:space="preserve"><value>Neon Contrast</value></data>
+  <data name="Theme_Ocean" xml:space="preserve"><value>Midnight Ocean</value></data>
+  <data name="Theme_Forest" xml:space="preserve"><value>Forest</value></data>
+  <data name="Theme_Sakura" xml:space="preserve"><value>Sakura</value></data>
 
   <!-- ToggleSwitch on/off labels -->
   <data name="Toggle_On" xml:space="preserve"><value>On</value></data>
@@ -48,7 +53,7 @@
   <data name="Settings_Theme" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Language</value></data>
   <data name="Settings_ExportFolder" xml:space="preserve"><value>Export Settings</value></data>
-  <data name="Settings_Theme_Description" xml:space="preserve"><value>Change the app's appearance</value></data>
+  <data name="Settings_Theme_Description" xml:space="preserve"><value>Select a theme to preview it across the app immediately</value></data>
   <data name="Settings_Language_Description" xml:space="preserve"><value>Change the display language</value></data>
   <data name="Settings_TranslationButtonPlacement" xml:space="preserve"><value>Auto-translate button placement</value></data>
   <data name="Settings_TranslationButtonPlacement_Description" xml:space="preserve"><value>Choose whether the auto-translate button stays in the column header, moves into the three-dot menu, or is hidden.</value></data>
@@ -269,8 +274,10 @@
   <data name="Empty_QuickAdd" xml:space="preserve"><value>Quick add</value></data>
   <data name="Empty_DisabledHint" xml:space="preserve"><value>Add an X account first to use search, posting, and timelines.</value></data>
   <data name="Layout_Tooltip" xml:space="preserve"><value>Change layout</value></data>
-  <data name="Layout_Auto" xml:space="preserve"><value>Auto arrange</value></data>
-  <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>Automatically arrange visible timelines</value></data>
+  <data name="Layout_Auto" xml:space="preserve"><value>Auto-arrange (keep current layout)</value></data>
+  <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>Equalize column and row sizes without changing the current layout</value></data>
+  <data name="Layout_PagePrevious" xml:space="preserve"><value>Show previous timelines</value></data>
+  <data name="Layout_PageNext" xml:space="preserve"><value>Show next timelines</value></data>
   <data name="Timeline_RestoreHidden" xml:space="preserve"><value>Restore temporarily hidden timelines ({0})</value></data>
   <data name="Layout_Classic" xml:space="preserve"><value>▥  Classic columns</value></data>
   <data name="Layout_Grid2x2" xml:space="preserve"><value>▦  2 × 2 grid</value></data>

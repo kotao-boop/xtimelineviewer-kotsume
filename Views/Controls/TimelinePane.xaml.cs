@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Web.WebView2.Core;
@@ -57,7 +58,6 @@ namespace XTimelineViewer.Views.Controls
         // ── ドラッグリサイズ ────────────────────────────────────
         private bool _isResizing = false;
         private int _unreadCount;
-        private double _resizeStartPointerX;
         private double _resizeStartWidth;
         private double _lastRequestedWidth;
         private bool _isResizingHeight;
@@ -95,8 +95,9 @@ namespace XTimelineViewer.Views.Controls
 
         private void UpdateHeaderDensity()
         {
-            var compact = ActualWidth > 0 && ActualWidth < 520;
-            UrlLabel.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            // 閲覧領域を優先し、列ヘッダーは常に1行にする。
+            // URL は TitleLabel のツールチップで確認できる。
+            UrlLabel.Visibility = Visibility.Collapsed;
             RefreshBtn.Visibility = _headerPointerOver && ActualWidth >= 420
                 ? Visibility.Visible
                 : Visibility.Collapsed;
@@ -108,7 +109,7 @@ namespace XTimelineViewer.Views.Controls
             {
                 if (!_isResizing)
                 {
-                    ResizeGripBar.Opacity = 0.6;
+                    ResizeGripBar.Opacity = 0.9;
                     try { this.ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast); } catch { }
                 }
             };
@@ -117,75 +118,47 @@ namespace XTimelineViewer.Views.Controls
             {
                 if (!_isResizing)
                 {
-                    ResizeGripBar.Opacity = 0.0;
+                    ResizeGripBar.Opacity = 0.28;
                     try { this.ProtectedCursor = null; } catch { }
                 }
             };
 
-            ResizeGrip.PointerPressed += (s, e) =>
+            ResizeGrip.DragStarted += (s, e) =>
             {
-                var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
-                if (pt.Properties.IsLeftButtonPressed)
+                _isResizing = true;
+                _resizeStartWidth = ActualWidth > 0 ? ActualWidth : (double.IsNaN(Width) ? Config.Width : Width);
+                _lastRequestedWidth = _resizeStartWidth;
+                ResizeGripBar.Opacity = 1.0;
+            };
+
+            ResizeGrip.DragDelta += (s, e) =>
+            {
+                if (!_isResizing) return;
+                var minimumWidth = _gridResizeMode ? 160 : 220;
+                var newWidth = Math.Clamp(_lastRequestedWidth + e.HorizontalChange, minimumWidth, 1600);
+                _lastRequestedWidth = newWidth;
+                if (_gridResizeMode) WidthResizing?.Invoke(this, newWidth);
+                else
                 {
-                    _isResizing = true;
-                    _resizeStartPointerX = pt.Position.X;
-                    _resizeStartWidth = this.ActualWidth > 0 ? this.ActualWidth : (double.IsNaN(this.Width) ? Config.Width : this.Width);
-                    _lastRequestedWidth = _resizeStartWidth;
-                    ResizeGrip.CapturePointer(e.Pointer);
-                    ResizeGripBar.Opacity = 1.0;
-                    e.Handled = true;
+                    Width = newWidth;
+                    Config.Width = newWidth;
                 }
             };
 
-            ResizeGrip.PointerMoved += (s, e) =>
+            ResizeGrip.DragCompleted += (s, e) =>
             {
-                if (_isResizing)
-                {
-                    var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
-                    var deltaX = pt.Position.X - _resizeStartPointerX;
-                    var newWidth = Math.Clamp(_resizeStartWidth + deltaX, 220, 1600);
-                    _lastRequestedWidth = newWidth;
-                    if (_gridResizeMode) WidthResizing?.Invoke(this, newWidth);
-                    else
-                    {
-                        Width = newWidth;
-                        Config.Width = newWidth;
-                    }
-                    e.Handled = true;
-                }
-            };
-
-            ResizeGrip.PointerReleased += (s, e) =>
-            {
-                if (_isResizing)
-                {
-                    _isResizing = false;
-                    ResizeGrip.ReleasePointerCapture(e.Pointer);
-                    ResizeGripBar.Opacity = 0.0;
-                    try { this.ProtectedCursor = null; } catch { }
-                    WidthResized?.Invoke(this, _gridResizeMode
-                        ? _lastRequestedWidth
-                        : Width);
-                    e.Handled = true;
-                }
-            };
-
-            ResizeGrip.PointerCaptureLost += (s, e) =>
-            {
-                if (_isResizing)
-                {
-                    _isResizing = false;
-                    ResizeGripBar.Opacity = 0.0;
-                    try { this.ProtectedCursor = null; } catch { }
-                    WidthResized?.Invoke(this, _gridResizeMode ? _lastRequestedWidth : Width);
-                }
+                if (!_isResizing) return;
+                _isResizing = false;
+                ResizeGripBar.Opacity = 0.28;
+                try { ProtectedCursor = null; } catch { }
+                WidthResized?.Invoke(this, _gridResizeMode ? _lastRequestedWidth : Width);
             };
 
             VerticalResizeGrip.PointerEntered += (s, e) =>
             {
                 if (!_isResizingHeight)
                 {
-                    VerticalResizeGripBar.Opacity = 0.6;
+                    VerticalResizeGripBar.Opacity = 0.9;
                     try { ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth); } catch { }
                 }
             };
@@ -193,7 +166,7 @@ namespace XTimelineViewer.Views.Controls
             {
                 if (!_isResizingHeight)
                 {
-                    VerticalResizeGripBar.Opacity = 0.0;
+                    VerticalResizeGripBar.Opacity = 0.28;
                     try { ProtectedCursor = null; } catch { }
                 }
             };
@@ -214,7 +187,8 @@ namespace XTimelineViewer.Views.Controls
                 if (!_isResizingHeight) return;
                 var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
                 var deltaY = pt.Position.Y - _resizeStartPointerY;
-                var newHeight = Math.Clamp(_resizeStartHeight + deltaY, 180, 1600);
+                var minimumHeight = _gridResizeMode ? 140 : 180;
+                var newHeight = Math.Clamp(_resizeStartHeight + deltaY, minimumHeight, 1600);
                 _lastRequestedHeight = newHeight;
                 if (_gridResizeMode) HeightResizing?.Invoke(this, newHeight);
                 else
@@ -229,7 +203,7 @@ namespace XTimelineViewer.Views.Controls
                 if (!_isResizingHeight) return;
                 _isResizingHeight = false;
                 VerticalResizeGrip.ReleasePointerCapture(e.Pointer);
-                VerticalResizeGripBar.Opacity = 0.0;
+                VerticalResizeGripBar.Opacity = 0.28;
                 try { ProtectedCursor = null; } catch { }
                 HeightResized?.Invoke(this, _gridResizeMode
                     ? _lastRequestedHeight
@@ -240,7 +214,7 @@ namespace XTimelineViewer.Views.Controls
             {
                 if (!_isResizingHeight) return;
                 _isResizingHeight = false;
-                VerticalResizeGripBar.Opacity = 0.0;
+                VerticalResizeGripBar.Opacity = 0.28;
                 try { ProtectedCursor = null; } catch { }
                 HeightResized?.Invoke(this, _gridResizeMode ? _lastRequestedHeight : Height);
             };
@@ -299,8 +273,12 @@ namespace XTimelineViewer.Views.Controls
             _gridResizeMode = gridMode;
             ResizeGrip.Visibility = horizontal ? Visibility.Visible : Visibility.Collapsed;
             VerticalResizeGrip.Visibility = vertical ? Visibility.Visible : Visibility.Collapsed;
+            ResizeGrip.IsHitTestVisible = horizontal;
+            VerticalResizeGrip.IsHitTestVisible = vertical;
             ResizeGrip.IsTabStop = horizontal;
             VerticalResizeGrip.IsTabStop = vertical;
+            ResizeGripBar.Opacity = horizontal ? 0.28 : 0;
+            VerticalResizeGripBar.Opacity = vertical ? 0.28 : 0;
         }
 
         // ── フォーカス ───────────────────────────────────────
@@ -328,26 +306,40 @@ namespace XTimelineViewer.Views.Controls
         /// 解決済みの ActualTheme を使って ThemeDictionaries を直接引く。
         /// コントラストテーマの判定は MainWindow 側の責任（引数で受け取る）。
         /// </summary>
-        internal void ApplyTheme(ElementTheme theme, bool focused, bool highContrast)
+        internal void ApplyTheme(ElementTheme theme, string? appTheme, bool focused, bool highContrast)
         {
             var themeKey  = highContrast ? "HighContrast"
                           : theme == ElementTheme.Light ? "Light" : "Default";
             var themeDict = (ResourceDictionary)Application.Current.Resources.ThemeDictionaries[themeKey];
 
-            PaneRoot.Background = (Brush)themeDict["TimelinePaneBackgroundBrush"];
+            PaneRoot.Background = highContrast
+                ? (Brush)themeDict["TimelinePaneBackgroundBrush"]
+                : ThemePaletteService.GetPaneBrush(appTheme, "TimelinePaneBackgroundBrush", themeDict);
 
             // コントラストテーマではフォーカスを「塗り」ではなく「枠」で示す（#341）。
             // ヘッダーを Highlight 色で塗ると、中の文字色までこちらで揃えない限り
             // 地と衝突する。枠なら子要素の配色に一切干渉せずに済む。
-            bool outlineFocus = highContrast && focused;
-            PaneRoot.BorderBrush = (Brush)themeDict[outlineFocus
+            bool outlineFocus = focused && (highContrast || ThemePaletteService.UsesOutlineFocus(appTheme));
+            var borderRole = outlineFocus
                 ? "TimelineHeaderFocusedBackgroundBrush"
-                : "TimelinePaneBorderBrush"];
+                : "TimelinePaneBorderBrush";
+            PaneRoot.BorderBrush = highContrast
+                ? (Brush)themeDict[borderRole]
+                : ThemePaletteService.GetPaneBrush(appTheme, borderRole, themeDict);
             PaneRoot.BorderThickness = new Thickness(outlineFocus ? 2 : 1);
 
-            HeaderGrid.Background = (Brush)themeDict[focused && !highContrast
+            var headerRole = focused && !outlineFocus
                 ? "TimelineHeaderFocusedBackgroundBrush"
-                : "TimelineHeaderBackgroundBrush"];
+                : "TimelineHeaderBackgroundBrush";
+            HeaderGrid.Background = highContrast
+                ? (Brush)themeDict[headerRole]
+                : ThemePaletteService.GetPaneBrush(appTheme, headerRole, themeDict);
+
+            var resizeBrush = highContrast
+                ? (Brush)themeDict["TimelinePaneBorderBrush"]
+                : ThemePaletteService.GetPaneBrush(appTheme, "TimelinePaneBorderBrush", themeDict);
+            ResizeGripBar.Fill = resizeBrush;
+            VerticalResizeGripBar.Fill = resizeBrush;
         }
 
         // ── 外から触る要素 ────────────────────────────────────────────────────

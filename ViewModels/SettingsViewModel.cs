@@ -20,7 +20,7 @@ namespace XTimelineViewer.ViewModels
     /// </summary>
     public partial class SettingsViewModel : ObservableObject
     {
-        internal static readonly string[] ThemeValues   = ["Default", "Light", "Dark"];
+        internal static readonly string[] ThemeValues   = ["Default", "Light", "Dark", "Cyberpunk", "NeonContrast", "Ocean", "Forest", "Sakura"];
         internal static readonly string[] LangValues    = ["system", "ja-JP", "en-US"];
         internal static readonly string[] BrowserValues = ["system", "edge"];
         internal static readonly string[] TranslationButtonPlacementValues = ["menu", "header", "hidden"];

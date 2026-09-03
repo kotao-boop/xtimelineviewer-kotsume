@@ -7,7 +7,7 @@
     <!-- KeyboardAcceleratorPlacementMode=Hidden: ルート Grid のグローバルアクセラレータ
          （Ctrl+F / F3）の自動ツールチップが UI のあちこちに出るのを抑止する (#214)。
          ショートカット自体は引き続き機能する。 -->
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    <Grid x:Name="MainRoot" Background="{ThemeResource AppSurfaceBrush}"
           KeyboardAcceleratorPlacementMode="Hidden">
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="FocusSearchBox_Invoked"/>
@@ -45,10 +45,10 @@
         <!-- Toolbar -->
         <Grid x:Name="ToolbarRoot"
               Grid.Row="0"
-              Background="{ThemeResource LayerFillColorDefaultBrush}"
-              BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+              Background="{ThemeResource AppChromeBrush}"
+              BorderBrush="{ThemeResource AppBorderBrush}"
               BorderThickness="0,0,0,1"
-              Padding="8,4">
+              Padding="6,2">
             <VisualStateManager.VisualStateGroups>
                 <VisualStateGroup x:Name="ToolbarWidthStates">
                     <VisualState x:Name="CompactToolbar">
@@ -59,7 +59,7 @@
                             <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Collapsed"/>
                             <Setter Target="PostLabel.Visibility" Value="Collapsed"/>
                             <Setter Target="ExitFocusModeLabel.Visibility" Value="Collapsed"/>
-                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="140"/>
+                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="180"/>
                             <Setter Target="SearchBox.MaxWidth" Value="360"/>
                             <Setter Target="AddTimelineToolbarBtn.Padding" Value="8,0"/>
                             <Setter Target="PostBtn.Padding" Value="9,0"/>
@@ -75,7 +75,7 @@
                             <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Visible"/>
                             <Setter Target="PostLabel.Visibility" Value="Visible"/>
                             <Setter Target="ExitFocusModeLabel.Visibility" Value="Visible"/>
-                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="200"/>
+                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="240"/>
                             <Setter Target="SearchBox.MaxWidth" Value="480"/>
                             <Setter Target="AddTimelineToolbarBtn.Padding" Value="10,0"/>
                             <Setter Target="PostBtn.Padding" Value="12,0"/>
@@ -91,7 +91,7 @@
                             <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Visible"/>
                             <Setter Target="PostLabel.Visibility" Value="Visible"/>
                             <Setter Target="ExitFocusModeLabel.Visibility" Value="Visible"/>
-                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="280"/>
+                            <Setter Target="ToolbarProfileCombo.MaxWidth" Value="320"/>
                             <Setter Target="SearchBox.MaxWidth" Value="720"/>
                             <Setter Target="WorkspaceSectionIcon.Visibility" Value="Visible"/>
                         </VisualState.Setters>
@@ -110,12 +110,14 @@
                         Spacing="6"
                         VerticalAlignment="Center">
                 <ComboBox x:Name="ToolbarProfileCombo"
-                          MinWidth="120"
-                          MaxWidth="180"
+                          MinWidth="150"
+                          MaxWidth="240"
                           Height="32"
+                          VerticalContentAlignment="Center"
                           SelectionChanged="ToolbarProfileCombo_SelectionChanged"/>
                 <Button x:Name="AddTimelineToolbarBtn"
                         Height="32"
+                        VerticalContentAlignment="Center"
                         Padding="10,0"
                         Click="AddTimelineToolbarBtn_Click"
                         IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}">
@@ -128,6 +130,7 @@
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
                         Height="32"
+                        VerticalContentAlignment="Center"
                         Padding="12,0"
                         FontSize="14"
                         Style="{StaticResource AccentButtonStyle}"
@@ -146,6 +149,8 @@
                             Grid.Column="1"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
+                            Height="32"
+                            VerticalContentAlignment="Center"
                             MaxWidth="300"
                             Margin="8,0"
                             QueryIcon="Find"
@@ -168,10 +173,20 @@
                         Spacing="4"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
-                <Button x:Name="BossModeBtn" Width="32" Height="32" Padding="0" Click="BossModeBtn_Click" Visibility="Collapsed" AutomationProperties.AutomationId="BossModeBtn"><FontIcon Glyph="&#xE7B7;" FontFamily="Segoe Fluent Icons" FontSize="14"/></Button>
+                <Button x:Name="BossModeBtn" Width="28" Height="28" Padding="0" Click="BossModeBtn_Click" Visibility="Collapsed" AutomationProperties.AutomationId="BossModeBtn"><FontIcon Glyph="&#xE7B7;" FontFamily="Segoe Fluent Icons" FontSize="13"/></Button>
+                <!-- ワークスペースが0件でも保存・管理へ入れる常設ボタン。
+                     空のワークスペース行を1段表示しないため、上部操作列へ置く。 -->
+                <Button x:Name="WorkspaceAddBtn"
+                        Width="28"
+                        Height="28"
+                        Padding="0"
+                        Click="OpenWorkspaces_Click"
+                        AutomationProperties.AutomationId="WorkspaceAddBtn">
+                    <FontIcon Glyph="&#xE8F1;" FontFamily="Segoe Fluent Icons" FontSize="13"/>
+                </Button>
                 <Button x:Name="AutoArrangeBtn"
-                        Width="32"
-                        Height="32"
+                        Width="28"
+                        Height="28"
                         Padding="0"
                         Click="AutoArrangeBtn_Click"
                         AutomationProperties.AutomationId="AutoArrangeBtn">
@@ -179,15 +194,15 @@
                 </Button>
 
                 <Button x:Name="RestoreHiddenBtn"
-                        Width="32"
-                        Height="32"
+                        Width="28"
+                        Height="28"
                         Padding="0"
                         Visibility="Collapsed"
                         Click="RestoreHiddenBtn_Click"
                         AutomationProperties.AutomationId="RestoreHiddenBtn">
                     <Grid>
                         <FontIcon Glyph="&#xE890;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
-                        <Border Background="{ThemeResource SystemAccentColor}"
+                        <Border x:Name="HiddenTimelineCountBadge" Background="{ThemeResource AppAccentBrush}"
                                 CornerRadius="8"
                                 MinWidth="16"
                                 Height="16"
@@ -197,7 +212,7 @@
                                 Margin="13,-8,-8,0">
                             <TextBlock x:Name="HiddenTimelineCountText"
                                        FontSize="10"
-                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                       Foreground="{ThemeResource AppAccentTextBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
                         </Border>
@@ -205,7 +220,7 @@
                 </Button>
 
                 <!-- レイアウトテンプレート切替ボタン -->
-                <Button x:Name="LayoutBtn" Width="32" Height="32" Padding="0" FontSize="14">
+                <Button x:Name="LayoutBtn" Width="28" Height="28" Padding="0" FontSize="13">
                     <FontIcon Glyph="&#xE737;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     <Button.Flyout>
                         <MenuFlyout>
@@ -244,7 +259,7 @@
                 </Button>
 
                 <Grid>
-                <Button x:Name="AppMenuBtn" Width="32" Height="32" Padding="0" FontSize="14">
+                <Button x:Name="AppMenuBtn" Width="28" Height="28" Padding="0" FontSize="13">
                     <FontIcon Glyph="&#xE700;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     <Button.Flyout>
                         <MenuFlyout>
@@ -299,6 +314,11 @@
                                 <RadioMenuFlyoutItem x:Name="ThemeSystemItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Default"/>
                                 <RadioMenuFlyoutItem x:Name="ThemeLightItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Light"/>
                                 <RadioMenuFlyoutItem x:Name="ThemeDarkItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Dark"/>
+                                <RadioMenuFlyoutItem x:Name="ThemeCyberpunkItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Cyberpunk"/>
+                                <RadioMenuFlyoutItem x:Name="ThemeNeonContrastItem" GroupName="Theme" Click="ThemeItem_Click" Tag="NeonContrast"/>
+                                <RadioMenuFlyoutItem x:Name="ThemeOceanItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Ocean"/>
+                                <RadioMenuFlyoutItem x:Name="ThemeForestItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Forest"/>
+                                <RadioMenuFlyoutItem x:Name="ThemeSakuraItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Sakura"/>
                             </MenuFlyoutSubItem>
                             <MenuFlyoutSeparator/>
                             <MenuFlyoutItem x:Name="AppSettingsMenuItem" Click="OpenSettingsWindow_Click">
@@ -311,7 +331,7 @@
                 </Button>
                 <Ellipse x:Name="UpdateBadgeDot"
                          Width="8" Height="8"
-                         Fill="{ThemeResource SystemAccentColor}"
+                         Fill="{ThemeResource AppAccentBrush}"
                          HorizontalAlignment="Right" VerticalAlignment="Top"
                          Margin="0,2,2,0"
                          Visibility="Collapsed"
@@ -321,11 +341,12 @@
         </Grid>
 
         <!-- 保存済みワークスペースを、ブラウザーのタブのように即座に切り替える。 -->
-        <Border Grid.Row="1"
-                Background="{ThemeResource LayerFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+        <Border x:Name="WorkspaceBar" Grid.Row="1"
+                Visibility="Collapsed"
+                Background="{ThemeResource AppChromeBrush}"
+                BorderBrush="{ThemeResource AppBorderBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="8,4">
+                Padding="6,1">
             <Grid ColumnSpacing="6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -348,16 +369,6 @@
                                 Orientation="Horizontal"
                                 Spacing="4"/>
                 </ScrollViewer>
-                <Button x:Name="WorkspaceAddBtn"
-                        Grid.Column="2"
-                        Width="32"
-                        Height="28"
-                        Padding="0"
-                        Click="OpenWorkspaces_Click"
-                        AutomationProperties.AutomationId="WorkspaceAddBtn">
-                    <FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
-                </Button>
-
                 <Button x:Name="ExitFocusModeBtn"
                         Height="32"
                         Padding="10,0"
@@ -388,7 +399,7 @@
                     Visibility="{x:Bind ViewModel.DropHintBorderVisibility, Mode=OneWay}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                    BorderBrush="{ThemeResource AppBorderBrush}"
                     BorderThickness="2"
                     CornerRadius="12"
                     MaxWidth="620"
@@ -449,7 +460,32 @@
             <Grid x:Name="TimelineGrid"
                   Grid.Column="0"
                   Visibility="Collapsed"
+                  SizeChanged="TimelineGrid_SizeChanged"
                   Padding="4"/>
+
+            <!-- 小さい画面で自動整列した列が消えたように見えないよう、表示範囲を明示する。 -->
+            <Border x:Name="AutoPageNavigator"
+                    Grid.Column="0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="12"
+                    Padding="6,4"
+                    CornerRadius="8"
+                    Background="{ThemeResource AppChromeBrush}"
+                    BorderBrush="{ThemeResource AppBorderBrush}"
+                    BorderThickness="1"
+                    Visibility="Collapsed"
+                    Canvas.ZIndex="60">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Button x:Name="AutoPagePreviousBtn" Width="30" Height="28" Padding="0" Click="AutoPagePreviousBtn_Click">
+                        <FontIcon Glyph="&#xE76B;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                    </Button>
+                    <TextBlock x:Name="AutoPageStatusText" MinWidth="76" TextAlignment="Center" VerticalAlignment="Center"/>
+                    <Button x:Name="AutoPageNextBtn" Width="30" Height="28" Padding="0" Click="AutoPageNextBtn_Click">
+                        <FontIcon Glyph="&#xE76C;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                    </Button>
+                </StackPanel>
+            </Border>
 
             <Border x:Name="BossModeOverlay"
                     Grid.Column="0"
@@ -492,9 +528,9 @@
                     Width="480"
                     MaxWidth="560"
                     Visibility="Collapsed"
-                    BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    BorderBrush="{ThemeResource AppBorderBrush}"
                     BorderThickness="1,0,0,0"
-                    Background="{ThemeResource LayerFillColorDefaultBrush}">
+                    Background="{ThemeResource AppChromeBrush}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

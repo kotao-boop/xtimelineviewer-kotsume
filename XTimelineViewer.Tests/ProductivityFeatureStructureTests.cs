@@ -22,9 +22,11 @@ public class ProductivityFeatureStructureTests
     public void MainWindow_ExposesWorkspaceTabsAndUnifiedColumnCreator()
     {
         var xaml = ReadRepoFile("Views/MainWindow.xaml");
+        var productivity = ReadRepoFile("Views/MainWindow.Productivity.cs");
         Assert.Contains("x:Name=\"WorkspaceTabsPanel\"", xaml);
         Assert.Contains("Click=\"AddTimelineToolbarBtn_Click\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"WorkspaceAddBtn\"", xaml);
+        Assert.Contains("WorkspaceBar.Visibility = _workspaces.Count == 0", productivity);
     }
 
     [Fact]
@@ -96,10 +98,27 @@ public class ProductivityFeatureStructureTests
     {
         var xaml = ReadRepoFile("Views/Controls/TimelinePane.xaml");
         var source = ReadRepoFile("Views/Controls/TimelinePane.xaml.cs");
+        var mainWindow = ReadRepoFile("Views/MainWindow.Timeline.cs");
         Assert.Contains("PaneWidthResizeGrip", xaml);
         Assert.Contains("PaneHeightResizeGrip", xaml);
+        Assert.Contains("<Thumb x:Name=\"ResizeGrip\"", xaml);
+        Assert.Contains("<ControlTemplate TargetType=\"Thumb\">", xaml);
+        Assert.Contains("<Border Background=\"{TemplateBinding Background}\"/>", xaml);
+        Assert.Contains("ResizeGrip.DragDelta", source);
         Assert.Contains("ConfigureResizeAffordances", source);
         Assert.Contains("ResizeGrip.KeyDown", source);
         Assert.Contains("VerticalResizeGrip.KeyDown", source);
+        Assert.Contains("_gridResizeMode ? 160 : 220", source);
+        Assert.Contains("_gridResizeMode ? 140 : 180", source);
+        Assert.Contains("AddGridResizeHandles", mainWindow);
+        Assert.Contains("Width = verticalBoundary ? 16", mainWindow);
+        Assert.Contains("NormalizeCurrentLayout", mainWindow);
+        Assert.Contains("pane.ConfigureResizeAffordances(horizontal: true, vertical: false, gridMode: false)", mainWindow);
+        Assert.Contains("usableWidth / visible.Count", mainWindow);
+        Assert.DoesNotContain("Math.Clamp(available / visible.Count, 280, 600)", mainWindow);
+        Assert.DoesNotContain("AutoArrangeBtn_Click(object sender, RoutedEventArgs e)\n            => SetLayoutFromCommand(\"Auto\")", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("else if (mode == \"Auto\") NormalizeCurrentLayout()", mainWindow, StringComparison.Ordinal);
+        var productivity = ReadRepoFile("Views/MainWindow.Productivity.cs");
+        Assert.Contains("NormalizeCurrentLayout)", productivity, StringComparison.Ordinal);
     }
 }
