@@ -40,7 +40,7 @@ namespace XTimelineViewer.Views
                 var saveFirstWorkspace = new Button
                 {
                     Content = R.Get("Workspace_EmptySave"),
-                    Height = 28,
+                    Height = 24,
                     Padding = new Thickness(12, 0, 12, 0),
                 };
                 saveFirstWorkspace.Click += OpenWorkspaces_Click;
@@ -54,7 +54,7 @@ namespace XTimelineViewer.Views
                 var tab = new Button
                 {
                     Content = workspace.Name,
-                    Height = 28,
+                    Height = 24,
                     Padding = new Thickness(12, 0, 8, 0),
                     Tag = workspace.Id,
                 };
@@ -106,8 +106,8 @@ namespace XTimelineViewer.Views
                 menu.Items.Add(delete);
                 var more = new Button
                 {
-                    Width = 28,
-                    Height = 28,
+                    Width = 24,
+                    Height = 24,
                     Padding = new Thickness(0),
                     Flyout = menu,
                     Content = new FontIcon

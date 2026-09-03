@@ -48,7 +48,7 @@
               Background="{ThemeResource AppChromeBrush}"
               BorderBrush="{ThemeResource AppBorderBrush}"
               BorderThickness="0,0,0,1"
-              Padding="8,4">
+              Padding="6,2">
             <VisualStateManager.VisualStateGroups>
                 <VisualStateGroup x:Name="ToolbarWidthStates">
                     <VisualState x:Name="CompactToolbar">
@@ -112,10 +112,10 @@
                 <ComboBox x:Name="ToolbarProfileCombo"
                           MinWidth="120"
                           MaxWidth="180"
-                          Height="32"
+                          Height="28"
                           SelectionChanged="ToolbarProfileCombo_SelectionChanged"/>
                 <Button x:Name="AddTimelineToolbarBtn"
-                        Height="32"
+                        Height="28"
                         Padding="10,0"
                         Click="AddTimelineToolbarBtn_Click"
                         IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}">
@@ -127,7 +127,7 @@
                 <Button x:Name="PostBtn"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
-                        Height="32"
+                        Height="28"
                         Padding="12,0"
                         FontSize="14"
                         Style="{StaticResource AccentButtonStyle}"
@@ -146,6 +146,7 @@
                             Grid.Column="1"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
+                            Height="28"
                             MaxWidth="300"
                             Margin="8,0"
                             QueryIcon="Find"
@@ -168,10 +169,10 @@
                         Spacing="4"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
-                <Button x:Name="BossModeBtn" Width="32" Height="32" Padding="0" Click="BossModeBtn_Click" Visibility="Collapsed" AutomationProperties.AutomationId="BossModeBtn"><FontIcon Glyph="&#xE7B7;" FontFamily="Segoe Fluent Icons" FontSize="14"/></Button>
+                <Button x:Name="BossModeBtn" Width="28" Height="28" Padding="0" Click="BossModeBtn_Click" Visibility="Collapsed" AutomationProperties.AutomationId="BossModeBtn"><FontIcon Glyph="&#xE7B7;" FontFamily="Segoe Fluent Icons" FontSize="13"/></Button>
                 <Button x:Name="AutoArrangeBtn"
-                        Width="32"
-                        Height="32"
+                        Width="28"
+                        Height="28"
                         Padding="0"
                         Click="AutoArrangeBtn_Click"
                         AutomationProperties.AutomationId="AutoArrangeBtn">
@@ -179,8 +180,8 @@
                 </Button>
 
                 <Button x:Name="RestoreHiddenBtn"
-                        Width="32"
-                        Height="32"
+                        Width="28"
+                        Height="28"
                         Padding="0"
                         Visibility="Collapsed"
                         Click="RestoreHiddenBtn_Click"
@@ -205,7 +206,7 @@
                 </Button>
 
                 <!-- レイアウトテンプレート切替ボタン -->
-                <Button x:Name="LayoutBtn" Width="32" Height="32" Padding="0" FontSize="14">
+                <Button x:Name="LayoutBtn" Width="28" Height="28" Padding="0" FontSize="13">
                     <FontIcon Glyph="&#xE737;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     <Button.Flyout>
                         <MenuFlyout>
@@ -244,7 +245,7 @@
                 </Button>
 
                 <Grid>
-                <Button x:Name="AppMenuBtn" Width="32" Height="32" Padding="0" FontSize="14">
+                <Button x:Name="AppMenuBtn" Width="28" Height="28" Padding="0" FontSize="13">
                     <FontIcon Glyph="&#xE700;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     <Button.Flyout>
                         <MenuFlyout>
@@ -330,7 +331,7 @@
                 Background="{ThemeResource AppChromeBrush}"
                 BorderBrush="{ThemeResource AppBorderBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="8,4">
+                Padding="6,1">
             <Grid ColumnSpacing="6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -355,8 +356,8 @@
                 </ScrollViewer>
                 <Button x:Name="WorkspaceAddBtn"
                         Grid.Column="2"
-                        Width="32"
-                        Height="28"
+                        Width="28"
+                        Height="24"
                         Padding="0"
                         Click="OpenWorkspaces_Click"
                         AutomationProperties.AutomationId="WorkspaceAddBtn">

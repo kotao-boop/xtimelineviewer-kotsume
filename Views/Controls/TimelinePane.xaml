@@ -16,7 +16,7 @@
             <!-- WebView とドラッグ境界を別の列に分離する。境界は重ねず、
                  常に実体のある専用スペースとして確保する。 -->
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="18"/>
+            <ColumnDefinition Width="8"/>
         </Grid.ColumnDefinitions>
         <Grid x:Name="PaneRoot"
               Grid.Column="0"
@@ -29,7 +29,7 @@
 
             <Grid x:Name="HeaderGrid"
                   Grid.Row="0"
-                  Padding="8,4,4,4"
+                  Padding="6,2,2,2"
                   PointerEntered="HeaderGrid_PointerEntered"
                   PointerExited="HeaderGrid_PointerExited">
                 <Grid.ColumnDefinitions>
@@ -79,7 +79,7 @@
                                FontWeight="SemiBold"
                                TextTrimming="CharacterEllipsis"/>
                     <TextBlock x:Name="UrlLabel"
-                               FontSize="10"
+                               FontSize="9"
                                TextTrimming="CharacterEllipsis"
                                Opacity="0.55"/>
                 </StackPanel>
@@ -98,7 +98,7 @@
                               VerticalAlignment="Center"
                               Visibility="Collapsed"/>
                     <Button x:Name="NewItemsBtn"
-                            Height="26"
+                            Height="24"
                             Padding="8,0"
                             Visibility="Collapsed"
                             Click="NewItemsBtn_Click"
@@ -110,7 +110,7 @@
                     </Button>
                     <Button x:Name="RefreshBtn"
                             Width="28"
-                            Height="26"
+                            Height="24"
                             Padding="0"
                             Click="RefreshBtn_Click"
                             Visibility="Collapsed"
@@ -120,7 +120,7 @@
                     <!-- 狭い列でも本文を圧迫しないよう、列操作は三点メニューへまとめる。 -->
                     <Button x:Name="TranslationBtn"
                             Width="28"
-                            Height="26"
+                            Height="24"
                             Padding="0"
                             Visibility="Collapsed"
                             Click="TranslationBtn_Click"
@@ -132,7 +132,7 @@
                     </Button>
                     <Button x:Name="ActionsBtn"
                             Width="28"
-                            Height="26"
+                            Height="24"
                             Padding="0"
                             AutomationProperties.AutomationId="PaneActionsBtn">
                         <Button.Flyout>
@@ -215,7 +215,7 @@
                Grid.Column="1"
                HorizontalAlignment="Stretch"
                VerticalAlignment="Stretch"
-               MinWidth="18"
+               MinWidth="8"
                Background="#01000000"
                IsTabStop="True"
                AutomationProperties.AutomationId="PaneWidthResizeGrip">
@@ -227,7 +227,7 @@
         </Thumb>
         <Rectangle x:Name="ResizeGripBar"
                    Grid.Column="1"
-                   Width="2"
+                   Width="1"
                    HorizontalAlignment="Right"
                    VerticalAlignment="Stretch"
                    Fill="{ThemeResource TimelinePaneBorderBrush}"

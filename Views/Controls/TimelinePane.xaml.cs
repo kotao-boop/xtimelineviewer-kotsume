@@ -95,8 +95,9 @@ namespace XTimelineViewer.Views.Controls
 
         private void UpdateHeaderDensity()
         {
-            var compact = ActualWidth > 0 && ActualWidth < 520;
-            UrlLabel.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            // 閲覧領域を優先し、列ヘッダーは常に1行にする。
+            // URL は TitleLabel のツールチップで確認できる。
+            UrlLabel.Visibility = Visibility.Collapsed;
             RefreshBtn.Visibility = _headerPointerOver && ActualWidth >= 420
                 ? Visibility.Visible
                 : Visibility.Collapsed;
