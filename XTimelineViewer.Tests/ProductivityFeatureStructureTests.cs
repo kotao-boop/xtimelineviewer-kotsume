@@ -96,6 +96,7 @@ public class ProductivityFeatureStructureTests
     {
         var xaml = ReadRepoFile("Views/Controls/TimelinePane.xaml");
         var source = ReadRepoFile("Views/Controls/TimelinePane.xaml.cs");
+        var mainWindow = ReadRepoFile("Views/MainWindow.Timeline.cs");
         Assert.Contains("PaneWidthResizeGrip", xaml);
         Assert.Contains("PaneHeightResizeGrip", xaml);
         Assert.Contains("ConfigureResizeAffordances", source);
@@ -103,5 +104,7 @@ public class ProductivityFeatureStructureTests
         Assert.Contains("VerticalResizeGrip.KeyDown", source);
         Assert.Contains("_gridResizeMode ? 160 : 220", source);
         Assert.Contains("_gridResizeMode ? 140 : 180", source);
+        Assert.Contains("AddGridResizeHandles", mainWindow);
+        Assert.Contains("Width = verticalBoundary ? 16", mainWindow);
     }
 }

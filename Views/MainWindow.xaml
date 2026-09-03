@@ -7,7 +7,7 @@
     <!-- KeyboardAcceleratorPlacementMode=Hidden: ルート Grid のグローバルアクセラレータ
          （Ctrl+F / F3）の自動ツールチップが UI のあちこちに出るのを抑止する (#214)。
          ショートカット自体は引き続き機能する。 -->
-    <Grid Background="{ThemeResource AppSurfaceBrush}"
+    <Grid x:Name="MainRoot" Background="{ThemeResource AppSurfaceBrush}"
           KeyboardAcceleratorPlacementMode="Hidden">
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="FocusSearchBox_Invoked"/>
@@ -187,7 +187,7 @@
                         AutomationProperties.AutomationId="RestoreHiddenBtn">
                     <Grid>
                         <FontIcon Glyph="&#xE890;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
-                        <Border Background="{ThemeResource AppAccentBrush}"
+                        <Border x:Name="HiddenTimelineCountBadge" Background="{ThemeResource AppAccentBrush}"
                                 CornerRadius="8"
                                 MinWidth="16"
                                 Height="16"
@@ -326,7 +326,7 @@
         </Grid>
 
         <!-- 保存済みワークスペースを、ブラウザーのタブのように即座に切り替える。 -->
-        <Border Grid.Row="1"
+        <Border x:Name="WorkspaceBar" Grid.Row="1"
                 Background="{ThemeResource AppChromeBrush}"
                 BorderBrush="{ThemeResource AppBorderBrush}"
                 BorderThickness="0,0,0,1"

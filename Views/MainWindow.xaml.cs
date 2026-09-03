@@ -390,7 +390,11 @@ namespace XTimelineViewer.Views
                 foreach (var wv in Panes.Select(p => p.WebView).ToList())
                     CleanupWebView(wv);
             };
-            ((FrameworkElement)Content).ActualThemeChanged += (s, e) => ApplyThemeToWebViews();
+            ((FrameworkElement)Content).ActualThemeChanged += (s, e) =>
+            {
+                ApplySavedTheme();
+                ApplyThemeToWebViews();
+            };
             LoadSettings();
             InitializeBossMode();
             LoadProfiles();

@@ -88,23 +88,49 @@ namespace XTimelineViewer.Services
         /// <summary>ThemeResource が参照するアプリ専用ブラシをウィンドウ単位で差し替える。</summary>
         internal static void ApplyResources(FrameworkElement root, string? theme, bool highContrast = false)
         {
-            if (!highContrast && TryGetPalette(theme, out var palette))
-            {
-                root.Resources["AppSurfaceBrush"] = new SolidColorBrush(palette.Surface);
-                root.Resources["AppChromeBrush"] = new SolidColorBrush(palette.Chrome);
-                root.Resources["AppBorderBrush"] = new SolidColorBrush(palette.Border);
-                root.Resources["AppAccentBrush"] = new SolidColorBrush(palette.Accent);
-                root.Resources["AppAccentTextBrush"] = new SolidColorBrush(palette.AccentText);
-                return;
-            }
-
-            // 独自テーマから標準テーマへ戻したときは、親の ThemeDictionary を再び参照させる。
-            root.Resources.Remove("AppSurfaceBrush");
-            root.Resources.Remove("AppChromeBrush");
-            root.Resources.Remove("AppBorderBrush");
-            root.Resources.Remove("AppAccentBrush");
-            root.Resources.Remove("AppAccentTextBrush");
+            var palette = ResolvePalette(theme, highContrast);
+            // Remove による親辞書へのフォールバックは、ThemeResource が以前のブラシを
+            // 保持する場合がある。切替のたびに全役割を新しい Brush で明示的に置換する。
+            root.Resources["AppSurfaceBrush"] = new SolidColorBrush(palette.Surface);
+            root.Resources["AppChromeBrush"] = new SolidColorBrush(palette.Chrome);
+            root.Resources["AppBorderBrush"] = new SolidColorBrush(palette.Border);
+            root.Resources["AppAccentBrush"] = new SolidColorBrush(palette.Accent);
+            root.Resources["AppAccentTextBrush"] = new SolidColorBrush(palette.AccentText);
         }
+
+        private static Palette ResolvePalette(string? theme, bool highContrast)
+        {
+            if (highContrast)
+            {
+                var hc = (ResourceDictionary)Application.Current.Resources.ThemeDictionaries["HighContrast"];
+                return new(
+                    ((SolidColorBrush)hc["AppSurfaceBrush"]).Color,
+                    ((SolidColorBrush)hc["AppChromeBrush"]).Color,
+                    ((SolidColorBrush)hc["AppBorderBrush"]).Color,
+                    ((SolidColorBrush)hc["TimelineHeaderBackgroundBrush"]).Color,
+                    ((SolidColorBrush)hc["TimelineHeaderFocusedBackgroundBrush"]).Color,
+                    ((SolidColorBrush)hc["AppAccentBrush"]).Color,
+                    ((SolidColorBrush)hc["AppAccentTextBrush"]).Color,
+                    ElementTheme.Default);
+            }
+            if (TryGetPalette(theme, out var custom)) return custom;
+            var useLight = theme == "Light"
+                || (theme is null or "Default" && Application.Current.RequestedTheme == ApplicationTheme.Light);
+            return useLight
+                ? new(
+                    ColorHelper.FromArgb(255, 247, 247, 247), Colors.White,
+                    ColorHelper.FromArgb(255, 210, 210, 210), ColorHelper.FromArgb(255, 235, 235, 240),
+                    ColorHelper.FromArgb(255, 0, 120, 212), ColorHelper.FromArgb(255, 0, 120, 212),
+                    Colors.White, ElementTheme.Light)
+                : new(
+                    ColorHelper.FromArgb(255, 32, 32, 32), ColorHelper.FromArgb(255, 40, 40, 40),
+                    ColorHelper.FromArgb(255, 70, 70, 70), ColorHelper.FromArgb(255, 55, 55, 60),
+                    ColorHelper.FromArgb(255, 29, 78, 137), ColorHelper.FromArgb(255, 96, 205, 255),
+                    ColorHelper.FromArgb(255, 7, 16, 24), ElementTheme.Dark);
+        }
+
+        internal static Brush GetResizeBrush(string? theme, bool highContrast)
+            => new SolidColorBrush(ResolvePalette(theme, highContrast).Border);
 
         internal static Brush GetPaneBrush(string? theme, string role, ResourceDictionary fallback)
         {

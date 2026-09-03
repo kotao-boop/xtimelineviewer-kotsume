@@ -75,6 +75,7 @@ namespace XTimelineViewer.Views
         private void RefreshPaneThemes()
         {
             foreach (var pane in Panes) ApplyPaneTheme(pane);
+            RefreshGridResizeHandleBrushes();
         }
 
         private void ApplySavedTheme()
@@ -83,9 +84,31 @@ namespace XTimelineViewer.Views
             ThemePaletteService.ApplyResources(root, _appSettings.Theme, IsHighContrast());
             var theme = ThemePaletteService.GetBaseTheme(_appSettings.Theme);
             root.RequestedTheme = theme;
+            ApplyChromeBrushes(root);
             ApplyTitleBarTheme(this, theme);
             ApplyThemeToWebViews();
             RefreshPaneThemes();
+        }
+
+        private void ApplyChromeBrushes(FrameworkElement root)
+        {
+            var surface = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppSurfaceBrush"];
+            var chrome = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppChromeBrush"];
+            var border = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppBorderBrush"];
+            var accent = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppAccentBrush"];
+            var accentText = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppAccentTextBrush"];
+            MainRoot.Background = surface;
+            ToolbarRoot.Background = chrome;
+            ToolbarRoot.BorderBrush = border;
+            WorkspaceBar.Background = chrome;
+            WorkspaceBar.BorderBrush = border;
+            SearchSidePanel.Background = chrome;
+            SearchSidePanel.BorderBrush = border;
+            AutoPageNavigator.Background = chrome;
+            AutoPageNavigator.BorderBrush = border;
+            HiddenTimelineCountBadge.Background = accent;
+            HiddenTimelineCountText.Foreground = accentText;
+            UpdateBadgeDot.Fill = accent;
         }
 
         private void ThemeItem_Click(object sender, RoutedEventArgs _)

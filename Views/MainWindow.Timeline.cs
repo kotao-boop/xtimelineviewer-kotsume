@@ -36,6 +36,7 @@ namespace XTimelineViewer.Views
         private readonly HashSet<TimelineConfig> _temporarilyHiddenTimelines = [];
         private int _autoLayoutPage;
         private int _autoLayoutPageSize = 6;
+        private readonly List<Microsoft.UI.Xaml.Shapes.Rectangle> _gridResizeBars = [];
 
         // ── Persistence ───────────────────────────────────────────
         // 実体は Services/TimelineStore.cs（#368）。ここは例外を握って記録するだけ。
@@ -257,6 +258,7 @@ namespace XTimelineViewer.Views
                 TimelineScroll.Visibility = Visibility.Visible;
 
                 TimelineGrid.Children.Clear();
+                _gridResizeBars.Clear();
                 TimelineGrid.RowDefinitions.Clear();
                 TimelineGrid.ColumnDefinitions.Clear();
 
@@ -280,6 +282,7 @@ namespace XTimelineViewer.Views
 
                 TimelinePanel.Children.Clear();
                 TimelineGrid.Children.Clear();
+                _gridResizeBars.Clear();
                 TimelineGrid.RowDefinitions.Clear();
                 TimelineGrid.ColumnDefinitions.Clear();
 
@@ -352,11 +355,12 @@ namespace XTimelineViewer.Views
                         Grid.SetRow(pane, row);
                         Grid.SetColumn(pane, column);
                         pane.ConfigureResizeAffordances(
-                            horizontal: column < plan.Columns - 1,
-                            vertical: row < plan.Rows - 1,
+                            horizontal: false,
+                            vertical: false,
                             gridMode: true);
                         TimelineGrid.Children.Add(pane);
                     }
+                    AddGridResizeHandles(plan.Rows, plan.Columns);
                 }
             }
 
@@ -377,6 +381,137 @@ namespace XTimelineViewer.Views
                 TimelineGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(weight, GridUnitType.Star) });
             foreach (var weight in columnWeights)
                 TimelineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(weight, GridUnitType.Star) });
+        }
+
+        /// <summary>
+        /// WebView2を含む各ペインの内側ではなく、TimelineGrid直下に境界線を置く。
+        /// これにより隣のWebViewに覆われず、境界のどこをつかんでも行・列を変更できる。
+        /// </summary>
+        private void AddGridResizeHandles(int rows, int columns)
+        {
+            var brush = ThemePaletteService.GetResizeBrush(_appSettings.Theme, IsHighContrast());
+            for (var column = 0; column < columns - 1; column++)
+                AddGridResizeHandle(verticalBoundary: true, column, rows, columns, brush);
+            for (var row = 0; row < rows - 1; row++)
+                AddGridResizeHandle(verticalBoundary: false, row, rows, columns, brush);
+        }
+
+        private void AddGridResizeHandle(bool verticalBoundary, int boundaryIndex, int rows, int columns, Brush brush)
+        {
+            var bar = new Microsoft.UI.Xaml.Shapes.Rectangle
+            {
+                Fill = brush,
+                Opacity = 0.38,
+                HorizontalAlignment = verticalBoundary ? HorizontalAlignment.Center : HorizontalAlignment.Stretch,
+                VerticalAlignment = verticalBoundary ? VerticalAlignment.Stretch : VerticalAlignment.Center,
+                Width = verticalBoundary ? 2 : double.NaN,
+                Height = verticalBoundary ? double.NaN : 2,
+                IsHitTestVisible = false,
+            };
+            var handle = new GridResizeHandle(bar)
+            {
+                HorizontalAlignment = verticalBoundary ? HorizontalAlignment.Right : HorizontalAlignment.Stretch,
+                VerticalAlignment = verticalBoundary ? VerticalAlignment.Stretch : VerticalAlignment.Bottom,
+                Width = verticalBoundary ? 16 : double.NaN,
+                Height = verticalBoundary ? double.NaN : 16,
+            };
+            Grid.SetColumn(handle, verticalBoundary ? boundaryIndex : 0);
+            Grid.SetRow(handle, verticalBoundary ? 0 : boundaryIndex);
+            Grid.SetColumnSpan(handle, verticalBoundary ? 1 : columns);
+            Grid.SetRowSpan(handle, verticalBoundary ? rows : 1);
+            Canvas.SetZIndex(handle, 1000);
+            AutomationProperties.SetName(handle, R.Get(verticalBoundary ? "Pane_ResizeWidth" : "Pane_ResizeHeight"));
+
+            var resizing = false;
+            double startPointer = 0;
+            double firstStart = 0;
+            double secondStart = 0;
+            handle.PointerEntered += (_, _) =>
+            {
+                if (!resizing) bar.Opacity = 1;
+                try
+                {
+                    handle.SetCursor(Microsoft.UI.Input.InputSystemCursor.Create(
+                        verticalBoundary
+                            ? Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast
+                            : Microsoft.UI.Input.InputSystemCursorShape.SizeNorthSouth));
+                }
+                catch { }
+            };
+            handle.PointerExited += (_, _) =>
+            {
+                if (!resizing) bar.Opacity = 0.38;
+            };
+            handle.PointerPressed += (_, e) =>
+            {
+                var point = e.GetCurrentPoint(TimelineGrid);
+                if (!point.Properties.IsLeftButtonPressed) return;
+                resizing = true;
+                startPointer = verticalBoundary ? point.Position.X : point.Position.Y;
+                firstStart = verticalBoundary
+                    ? TimelineGrid.ColumnDefinitions[boundaryIndex].ActualWidth
+                    : TimelineGrid.RowDefinitions[boundaryIndex].ActualHeight;
+                secondStart = verticalBoundary
+                    ? TimelineGrid.ColumnDefinitions[boundaryIndex + 1].ActualWidth
+                    : TimelineGrid.RowDefinitions[boundaryIndex + 1].ActualHeight;
+                handle.CapturePointer(e.Pointer);
+                bar.Opacity = 1;
+                e.Handled = true;
+            };
+            handle.PointerMoved += (_, e) =>
+            {
+                if (!resizing) return;
+                var point = e.GetCurrentPoint(TimelineGrid);
+                var current = verticalBoundary ? point.Position.X : point.Position.Y;
+                var total = firstStart + secondStart;
+                var minimum = verticalBoundary ? Math.Min(160, total / 3) : Math.Min(140, total / 3);
+                var first = Math.Clamp(firstStart + current - startPointer, minimum, total - minimum);
+                if (verticalBoundary)
+                {
+                    TimelineGrid.ColumnDefinitions[boundaryIndex].Width = new GridLength(first, GridUnitType.Star);
+                    TimelineGrid.ColumnDefinitions[boundaryIndex + 1].Width = new GridLength(total - first, GridUnitType.Star);
+                }
+                else
+                {
+                    TimelineGrid.RowDefinitions[boundaryIndex].Height = new GridLength(first, GridUnitType.Star);
+                    TimelineGrid.RowDefinitions[boundaryIndex + 1].Height = new GridLength(total - first, GridUnitType.Star);
+                }
+                e.Handled = true;
+            };
+            handle.PointerReleased += (_, e) => FinishResize(e);
+            handle.PointerCaptureLost += (_, _) => FinishResize(null);
+
+            void FinishResize(PointerRoutedEventArgs? args)
+            {
+                if (!resizing) return;
+                resizing = false;
+                if (args is not null) handle.ReleasePointerCapture(args.Pointer);
+                bar.Opacity = 0.38;
+                SaveCurrentGridWeights();
+            }
+
+            _gridResizeBars.Add(bar);
+            TimelineGrid.Children.Add(handle);
+        }
+
+        private void RefreshGridResizeHandleBrushes()
+        {
+            var brush = ThemePaletteService.GetResizeBrush(_appSettings.Theme, IsHighContrast());
+            foreach (var bar in _gridResizeBars) bar.Fill = brush;
+        }
+
+        private sealed class GridResizeHandle : UserControl
+        {
+            internal GridResizeHandle(UIElement child)
+            {
+                Content = new Border
+                {
+                    Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                    Child = child,
+                };
+            }
+
+            internal void SetCursor(Microsoft.UI.Input.InputCursor cursor) => ProtectedCursor = cursor;
         }
 
         private static List<double> GetSavedWeights(
