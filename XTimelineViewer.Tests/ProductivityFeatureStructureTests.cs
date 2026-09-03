@@ -100,6 +100,8 @@ public class ProductivityFeatureStructureTests
         Assert.Contains("PaneWidthResizeGrip", xaml);
         Assert.Contains("PaneHeightResizeGrip", xaml);
         Assert.Contains("<Thumb x:Name=\"ResizeGrip\"", xaml);
+        Assert.Contains("<ControlTemplate TargetType=\"Thumb\">", xaml);
+        Assert.Contains("<Border Background=\"{TemplateBinding Background}\"/>", xaml);
         Assert.Contains("ResizeGrip.DragDelta", source);
         Assert.Contains("ConfigureResizeAffordances", source);
         Assert.Contains("ResizeGrip.KeyDown", source);

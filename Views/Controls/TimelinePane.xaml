@@ -31,6 +31,7 @@
                     <ColumnDefinition Width="Auto"/>  <!-- 2: プロファイルバッジ -->
                     <ColumnDefinition Width="*"/>     <!-- 3: URL -->
                     <ColumnDefinition Width="Auto"/>  <!-- 4: ボタン -->
+                    <ColumnDefinition Width="18"/>    <!-- 5: 幅変更 -->
                 </Grid.ColumnDefinitions>
 
                 <!-- 表示順に 1..9 を割り当てる。AutomationId は RefreshTimelineNumbers が
@@ -174,6 +175,23 @@
                         <FontIcon Glyph="&#xE712;" FontFamily="Segoe Fluent Icons" FontSize="14"/>
                     </Button>
                 </StackPanel>
+
+                <!-- WebView の外側ではなく、ヘッダー自身の専用列に置く。
+                     これにより X の WebView にマウス入力を奪われない。 -->
+                <Thumb x:Name="ResizeGrip"
+                       Grid.Column="5"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Stretch"
+                       MinWidth="18"
+                       Background="#01000000"
+                       IsTabStop="True"
+                       AutomationProperties.AutomationId="PaneWidthResizeGrip">
+                    <Thumb.Template>
+                        <ControlTemplate TargetType="Thumb">
+                            <Border Background="{TemplateBinding Background}"/>
+                        </ControlTemplate>
+                    </Thumb.Template>
+                </Thumb>
             </Grid>
 
             <controls:WebView2 x:Name="WebViewHost"
@@ -202,17 +220,7 @@
             </Border>
         </Grid>
 
-        <!-- 右端のドラッグリサイズ用スプリッターハンドル -->
-        <Thumb x:Name="ResizeGrip"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                Width="18"
-                Height="44"
-                Margin="0,0,-2,0"
-                Background="Transparent"
-                IsTabStop="True"
-                AutomationProperties.AutomationId="PaneWidthResizeGrip"
-                Canvas.ZIndex="100"/>
+        <!-- 右端の境界線。実際のドラッグ面は HeaderGrid の第5列。 -->
         <Rectangle x:Name="ResizeGripBar"
                    Width="2"
                    HorizontalAlignment="Right"
@@ -229,11 +237,17 @@
                 VerticalAlignment="Bottom"
                 Height="14"
                 Margin="0,0,0,-2"
-                Background="Transparent"
+                Background="#01000000"
                 IsTabStop="True"
                 AutomationProperties.AutomationId="PaneHeightResizeGrip"
                 Visibility="Collapsed"
-                Canvas.ZIndex="100"/>
+                Canvas.ZIndex="100">
+            <Thumb.Template>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Background="{TemplateBinding Background}"/>
+                </ControlTemplate>
+            </Thumb.Template>
+        </Thumb>
         <Rectangle x:Name="VerticalResizeGripBar"
                    Height="2"
                    HorizontalAlignment="Stretch"
