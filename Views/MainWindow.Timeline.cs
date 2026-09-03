@@ -207,6 +207,7 @@ namespace XTimelineViewer.Views
             if (sender is MenuFlyoutItem item && item.Tag is string mode)
             {
                 if (mode == "Focus") EnterFocusMode(_focusedPane);
+                else if (mode == "Auto") NormalizeCurrentLayout();
                 else SetLayoutFromCommand(mode);
             }
         }
@@ -651,6 +652,7 @@ namespace XTimelineViewer.Views
                     pane.Config.Width = equalWidth;
                 }
                 SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
+                UpdateLayoutMenuState();
                 return;
             }
 
@@ -661,6 +663,7 @@ namespace XTimelineViewer.Views
             _appSettings.LayoutRowWeights[mode] = Enumerable.Repeat(1.0, rowCount).ToList();
             SaveSettings();
             ApplyLayoutMode(mode);
+            UpdateLayoutMenuState();
         }
 
         private void UpdateAutoPageNavigator(int total, int pageCount)

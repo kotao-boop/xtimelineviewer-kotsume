@@ -566,7 +566,7 @@ namespace XTimelineViewer.Views
                 new(R.Get("Menu_Workspaces"), "workspace save switch", () => ShowWorkspacesAsync().FireAndForget(nameof(ShowWorkspacesAsync))),
                 new(R.Get("Menu_Settings"), "settings preferences", () => OpenSettingsWindow()),
                 new(R.Get("Menu_NewProfile"), "profile account login", () => NewProfileMenuItem_Click(this, new RoutedEventArgs())),
-                new(R.Get("Layout_Auto"), "layout auto arrange reflow 自動 整列", () => SetLayoutFromCommand("Auto")),
+                new(R.Get("Layout_Auto"), "layout auto arrange equalize 自動 整列", NormalizeCurrentLayout),
                 new(R.Get("Layout_Classic"), "layout classic", () => SetLayoutFromCommand("Classic")),
                 new(R.Get("Layout_Grid2x2"), "layout grid 2x2", () => SetLayoutFromCommand("Grid2x2")),
                 new(R.Get("Layout_Grid2x3"), "layout grid 2x3", () => SetLayoutFromCommand("Grid2x3")),
