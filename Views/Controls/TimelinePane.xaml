@@ -203,47 +203,46 @@
         </Grid>
 
         <!-- 右端のドラッグリサイズ用スプリッターハンドル -->
-        <Button x:Name="ResizeGrip"
+        <Thumb x:Name="ResizeGrip"
                 HorizontalAlignment="Right"
-                VerticalAlignment="Stretch"
-                Width="14"
+                VerticalAlignment="Top"
+                Width="18"
+                Height="44"
                 Margin="0,0,-2,0"
                 Background="Transparent"
-                BorderThickness="0"
-                Padding="0"
                 IsTabStop="True"
                 AutomationProperties.AutomationId="PaneWidthResizeGrip"
-                Canvas.ZIndex="100">
-            <Rectangle x:Name="ResizeGripBar"
-                       Width="2"
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Stretch"
-                       Fill="{ThemeResource TimelinePaneBorderBrush}"
-                       Opacity="0.28"
-                       RadiusX="1.5"
-                       RadiusY="1.5"/>
-        </Button>
+                Canvas.ZIndex="100"/>
+        <Rectangle x:Name="ResizeGripBar"
+                   Width="2"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Stretch"
+                   Fill="{ThemeResource TimelinePaneBorderBrush}"
+                   Opacity="0.28"
+                   IsHitTestVisible="False"
+                   RadiusX="1.5"
+                   RadiusY="1.5"
+                   Canvas.ZIndex="101"/>
 
-        <Button x:Name="VerticalResizeGrip"
+        <Thumb x:Name="VerticalResizeGrip"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom"
                 Height="14"
                 Margin="0,0,0,-2"
                 Background="Transparent"
-                BorderThickness="0"
-                Padding="0"
                 IsTabStop="True"
                 AutomationProperties.AutomationId="PaneHeightResizeGrip"
                 Visibility="Collapsed"
-                Canvas.ZIndex="100">
-            <Rectangle x:Name="VerticalResizeGripBar"
-                       Height="2"
-                       HorizontalAlignment="Stretch"
-                       VerticalAlignment="Bottom"
-                       Fill="{ThemeResource TimelinePaneBorderBrush}"
-                       Opacity="0.28"
-                       RadiusX="1.5"
-                       RadiusY="1.5"/>
-        </Button>
+                Canvas.ZIndex="100"/>
+        <Rectangle x:Name="VerticalResizeGripBar"
+                   Height="2"
+                   HorizontalAlignment="Stretch"
+                   VerticalAlignment="Bottom"
+                   Fill="{ThemeResource TimelinePaneBorderBrush}"
+                   Opacity="0.28"
+                   IsHitTestVisible="False"
+                   RadiusX="1.5"
+                   RadiusY="1.5"
+                   Canvas.ZIndex="101"/>
     </Grid>
 </UserControl>

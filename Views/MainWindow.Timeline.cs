@@ -650,6 +650,10 @@ namespace XTimelineViewer.Views
                 {
                     pane.Width = equalWidth;
                     pane.Config.Width = equalWidth;
+                    // 直前にグリッド／集中表示を使っていた場合、ペイン内の幅変更境界が
+                    // Collapsed のまま残ることがある。幅をそろえるだけでなく、Classic
+                    // で必要なマウス・キーボード操作も必ず復元する。
+                    pane.ConfigureResizeAffordances(horizontal: true, vertical: false, gridMode: false);
                 }
                 SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
                 UpdateLayoutMenuState();

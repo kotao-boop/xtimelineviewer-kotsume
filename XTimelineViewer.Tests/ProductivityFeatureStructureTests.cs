@@ -99,6 +99,8 @@ public class ProductivityFeatureStructureTests
         var mainWindow = ReadRepoFile("Views/MainWindow.Timeline.cs");
         Assert.Contains("PaneWidthResizeGrip", xaml);
         Assert.Contains("PaneHeightResizeGrip", xaml);
+        Assert.Contains("<Thumb x:Name=\"ResizeGrip\"", xaml);
+        Assert.Contains("ResizeGrip.DragDelta", source);
         Assert.Contains("ConfigureResizeAffordances", source);
         Assert.Contains("ResizeGrip.KeyDown", source);
         Assert.Contains("VerticalResizeGrip.KeyDown", source);
@@ -107,6 +109,7 @@ public class ProductivityFeatureStructureTests
         Assert.Contains("AddGridResizeHandles", mainWindow);
         Assert.Contains("Width = verticalBoundary ? 16", mainWindow);
         Assert.Contains("NormalizeCurrentLayout", mainWindow);
+        Assert.Contains("pane.ConfigureResizeAffordances(horizontal: true, vertical: false, gridMode: false)", mainWindow);
         Assert.DoesNotContain("AutoArrangeBtn_Click(object sender, RoutedEventArgs e)\n            => SetLayoutFromCommand(\"Auto\")", mainWindow, StringComparison.Ordinal);
         Assert.Contains("else if (mode == \"Auto\") NormalizeCurrentLayout()", mainWindow, StringComparison.Ordinal);
         var productivity = ReadRepoFile("Views/MainWindow.Productivity.cs");

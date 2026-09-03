@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Web.WebView2.Core;
@@ -57,7 +58,6 @@ namespace XTimelineViewer.Views.Controls
         // ── ドラッグリサイズ ────────────────────────────────────
         private bool _isResizing = false;
         private int _unreadCount;
-        private double _resizeStartPointerX;
         private double _resizeStartWidth;
         private double _lastRequestedWidth;
         private bool _isResizingHeight;
@@ -122,64 +122,35 @@ namespace XTimelineViewer.Views.Controls
                 }
             };
 
-            ResizeGrip.PointerPressed += (s, e) =>
+            ResizeGrip.DragStarted += (s, e) =>
             {
-                var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
-                if (pt.Properties.IsLeftButtonPressed)
+                _isResizing = true;
+                _resizeStartWidth = ActualWidth > 0 ? ActualWidth : (double.IsNaN(Width) ? Config.Width : Width);
+                _lastRequestedWidth = _resizeStartWidth;
+                ResizeGripBar.Opacity = 1.0;
+            };
+
+            ResizeGrip.DragDelta += (s, e) =>
+            {
+                if (!_isResizing) return;
+                var minimumWidth = _gridResizeMode ? 160 : 220;
+                var newWidth = Math.Clamp(_lastRequestedWidth + e.HorizontalChange, minimumWidth, 1600);
+                _lastRequestedWidth = newWidth;
+                if (_gridResizeMode) WidthResizing?.Invoke(this, newWidth);
+                else
                 {
-                    _isResizing = true;
-                    _resizeStartPointerX = pt.Position.X;
-                    _resizeStartWidth = this.ActualWidth > 0 ? this.ActualWidth : (double.IsNaN(this.Width) ? Config.Width : this.Width);
-                    _lastRequestedWidth = _resizeStartWidth;
-                    ResizeGrip.CapturePointer(e.Pointer);
-                    ResizeGripBar.Opacity = 1.0;
-                    e.Handled = true;
+                    Width = newWidth;
+                    Config.Width = newWidth;
                 }
             };
 
-            ResizeGrip.PointerMoved += (s, e) =>
+            ResizeGrip.DragCompleted += (s, e) =>
             {
-                if (_isResizing)
-                {
-                    var pt = e.GetCurrentPoint(Parent as UIElement ?? this);
-                    var deltaX = pt.Position.X - _resizeStartPointerX;
-                    var minimumWidth = _gridResizeMode ? 160 : 220;
-                    var newWidth = Math.Clamp(_resizeStartWidth + deltaX, minimumWidth, 1600);
-                    _lastRequestedWidth = newWidth;
-                    if (_gridResizeMode) WidthResizing?.Invoke(this, newWidth);
-                    else
-                    {
-                        Width = newWidth;
-                        Config.Width = newWidth;
-                    }
-                    e.Handled = true;
-                }
-            };
-
-            ResizeGrip.PointerReleased += (s, e) =>
-            {
-                if (_isResizing)
-                {
-                    _isResizing = false;
-                    ResizeGrip.ReleasePointerCapture(e.Pointer);
-                    ResizeGripBar.Opacity = 0.28;
-                    try { this.ProtectedCursor = null; } catch { }
-                    WidthResized?.Invoke(this, _gridResizeMode
-                        ? _lastRequestedWidth
-                        : Width);
-                    e.Handled = true;
-                }
-            };
-
-            ResizeGrip.PointerCaptureLost += (s, e) =>
-            {
-                if (_isResizing)
-                {
-                    _isResizing = false;
-                    ResizeGripBar.Opacity = 0.28;
-                    try { this.ProtectedCursor = null; } catch { }
-                    WidthResized?.Invoke(this, _gridResizeMode ? _lastRequestedWidth : Width);
-                }
+                if (!_isResizing) return;
+                _isResizing = false;
+                ResizeGripBar.Opacity = 0.28;
+                try { ProtectedCursor = null; } catch { }
+                WidthResized?.Invoke(this, _gridResizeMode ? _lastRequestedWidth : Width);
             };
 
             VerticalResizeGrip.PointerEntered += (s, e) =>
@@ -301,6 +272,8 @@ namespace XTimelineViewer.Views.Controls
             _gridResizeMode = gridMode;
             ResizeGrip.Visibility = horizontal ? Visibility.Visible : Visibility.Collapsed;
             VerticalResizeGrip.Visibility = vertical ? Visibility.Visible : Visibility.Collapsed;
+            ResizeGrip.IsHitTestVisible = horizontal;
+            VerticalResizeGrip.IsHitTestVisible = vertical;
             ResizeGrip.IsTabStop = horizontal;
             VerticalResizeGrip.IsTabStop = vertical;
             ResizeGripBar.Opacity = horizontal ? 0.28 : 0;
