@@ -627,8 +627,40 @@ namespace XTimelineViewer.Views
 
         private void AutoArrangeBtn_Click(object sender, RoutedEventArgs e)
         {
-            _autoLayoutPage = 0;
-            SetLayoutFromCommand("Auto");
+            NormalizeCurrentLayout();
+        }
+
+        /// <summary>
+        /// レイアウトの種類を変えず、現在の配置内の大きさだけを均等に戻す。
+        /// 「自動整列」ボタンが Classic から Auto（4本なら2x2）へ切り替えてしまうと、
+        /// 利用者が選んだ配置を破壊するため、レイアウト切替とは明確に分離する。
+        /// </summary>
+        private void NormalizeCurrentLayout()
+        {
+            if (_focusModeActive) return;
+            var mode = _appSettings.LayoutMode ?? "Classic";
+            if (mode == "Classic")
+            {
+                var visible = Panes.Where(IsPaneEffectivelyVisible).ToList();
+                if (visible.Count == 0) return;
+                var available = TimelineScroll.ActualWidth > 0 ? TimelineScroll.ActualWidth : 1200;
+                var equalWidth = Math.Clamp(available / visible.Count, 280, 600);
+                foreach (var pane in visible)
+                {
+                    pane.Width = equalWidth;
+                    pane.Config.Width = equalWidth;
+                }
+                SaveTimelinesAsync().FireAndForget(nameof(SaveTimelinesAsync));
+                return;
+            }
+
+            var columnCount = TimelineGrid.ColumnDefinitions.Count;
+            var rowCount = TimelineGrid.RowDefinitions.Count;
+            if (columnCount == 0 || rowCount == 0) return;
+            _appSettings.LayoutColumnWeights[mode] = Enumerable.Repeat(1.0, columnCount).ToList();
+            _appSettings.LayoutRowWeights[mode] = Enumerable.Repeat(1.0, rowCount).ToList();
+            SaveSettings();
+            ApplyLayoutMode(mode);
         }
 
         private void UpdateAutoPageNavigator(int total, int pageCount)

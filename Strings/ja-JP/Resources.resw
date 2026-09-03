@@ -274,8 +274,8 @@
   <data name="Empty_QuickAdd" xml:space="preserve"><value>すぐに追加</value></data>
   <data name="Empty_DisabledHint" xml:space="preserve"><value>先に X アカウントを追加すると、検索・投稿・タイムライン追加を使えます。</value></data>
   <data name="Layout_Tooltip" xml:space="preserve"><value>レイアウトを変更</value></data>
-  <data name="Layout_Auto" xml:space="preserve"><value>自動整列</value></data>
-  <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>表示中のタイムラインを自動整列</value></data>
+  <data name="Layout_Auto" xml:space="preserve"><value>画面に合わせて自動配置</value></data>
+  <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>現在の配置のまま、列と行の大きさを均等にそろえる</value></data>
   <data name="Layout_PagePrevious" xml:space="preserve"><value>前のタイムラインを表示</value></data>
   <data name="Layout_PageNext" xml:space="preserve"><value>次のタイムラインを表示</value></data>
   <data name="Timeline_RestoreHidden" xml:space="preserve"><value>一時的に隠したタイムラインを戻す（{0}個）</value></data>

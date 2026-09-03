@@ -106,5 +106,7 @@ public class ProductivityFeatureStructureTests
         Assert.Contains("_gridResizeMode ? 140 : 180", source);
         Assert.Contains("AddGridResizeHandles", mainWindow);
         Assert.Contains("Width = verticalBoundary ? 16", mainWindow);
+        Assert.Contains("NormalizeCurrentLayout", mainWindow);
+        Assert.DoesNotContain("AutoArrangeBtn_Click(object sender, RoutedEventArgs e)\n            => SetLayoutFromCommand(\"Auto\")", mainWindow, StringComparison.Ordinal);
     }
 }
