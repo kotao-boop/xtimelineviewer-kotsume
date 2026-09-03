@@ -455,6 +455,10 @@ namespace XTimelineViewer.Views
             ThemeSystemItem.Text    = R.Get("Theme_System");
             ThemeLightItem.Text     = R.Get("Theme_Light");
             ThemeDarkItem.Text      = R.Get("Theme_Dark");
+            ThemeCyberpunkItem.Text = R.Get("Theme_Cyberpunk");
+            ThemeOceanItem.Text     = R.Get("Theme_Ocean");
+            ThemeForestItem.Text    = R.Get("Theme_Forest");
+            ThemeSakuraItem.Text    = R.Get("Theme_Sakura");
             UpdateThemeRadioState();
             AppSettingsMenuItem.Text = R.Get("Menu_Settings");
 

@@ -36,6 +36,10 @@
   <data name="Theme_System" xml:space="preserve"><value>システム</value></data>
   <data name="Theme_Light" xml:space="preserve"><value>ライト</value></data>
   <data name="Theme_Dark" xml:space="preserve"><value>ダーク</value></data>
+  <data name="Theme_Cyberpunk" xml:space="preserve"><value>サイバーパンク</value></data>
+  <data name="Theme_Ocean" xml:space="preserve"><value>ミッドナイト・オーシャン</value></data>
+  <data name="Theme_Forest" xml:space="preserve"><value>フォレスト</value></data>
+  <data name="Theme_Sakura" xml:space="preserve"><value>サクラ</value></data>
 
   <!-- ToggleSwitch on/off labels -->
   <data name="Toggle_On" xml:space="preserve"><value>有効</value></data>
@@ -48,7 +52,7 @@
   <data name="Settings_Theme" xml:space="preserve"><value>テーマ</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>言語</value></data>
   <data name="Settings_ExportFolder" xml:space="preserve"><value>設定ファイルのエクスポート</value></data>
-  <data name="Settings_Theme_Description" xml:space="preserve"><value>アプリの外観を変更します</value></data>
+  <data name="Settings_Theme_Description" xml:space="preserve"><value>選ぶとすぐにアプリ全体の配色を確認できます</value></data>
   <data name="Settings_Language_Description" xml:space="preserve"><value>アプリの表示言語を変更します</value></data>
   <data name="Settings_TranslationButtonPlacement" xml:space="preserve"><value>自動翻訳ボタンの表示場所</value></data>
   <data name="Settings_TranslationButtonPlacement_Description" xml:space="preserve"><value>列ヘッダーの自動翻訳ボタンを、三点メニュー内に入れるか、ヘッダーに常に表示するか、隠すかを選びます。</value></data>

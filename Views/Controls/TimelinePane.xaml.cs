@@ -328,26 +328,34 @@ namespace XTimelineViewer.Views.Controls
         /// 解決済みの ActualTheme を使って ThemeDictionaries を直接引く。
         /// コントラストテーマの判定は MainWindow 側の責任（引数で受け取る）。
         /// </summary>
-        internal void ApplyTheme(ElementTheme theme, bool focused, bool highContrast)
+        internal void ApplyTheme(ElementTheme theme, string? appTheme, bool focused, bool highContrast)
         {
             var themeKey  = highContrast ? "HighContrast"
                           : theme == ElementTheme.Light ? "Light" : "Default";
             var themeDict = (ResourceDictionary)Application.Current.Resources.ThemeDictionaries[themeKey];
 
-            PaneRoot.Background = (Brush)themeDict["TimelinePaneBackgroundBrush"];
+            PaneRoot.Background = highContrast
+                ? (Brush)themeDict["TimelinePaneBackgroundBrush"]
+                : ThemePaletteService.GetPaneBrush(appTheme, "TimelinePaneBackgroundBrush", themeDict);
 
             // コントラストテーマではフォーカスを「塗り」ではなく「枠」で示す（#341）。
             // ヘッダーを Highlight 色で塗ると、中の文字色までこちらで揃えない限り
             // 地と衝突する。枠なら子要素の配色に一切干渉せずに済む。
             bool outlineFocus = highContrast && focused;
-            PaneRoot.BorderBrush = (Brush)themeDict[outlineFocus
+            var borderRole = outlineFocus
                 ? "TimelineHeaderFocusedBackgroundBrush"
-                : "TimelinePaneBorderBrush"];
+                : "TimelinePaneBorderBrush";
+            PaneRoot.BorderBrush = highContrast
+                ? (Brush)themeDict[borderRole]
+                : ThemePaletteService.GetPaneBrush(appTheme, borderRole, themeDict);
             PaneRoot.BorderThickness = new Thickness(outlineFocus ? 2 : 1);
 
-            HeaderGrid.Background = (Brush)themeDict[focused && !highContrast
+            var headerRole = focused && !highContrast
                 ? "TimelineHeaderFocusedBackgroundBrush"
-                : "TimelineHeaderBackgroundBrush"];
+                : "TimelineHeaderBackgroundBrush";
+            HeaderGrid.Background = highContrast
+                ? (Brush)themeDict[headerRole]
+                : ThemePaletteService.GetPaneBrush(appTheme, headerRole, themeDict);
         }
 
         // ── 外から触る要素 ────────────────────────────────────────────────────

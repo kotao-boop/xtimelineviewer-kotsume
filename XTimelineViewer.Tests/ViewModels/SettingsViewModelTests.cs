@@ -13,6 +13,10 @@ public class SettingsViewModelTests
     [InlineData("Default", 0)]
     [InlineData("Light",   1)]
     [InlineData("Dark",    2)]
+    [InlineData("Cyberpunk", 3)]
+    [InlineData("Ocean", 4)]
+    [InlineData("Forest", 5)]
+    [InlineData("Sakura", 6)]
     [InlineData("bogus",   0)] // 不正値は既定（システム）にフォールバック
     public void ThemeIndex_Get_MapsFromSettings(string theme, int expected)
     {
@@ -37,8 +41,23 @@ public class SettingsViewModelTests
     }
 
     [Theory]
+    [InlineData(3, "Cyberpunk")]
+    [InlineData(4, "Ocean")]
+    [InlineData(5, "Forest")]
+    [InlineData(6, "Sakura")]
+    public void ThemeIndex_Set_UpdatesCustomThemes(int index, string expected)
+    {
+        var settings = new AppSettings();
+        var vm = new SettingsViewModel(settings);
+
+        vm.ThemeIndex = index;
+
+        Assert.Equal(expected, settings.Theme);
+    }
+
+    [Theory]
     [InlineData(-1)] // ItemsSource 再設定時の一時値
-    [InlineData(3)]
+    [InlineData(7)]
     public void ThemeIndex_Set_OutOfRange_Ignored(int value)
     {
         var s = new AppSettings { Theme = "Dark" };

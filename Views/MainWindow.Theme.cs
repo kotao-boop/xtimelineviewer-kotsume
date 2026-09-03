@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using Windows.UI.ViewManagement;
 
 using XTimelineViewer.Views.Controls;
+using XTimelineViewer.Services;
 
 namespace XTimelineViewer.Views
 {
@@ -61,14 +62,14 @@ namespace XTimelineViewer.Views
             _uiSettings.ColorValuesChanged += (_, _) =>
                 DispatcherQueue.TryEnqueue(() =>
                 {
-                    RefreshPaneThemes();
+                    ApplySavedTheme();
                     RefreshAllProfileBadges();
                 });
         }
 
         /// <summary>1 ペインの配色を当て直す。フォーカス判定と HC 判定はこちらの責任。</summary>
         private void ApplyPaneTheme(TimelinePane pane)
-            => pane.ApplyTheme(pane.ActualTheme, pane == _focusedPane, IsHighContrast());
+            => pane.ApplyTheme(pane.ActualTheme, _appSettings.Theme, pane == _focusedPane, IsHighContrast());
 
         /// <summary>全ペインの配色を当て直す。フォーカス移動やテーマ変更のときに呼ぶ。</summary>
         private void RefreshPaneThemes()
@@ -78,15 +79,13 @@ namespace XTimelineViewer.Views
 
         private void ApplySavedTheme()
         {
-            var theme = _appSettings.Theme switch
-            {
-                "Light" => ElementTheme.Light,
-                "Dark"  => ElementTheme.Dark,
-                _       => ElementTheme.Default,
-            };
-            ((FrameworkElement)Content).RequestedTheme = theme;
+            var root = (FrameworkElement)Content;
+            ThemePaletteService.ApplyResources(root, _appSettings.Theme, IsHighContrast());
+            var theme = ThemePaletteService.GetBaseTheme(_appSettings.Theme);
+            root.RequestedTheme = theme;
             ApplyTitleBarTheme(this, theme);
             ApplyThemeToWebViews();
+            RefreshPaneThemes();
         }
 
         private void ThemeItem_Click(object sender, RoutedEventArgs _)
@@ -104,6 +103,10 @@ namespace XTimelineViewer.Views
             ThemeSystemItem.IsChecked = _appSettings.Theme is null or "Default";
             ThemeLightItem.IsChecked  = _appSettings.Theme == "Light";
             ThemeDarkItem.IsChecked   = _appSettings.Theme == "Dark";
+            ThemeCyberpunkItem.IsChecked = _appSettings.Theme == "Cyberpunk";
+            ThemeOceanItem.IsChecked = _appSettings.Theme == "Ocean";
+            ThemeForestItem.IsChecked = _appSettings.Theme == "Forest";
+            ThemeSakuraItem.IsChecked = _appSettings.Theme == "Sakura";
         }
 
         private void ApplyThemeToWebViews()

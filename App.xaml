@@ -10,6 +10,11 @@
             <ResourceDictionary.ThemeDictionaries>
                 <!-- Dark -->
                 <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush x:Key="AppSurfaceBrush"                    Color="#202020"/>
+                    <SolidColorBrush x:Key="AppChromeBrush"                     Color="#282828"/>
+                    <SolidColorBrush x:Key="AppBorderBrush"                     Color="#464646"/>
+                    <SolidColorBrush x:Key="AppAccentBrush"                     Color="#60CDFF"/>
+                    <SolidColorBrush x:Key="AppAccentTextBrush"                 Color="#071018"/>
                     <SolidColorBrush x:Key="TimelinePaneBackgroundBrush"          Color="#202020"/>
                     <SolidColorBrush x:Key="TimelinePaneBorderBrush"              Color="#464646"/>
                     <SolidColorBrush x:Key="TimelineHeaderBackgroundBrush"        Color="#37373C"/>
@@ -17,6 +22,11 @@
                 </ResourceDictionary>
                 <!-- Light -->
                 <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppSurfaceBrush"                    Color="#F7F7F7"/>
+                    <SolidColorBrush x:Key="AppChromeBrush"                     Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="AppBorderBrush"                     Color="#D2D2D2"/>
+                    <SolidColorBrush x:Key="AppAccentBrush"                     Color="#0078D4"/>
+                    <SolidColorBrush x:Key="AppAccentTextBrush"                 Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TimelinePaneBackgroundBrush"          Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TimelinePaneBorderBrush"              Color="#D2D2D2"/>
                     <SolidColorBrush x:Key="TimelineHeaderBackgroundBrush"        Color="#EBEBF0"/>
@@ -27,6 +37,11 @@
                      ペインの境界とフォーカスが判別できれば良いので、背景は Window、
                      枠は WindowText、フォーカス中のヘッダーは Highlight を使う。 -->
                 <ResourceDictionary x:Key="HighContrast">
+                    <StaticResource x:Key="AppSurfaceBrush"                    ResourceKey="SystemColorWindowColorBrush"/>
+                    <StaticResource x:Key="AppChromeBrush"                     ResourceKey="SystemColorWindowColorBrush"/>
+                    <StaticResource x:Key="AppBorderBrush"                     ResourceKey="SystemColorWindowTextColorBrush"/>
+                    <StaticResource x:Key="AppAccentBrush"                     ResourceKey="SystemColorHighlightColorBrush"/>
+                    <StaticResource x:Key="AppAccentTextBrush"                 ResourceKey="SystemColorHighlightTextColorBrush"/>
                     <StaticResource x:Key="TimelinePaneBackgroundBrush"          ResourceKey="SystemColorWindowColorBrush"/>
                     <StaticResource x:Key="TimelinePaneBorderBrush"              ResourceKey="SystemColorWindowTextColorBrush"/>
                     <StaticResource x:Key="TimelineHeaderBackgroundBrush"        ResourceKey="SystemColorWindowColorBrush"/>

@@ -103,12 +103,7 @@ namespace XTimelineViewer.Views
             ViewModel.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName != nameof(ViewModels.SettingsViewModel.ThemeIndex)) return;
-                ApplyTheme(Settings.Theme switch
-                {
-                    "Light" => ElementTheme.Light,
-                    "Dark"  => ElementTheme.Dark,
-                    _       => ElementTheme.Default,
-                });
+                ApplyTheme(Settings.Theme);
             };
 
             this.InitializeComponent();
@@ -167,9 +162,12 @@ namespace XTimelineViewer.Views
         /// <summary>
         /// 親ウィンドウのテーマを設定ウィンドウにも適用する。
         /// </summary>
-        public void ApplyTheme(ElementTheme theme)
+        public void ApplyTheme(string? themeName)
         {
-            ((FrameworkElement)Content).RequestedTheme = theme;
+            var root = (FrameworkElement)Content;
+            ThemePaletteService.ApplyResources(root, themeName, MainWindow.IsHighContrast());
+            var theme = ThemePaletteService.GetBaseTheme(themeName);
+            root.RequestedTheme = theme;
             MainWindow.ApplyTitleBarTheme(this, theme);
         }
 
@@ -232,7 +230,7 @@ namespace XTimelineViewer.Views
             new(R.Get("Settings_DefaultTimeline"), "General", "timeline sidebar compose list default タイムライン サイドバー 投稿 リスト 既定"),
             new(R.Get("Settings_HomeAutoLoad"), "General", "home auto refresh interval ホーム 自動更新 間隔"),
             new(R.Get("Settings_ExternalBrowser"), "General", "browser edge link external ブラウザー Edge リンク 外部"),
-            new(R.Get("Settings_Theme"), "UserInterface", "theme light dark appearance テーマ ライト ダーク 表示"),
+            new(R.Get("Settings_Theme"), "UserInterface", "theme light dark cyberpunk ocean forest sakura appearance テーマ ライト ダーク サイバーパンク オーシャン フォレスト サクラ 表示"),
             new(R.Get("Settings_Language"), "UserInterface", "language japanese english 言語 日本語 英語"),
             new(R.Get("Settings_ExportFolder"), "Data", "data folder export backup データ フォルダー エクスポート バックアップ"),
             new(R.Get("Settings_SavedQueries"), "Data", "search query history 検索 クエリ 履歴"),
