@@ -44,7 +44,7 @@ namespace XTimelineViewer.Views
                 var tab = new Button
                 {
                     Content = workspace.Name,
-                    Height = 24,
+                    Height = 28,
                     Padding = new Thickness(12, 0, 8, 0),
                     Tag = workspace.Id,
                 };
@@ -96,8 +96,8 @@ namespace XTimelineViewer.Views
                 menu.Items.Add(delete);
                 var more = new Button
                 {
-                    Width = 24,
-                    Height = 24,
+                    Width = 28,
+                    Height = 28,
                     Padding = new Thickness(0),
                     Flyout = menu,
                     Content = new FontIcon
