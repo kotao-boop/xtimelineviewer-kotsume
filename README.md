@@ -1,14 +1,16 @@
+<a href="https://get.microsoft.com/installer/download/9pmm81b377sd?referrer=appbadge" target="_self">
+	<img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Download from the Microsoft Store" />
+</a>
+
+**[GitHub版（EXE・ZIP）をダウンロード](https://github.com/kotao-boop/xtimelineviewer-kotsume/releases/latest)**
+
 # XTimelineViewer Kotsume Edition (xTV-Kotsume)
 
 X（旧 Twitter）の複数タイムラインを並列表示できる、軽量で高機能な Windows デスクトップクライアントです。
 
 ![XTimelineViewer Kotsume Edition アプリアイコン](Assets/Square150x150Logo.png)
 
-<a href="https://get.microsoft.com/installer/download/9pmm81b377sd?referrer=appbadge" target="_self">
-	<img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Download from the Microsoft Store" />
-</a>
-
-Microsoft Store版は、Microsoftによる署名と自動更新に対応しています。上のバッジからインストールできます。
+Microsoft Store版は、Microsoftによる署名と自動更新に対応しています。ページ最上部のバッジからインストールできます。
 
 > [!NOTE]
 > 本ソフトウェアは、[daruyanagi 氏](https://github.com/daruyanagi)が開発したオープンソース「XTimelineViewer」をベースに、縦横グリッド分割レイアウト、手動ドラッグリサイズ、自動翻訳機能などを追加・強化した **Kotsume Edition** です。
