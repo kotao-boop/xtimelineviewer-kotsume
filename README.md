@@ -4,6 +4,12 @@ X（旧 Twitter）の複数タイムラインを並列表示できる、軽量�
 
 ![XTimelineViewer Kotsume Edition アプリアイコン](Assets/Square150x150Logo.png)
 
+<a href="https://get.microsoft.com/installer/download/9pmm81b377sd?referrer=appbadge" target="_self">
+	<img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Download from the Microsoft Store" />
+</a>
+
+Microsoft Store版は、Microsoftによる署名と自動更新に対応しています。上のバッジからインストールできます。
+
 > [!NOTE]
 > 本ソフトウェアは、[daruyanagi 氏](https://github.com/daruyanagi)が開発したオープンソース「XTimelineViewer」をベースに、縦横グリッド分割レイアウト、手動ドラッグリサイズ、自動翻訳機能などを追加・強化した **Kotsume Edition** です。
 
@@ -54,7 +60,7 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 
 ### Microsoft Store版の状況
 
-Microsoft Store版は2026年8月27日に初回公開されました。Store版の更新は、GitHub版で新機能と不具合修正を確認した後に提出します。Google／Appleログインがアプリ内で完了できない場合は、X用パスワードによる確実なログイン方法を画面内で案内します。
+Microsoft Store版は公開中です。最新の公開版はv2.7.0で、上部のMicrosoft Storeバッジからインストールできます。Google／Appleログインがアプリ内で完了できない場合は、X用パスワードによる確実なログイン方法を画面内で案内します。
 
 Store版のMSIXはMicrosoftが署名し、Microsoft Storeからインストールと更新を行います。GitHub Releasesで配布するEXE・ZIPとは別の配布経路であり、現在のGitHub版はコード署名されていません。
 
