@@ -409,10 +409,10 @@
   <data name="Profile_Relogin" xml:space="preserve"><value>サインインし直す</value></data>
   <data name="Profile_ReloginDescription" xml:space="preserve"><value>ログインが切れた場合に、同じプロフィールで X へサインインし直します。</value></data>
   <data name="Profile_SaveLogin" xml:space="preserve"><value>保存</value></data>
-  <data name="Profile_SocialSignInNoticeTitle" xml:space="preserve"><value>Google／Appleで作成したアカウントもログインできます</value></data>
-  <data name="Profile_SocialSignInNoticeBody" xml:space="preserve"><value>この画面では、Xのメールアドレス・ユーザー名・電話番号と、X用パスワードを使用してください。Google／Appleボタンは外部ブラウザーへ移動し、ログイン状態をこのアプリへ戻せません。</value></data>
+  <data name="Profile_SocialSignInNoticeTitle" xml:space="preserve"><value>Google／Appleで登録した場合は、X用パスワードを使用してください</value></data>
+  <data name="Profile_SocialSignInNoticeBody" xml:space="preserve"><value>このアプリではGoogle／Apple認証への移動を止め、X用パスワードでのログインをご案内します。Edgeなど外部ブラウザーのCookieやログイン状態を読み取ったり取り込んだりはしません。</value></data>
   <data name="Profile_SocialSignInDialogTitle" xml:space="preserve"><value>Google／Appleログインはこのアプリ内で完了できません</value></data>
-  <data name="Profile_SocialSignInDialogBody" xml:space="preserve"><value>Googleは安全のため、アプリ内ブラウザーでのGoogleログインを許可していません。外部ブラウザーでログインしても、そのログイン状態をXTimelineViewerへ渡せないため、白い画面で止まります。&#x0A;&#x0A;Xのメールアドレス、ユーザー名、または電話番号と「X用パスワード」でログインしてください。X用パスワードが分からない場合は、下のボタンから設定・再設定し、この画面へ戻ってログインしてください。</value></data>
+  <data name="Profile_SocialSignInDialogBody" xml:space="preserve"><value>Google／Apple認証のログイン状態は、本アプリのWebView2プロファイルへ引き継げません。そのため、このアプリは認証への移動を始める前に止めます。また、Edgeなど外部ブラウザーのCookieやログイン状態を読み取ったり取り込んだりはしません。&#x0A;&#x0A;Xのメールアドレス、ユーザー名、または電話番号と「X用パスワード」でログインしてください。X用パスワードを設定していない、または分からない場合は、下のボタンからXのページを外部ブラウザーで開いて設定・再設定し、その後この画面へ戻ってログインしてください。</value></data>
   <data name="Profile_OpenPasswordReset" xml:space="preserve"><value>X用パスワードを設定・再設定</value></data>
   <data name="Settings_Backup" xml:space="preserve"><value>設定をバックアップ</value></data>
   <data name="Settings_Backup_Description" xml:space="preserve"><value>設定、プロフィール名、タイムラインURL、保存検索、ワークスペースを1つのファイルに保存します。Xのログイン情報やCookieは含みません。</value></data>

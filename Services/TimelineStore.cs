@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,20 +23,26 @@ namespace XTimelineViewer.Services
         private static readonly SemaphoreSlim SaveLock = new(1, 1);
 
         /// <summary>
-        /// タイムライン一覧を読み込む。ファイルが無い・壊れている場合は空を返す。
+        /// タイムライン一覧を読み込む。既存呼び出しとの互換性のため、
+        /// ファイルが無い・壊れている場合は空を返す。
         /// </summary>
-        public static List<TimelineConfig> Load(string filePath)
-        {
-            try
-            {
-                var json = File.ReadAllText(filePath);
-                return JsonSerializer.Deserialize<List<TimelineConfig>>(json) ?? [];
-            }
-            catch
-            {
-                return [];
-            }
-        }
+        public static List<TimelineConfig> Load(string filePath) => LoadResult(filePath).Value;
+
+        /// <summary>
+        /// タイムライン一覧を読み込み、空の一覧と読み込み失敗を区別する。
+        /// 起動処理ではこちらを使い、破損・アクセス失敗時に空の一覧を保存しないこと。
+        /// </summary>
+        public static PersistenceLoadResult<List<TimelineConfig>> LoadResult(string filePath)
+            => JsonFilePersistence.Load(filePath, static () => new List<TimelineConfig>());
+
+        public static PersistenceLoadResult<List<TimelineConfig>> LoadBackupResult(string filePath)
+            => LoadResult(JsonFilePersistence.GetBackupPath(filePath));
+
+        public static PersistenceRestoreResult RestoreFromBackup(string filePath)
+            => JsonFilePersistence.RestoreValidatedBackup(
+                filePath,
+                LoadBackupResult(filePath),
+                value => JsonSerializer.Serialize(value, JsonOptions));
 
         /// <summary>
         /// タイムライン一覧を保存する。失敗したら例外を投げるので、
@@ -50,12 +55,13 @@ namespace XTimelineViewer.Services
         ///    呼び出し元は UI スレッドから fire-and-forget で呼ぶため、await を挟むと
         ///    その隙に configs が変更されうる。最初の await より前にスナップショットを取る。
         /// 2. <b>SemaphoreSlim で直列化する</b>。呼び出しが重なると I/O が競合する。
-        /// 3. <b>tmp に書いてから置換する</b>。WriteAllTextAsync は truncate してから
-        ///    書くので、途中で落ちると timelines.json が壊れる。Load は例外を握りつぶす
-        ///    ので、壊れると全ペインが黙って消えてしまう。
+        /// 3. <b>tmp に書いてから置換する</b>。一次ファイルへ直接書くと、
+        ///    途中で落ちた際に timelines.json が壊れるため、直前版を .bak に残して置換する。
         /// </remarks>
         public static async Task SaveAsync(string filePath, IReadOnlyList<TimelineConfig> configs)
         {
+            ArgumentNullException.ThrowIfNull(configs);
+
             // 【不変条件 1】await より前に同期でスナップショットを取る。ここを
             // await の後ろへ動かすと、保存内容が呼び出し時点とずれる。
             var json = JsonSerializer.Serialize(configs, JsonOptions);
@@ -64,12 +70,15 @@ namespace XTimelineViewer.Services
             await SaveLock.WaitAsync();
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+                var createBackup = JsonFilePersistence.ShouldCreateBackupBeforeSave(
+                    filePath,
+                    LoadResult(filePath));
 
                 // 【不変条件 3】
-                var tmp = filePath + ".tmp";
-                await File.WriteAllTextAsync(tmp, json);
-                File.Move(tmp, filePath, overwrite: true);
+                await JsonFilePersistence.SaveAtomicallyAsync(
+                    filePath,
+                    json,
+                    createBackup);
             }
             finally
             {

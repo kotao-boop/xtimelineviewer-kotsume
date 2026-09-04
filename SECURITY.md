@@ -31,3 +31,4 @@ Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布�
 保証そのものではありません。SignPathの検討経緯と署名パイプラインの設計は
 [コード署名ランブック](docs/CODE_SIGNING_RUNBOOK.md)を参照してください。Store署名をGitHub版の署名と
 説明したり、署名検証に失敗した成果物を「署名済み」と表示したりしてはなりません。
+

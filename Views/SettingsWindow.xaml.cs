@@ -23,6 +23,7 @@ namespace XTimelineViewer.Views
         private const double MinimumLogicalHeight = 560;
         private bool _correctingWindowSize;
         private WindowSizingService.LogicalSize _lastRestoredSize;
+        private readonly SettingsWindowCloseState _closeState = new();
 
         /// <summary>親ウィンドウから渡されたアプリ設定。ページが直接読み書きする。</summary>
         internal AppSettings Settings { get; }
@@ -86,6 +87,13 @@ namespace XTimelineViewer.Views
         /// <summary>設定バックアップの復元後、MainWindow の表示状態を読み直す。</summary>
         internal Func<Task>? BackupRestored { get; set; }
 
+        /// <summary>
+        /// バックアップ復元後の終了処理で、復元前の Settings を保存しないようにする。
+        /// 復元処理が完了した直後、ウィンドウを閉じる前に呼び出す。
+        /// </summary>
+        internal void SuppressSettingsSaveAfterRestore()
+            => _closeState.SuppressSettingsSaveAfterRestore();
+
         /// <summary>この設定ウィンドウにファイル選択画面を関連付けるためのハンドル。</summary>
         internal IntPtr WindowHandle => WinRT.Interop.WindowNative.GetWindowHandle(this);
 
@@ -128,9 +136,12 @@ namespace XTimelineViewer.Views
             EnableWindow(_ownerHwnd, false);
             Closed += (_, _) =>
             {
-                Settings.SettingsWindowWidth = Math.Max(MinimumLogicalWidth, _lastRestoredSize.Width);
-                Settings.SettingsWindowHeight = Math.Max(MinimumLogicalHeight, _lastRestoredSize.Height);
-                SaveSettingsOnly?.Invoke();
+                if (_closeState.ShouldSaveSettingsOnClose)
+                {
+                    Settings.SettingsWindowWidth = Math.Max(MinimumLogicalWidth, _lastRestoredSize.Width);
+                    Settings.SettingsWindowHeight = Math.Max(MinimumLogicalHeight, _lastRestoredSize.Height);
+                    SaveSettingsOnly?.Invoke();
+                }
                 EnableWindow(_ownerHwnd, true);
             };
 

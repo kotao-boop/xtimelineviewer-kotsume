@@ -1,7 +1,7 @@
 ; Inno Setup Script for XTimelineViewer Kotsume Edition
 #define MyAppName "XTimelineViewer Kotsume Edition"
 #ifndef MyAppVersion
-#define MyAppVersion "2.7.0"
+#define MyAppVersion "2.7.1"
 #endif
 #define MyAppPublisher "Kotsume Project"
 #define MyAppURL "https://github.com/kotao-boop/xtimelineviewer-kotsume"
@@ -50,3 +50,4 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilen
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+

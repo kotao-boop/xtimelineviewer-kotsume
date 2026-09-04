@@ -54,9 +54,14 @@ namespace XTimelineViewer.Views
         // タイムライン削除・プロファイル切り替え・ウィンドウクローズ時に必ず呼ぶこと。
         private void CleanupWebView(WebView2 wv)
         {
-            var source = wv.CoreWebView2?.Source ?? "(not initialized)";
+            string source;
+            try { source = wv.CoreWebView2?.Source ?? "(not initialized)"; }
+            catch (Exception) { source = "(unavailable)"; }
             Debug.WriteLine($"[WebView2] CleanupWebView: source={source}");
 
+            // Close() より先に寿命を終える。待機中の非同期処理に中断を伝え、
+            // CoreWebView2 イベントを解除してから実体を閉じることで、破棄後の継続を防ぐ。
+            EndWebViewLifetime(wv);
             StopHardReloadTimer(wv);
             _hardReloadUiUpdaters.Remove(wv);
             _pointerOverWebViews.Remove(wv);

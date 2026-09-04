@@ -53,16 +53,16 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 [ダウンロード案内](DOWNLOADS.md)から、お好みの形式を確認してご利用いただけます。
 
 > [!WARNING]
-> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.7.0のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
+> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.7.1のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
 
 | 形式 | ファイル名 | 説明 |
 |---|---|---|
-| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.7.0-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
-| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.7.0-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
+| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.7.1-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
+| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.7.1-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
 
 ### Microsoft Store版の状況
 
-Microsoft Store版は公開中です。最新の公開版はv2.7.0で、上部のMicrosoft Storeバッジからインストールできます。Google／Appleログインがアプリ内で完了できない場合は、X用パスワードによる確実なログイン方法を画面内で案内します。
+Microsoft Store版は公開中です。最新の公開版はv2.7.1で、上部のMicrosoft Storeバッジからインストールできます。本アプリではGoogle／Apple認証への移動を止め、X用パスワードによるログイン方法を画面内で案内します。Microsoft Edgeなど外部ブラウザーのCookieやログイン状態を読み取ったり取り込んだりはしません。
 
 Store版のMSIXはMicrosoftが署名し、Microsoft Storeからインストールと更新を行います。GitHub Releasesで配布するEXE・ZIPとは別の配布経路であり、現在のGitHub版はコード署名されていません。
 
@@ -83,6 +83,8 @@ Store版のMSIXはMicrosoftが署名し、Microsoft Storeからインストー�
 
 ### 1. 初回起動とログイン
 アプリを起動すると、3段階の初期設定案内が表示されます。画面の指示に従って X アカウントにログインすると、ホームタイムラインが自動的に追加されます。まず画面を確認したい場合は［あとで設定］を選び、メイン画面から後でアカウントを追加できます。
+
+Google／AppleでXアカウントを登録した場合も、この画面ではXのメールアドレス・ユーザー名・電話番号とX用パスワードを使用します。X用パスワードを設定していない、または分からない場合は、画面の案内からXのパスワード再設定ページを外部ブラウザーで開き、設定後に本アプリへ戻ってログインしてください。外部ブラウザーでのログイン状態そのものは本アプリへ引き継がれません。
 
 ### 2. タイムラインの追加
 - ツールバー左側の［＋タイムライン］から「ホーム」「通知」「ブックマーク」「リスト」をワンクリックで追加できます。
@@ -132,7 +134,7 @@ Store版のMSIXはMicrosoftが署名し、Microsoft Storeからインストー�
 
 ## Code signing policy
 
-**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.7.0 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
+**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.7.1 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
 
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 
@@ -152,3 +154,4 @@ Free code signing provided by [SignPath.io](https://signpath.io/), certificate b
 - **原作者**: [daruyanagi](https://github.com/daruyanagi)（[Original XTimelineViewer Repository](https://github.com/daruyanagi/XTimelineViewer)）
 - **カスタマイズ & 拡張**: Kotsume Project
 - **プライバシー**: [プライバシーポリシー](PRIVACY.md)
+

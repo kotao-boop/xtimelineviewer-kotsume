@@ -56,6 +56,117 @@ namespace XTimelineViewer.Tests.Services
             }
         }
 
+
+        [Fact]
+        public void Save_ReplacingFile_PreservesPreviousVersionAsBackup()
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "xtv-workspace-tests", Guid.NewGuid().ToString("N"));
+            var path = Path.Combine(dir, "workspaces.json");
+            try
+            {
+                WorkspaceStore.Save(path, [new WorkspaceConfig { Name = "Old" }]);
+                WorkspaceStore.Save(path, [new WorkspaceConfig { Name = "New" }]);
+
+                Assert.Equal("New", Assert.Single(WorkspaceStore.Load(path)).Name);
+                Assert.Equal("Old", Assert.Single(WorkspaceStore.LoadBackupResult(path).Value).Name);
+                Assert.Empty(Directory.GetFiles(dir, "workspaces.json.*.tmp"));
+            }
+            finally
+            {
+                if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
+            }
+        }
+
+        [Fact]
+        public void RestoreFromBackup_ArchivesCorruptPrimaryAndKeepsBackup()
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "xtv-workspace-tests", Guid.NewGuid().ToString("N"));
+            var path = Path.Combine(dir, "workspaces.json");
+            try
+            {
+                WorkspaceStore.Save(path, [new WorkspaceConfig { Name = "Old" }]);
+                WorkspaceStore.Save(path, [new WorkspaceConfig { Name = "New" }]);
+                File.WriteAllText(path, "broken primary");
+
+                var result = WorkspaceStore.RestoreFromBackup(path);
+
+                Assert.True(result.IsSuccess);
+                Assert.NotNull(result.ArchivedPrimaryPath);
+                Assert.Equal("broken primary", File.ReadAllText(result.ArchivedPrimaryPath));
+                Assert.Equal("Old", Assert.Single(WorkspaceStore.Load(path)).Name);
+                Assert.Equal("Old", Assert.Single(WorkspaceStore.LoadBackupResult(path).Value).Name);
+            }
+            finally
+            {
+                if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
+            }
+        }
+
+        [Fact]
+        public void Save_CorruptPrimary_BlocksOverwriteAndKeepsBackup()
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "xtv-workspace-tests", Guid.NewGuid().ToString("N"));
+            var path = Path.Combine(dir, "workspaces.json");
+            try
+            {
+                WorkspaceStore.Save(path, [new WorkspaceConfig { Name = "Old" }]);
+                WorkspaceStore.Save(path, [new WorkspaceConfig { Name = "New" }]);
+                File.WriteAllText(path, "broken primary");
+
+                var error = Assert.Throws<PersistenceSaveBlockedException>(() =>
+                    WorkspaceStore.Save(path, [new WorkspaceConfig { Name = "Must not overwrite" }]));
+
+                Assert.Equal(PersistenceLoadStatus.Corrupt, error.LoadStatus);
+                Assert.Equal("broken primary", File.ReadAllText(path));
+                Assert.Equal("Old", Assert.Single(WorkspaceStore.LoadBackupResult(path).Value).Name);
+            }
+            finally
+            {
+                if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
+            }
+        }
+
+
+        [Fact]
+        public void LoadResult_InvalidJson_ReportsCorruptInsteadOfEmptySuccess()
+        {
+            var path = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(path, "not-json");
+
+                var result = WorkspaceStore.LoadResult(path);
+
+                Assert.Equal(PersistenceLoadStatus.Corrupt, result.Status);
+                Assert.False(result.IsSuccess);
+                Assert.Empty(result.Value);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void LoadResult_ValidEmptyList_IsSuccess()
+        {
+            var path = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(path, "[]");
+
+                var result = WorkspaceStore.LoadResult(path);
+
+                Assert.Equal(PersistenceLoadStatus.Success, result.Status);
+                Assert.True(result.IsSuccess);
+                Assert.Empty(result.Value);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
         [Fact]
         public void Load_NullCollections_AreRecoveredAsEmpty()
         {

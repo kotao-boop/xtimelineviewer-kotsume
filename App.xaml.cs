@@ -37,13 +37,15 @@ namespace XTimelineViewer
             // ここで肥大化した error.log を 1 世代退避する（#374）。
             AppLog.Initialize();
 
-            // UI スレッドの未処理例外でプロセスが即死するのを防ぐ。
-            // winget バリデーション VM など特殊環境でのサイレントクラッシュを診断しやすくする。
+            // UI スレッドの未処理例外は必ず記録する。
+            // キャンセル以外を無条件に Handled にすると、壊れた UI 状態のまま動き続けてしまう。
+            // 未知の例外では自動再起動せず、OS に通常終了を任せる（再起動ループを作らない）。
             this.UnhandledException += (sender, e) =>
             {
                 Debug.WriteLine($"[App] UnhandledException: {e.Exception}");
                 AppLog.Error("UnhandledException", e.Exception);
-                e.Handled = true;
+                if (UiExceptionPolicy.CanContinue(e.Exception))
+                    e.Handled = true;
             };
         }
 
