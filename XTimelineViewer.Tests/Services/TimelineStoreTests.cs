@@ -42,11 +42,46 @@ namespace XTimelineViewer.Tests.Services
             => Assert.Empty(TimelineStore.Load(_file));
 
         [Fact]
+        public void LoadResult_MissingFile_ReportsMissing()
+        {
+            var result = TimelineStore.LoadResult(_file);
+
+            Assert.Equal(PersistenceLoadStatus.Missing, result.Status);
+            Assert.Empty(result.Value);
+        }
+
+        [Fact]
         public void Load_BrokenJson_ReturnsEmpty()
         {
             Directory.CreateDirectory(_dir);
             File.WriteAllText(_file, "{ this is not valid json");
             Assert.Empty(TimelineStore.Load(_file));
+        }
+
+        [Fact]
+        public void LoadResult_BrokenJson_ReportsCorruptInsteadOfEmptySuccess()
+        {
+            Directory.CreateDirectory(_dir);
+            File.WriteAllText(_file, "{ this is not valid json");
+
+            var result = TimelineStore.LoadResult(_file);
+
+            Assert.Equal(PersistenceLoadStatus.Corrupt, result.Status);
+            Assert.False(result.IsSuccess);
+            Assert.Empty(result.Value);
+        }
+
+        [Fact]
+        public void LoadResult_ValidEmptyList_IsSuccess()
+        {
+            Directory.CreateDirectory(_dir);
+            File.WriteAllText(_file, "[]");
+
+            var result = TimelineStore.LoadResult(_file);
+
+            Assert.Equal(PersistenceLoadStatus.Success, result.Status);
+            Assert.True(result.IsSuccess);
+            Assert.Empty(result.Value);
         }
 
         [Fact]
@@ -130,11 +165,12 @@ namespace XTimelineViewer.Tests.Services
         }
 
         [Fact]
-        public void SaveAsync_WritesToTempThenMoves()
+        public void SaveAsync_UsesSharedAtomicBackupWriter()
         {
             var src = StoreSource();
-            Assert.Contains("WriteAllTextAsync(tmp", src);
-            Assert.Contains("File.Move(tmp, filePath, overwrite: true)", src);
+            Assert.Contains("JsonFilePersistence.ShouldCreateBackupBeforeSave(", src);
+            Assert.Contains("JsonFilePersistence.SaveAtomicallyAsync(", src);
+            Assert.Contains("createBackup);", src);
             Assert.DoesNotContain("WriteAllTextAsync(filePath", src);
         }
 
@@ -157,6 +193,48 @@ namespace XTimelineViewer.Tests.Services
             var loaded = TimelineStore.Load(_file);
             Assert.Equal(2, loaded.Count);
             Assert.Equal("https://x.com/notifications", loaded[0].Url);
+        }
+
+        [Fact]
+        public async Task SaveAsync_ReplacingFile_PreservesPreviousVersionAsBackup()
+        {
+            await TimelineStore.SaveAsync(_file, Sample("https://x.com/home"));
+            await TimelineStore.SaveAsync(_file, Sample("https://x.com/notifications"));
+
+            Assert.Equal("https://x.com/notifications", Assert.Single(TimelineStore.Load(_file)).Url);
+            Assert.Equal("https://x.com/home", Assert.Single(TimelineStore.LoadBackupResult(_file).Value).Url);
+            Assert.Empty(Directory.GetFiles(_dir, "timelines.json.*.tmp"));
+        }
+
+        [Fact]
+        public async Task RestoreFromBackup_ArchivesCorruptPrimaryAndKeepsBackup()
+        {
+            await TimelineStore.SaveAsync(_file, Sample("https://x.com/home"));
+            await TimelineStore.SaveAsync(_file, Sample("https://x.com/notifications"));
+            File.WriteAllText(_file, "broken primary");
+
+            var result = TimelineStore.RestoreFromBackup(_file);
+
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(result.ArchivedPrimaryPath);
+            Assert.Equal("broken primary", File.ReadAllText(result.ArchivedPrimaryPath));
+            Assert.Equal("https://x.com/home", Assert.Single(TimelineStore.Load(_file)).Url);
+            Assert.Equal("https://x.com/home", Assert.Single(TimelineStore.LoadBackupResult(_file).Value).Url);
+        }
+
+        [Fact]
+        public async Task SaveAsync_CorruptPrimary_BlocksOverwriteAndKeepsBackup()
+        {
+            await TimelineStore.SaveAsync(_file, Sample("https://x.com/home"));
+            await TimelineStore.SaveAsync(_file, Sample("https://x.com/notifications"));
+            File.WriteAllText(_file, "broken primary");
+
+            var error = await Assert.ThrowsAsync<PersistenceSaveBlockedException>(() =>
+                TimelineStore.SaveAsync(_file, Sample("https://x.com/search?q=new")));
+
+            Assert.Equal(PersistenceLoadStatus.Corrupt, error.LoadStatus);
+            Assert.Equal("broken primary", File.ReadAllText(_file));
+            Assert.Equal("https://x.com/home", Assert.Single(TimelineStore.LoadBackupResult(_file).Value).Url);
         }
 
         [Fact]

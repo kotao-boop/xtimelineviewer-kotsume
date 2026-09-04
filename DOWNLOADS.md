@@ -15,7 +15,7 @@ through Microsoft Store. GitHub packages do not become signed merely because the
 
 ## Code-signing status
 
-The GitHub v2.4.0 release is **not code-signed**. Windows may therefore show an "Unknown publisher" or
+The GitHub v2.7.1 release is **not code-signed**. Windows may therefore show an "Unknown publisher" or
 Microsoft Defender SmartScreen warning. The release includes `SHA256SUMS.txt` and GitHub Artifact Attestations
 for its final packages. These help verify that a file is the exact file produced by the repository's release
 workflow; they do not replace Authenticode code signing and do not by themselves prove that software is safe.
@@ -40,3 +40,4 @@ have passed. For an unsigned release, the signing gate is explicitly marked as n
 presented as successful.
 
 See the [privacy policy](PRIVACY.md) before using the optional translation feature.
+

@@ -9,7 +9,7 @@ on:
       version:
         description: 'Version to test without publishing (MAJOR.MINOR.PATCH)'
         required: true
-        default: '2.7.0'
+        default: '2.7.1'
 
 permissions:
   contents: read
@@ -291,3 +291,4 @@ jobs:
             --notes-file $notes `
             --latest
           if ($LASTEXITCODE -ne 0) { throw "GitHub Release creation failed." }
+

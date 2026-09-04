@@ -161,8 +161,14 @@ namespace XTimelineViewer.Views.Settings
                     R.Get("Settings_Restore_SuccessTitle"),
                     string.Format(R.Get("Settings_Restore_SuccessBody"), result.RestoredFileCount));
 
+                // settings.json はすでにバックアップの内容へ置き換わっている。
+                // 設定ウィンドウが保持している復元前の Settings を Closed で保存すると、
+                // 復元結果を直ちに上書きしてしまうため、コールバックより先に保存を止める。
+                _parent.SuppressSettingsSaveAfterRestore();
                 if (_parent.BackupRestored is not null)
                     await _parent.BackupRestored();
+                else
+                    _parent.Close();
             }
             catch (Exception ex)
             {

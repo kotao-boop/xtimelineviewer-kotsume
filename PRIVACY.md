@@ -1,6 +1,6 @@
 # プライバシーポリシー / Privacy Policy
 
-最終更新日: 2026年8月28日
+最終更新日: 2026年9月5日
 
 この文書は、XTimelineViewer Kotsume Edition（以下「本アプリ」）が扱うデータと通信を説明します。
 本アプリはオープンソースの非公式Xクライアントであり、X Corp.、Google LLC、Microsoft Corporation
@@ -10,6 +10,8 @@
 
 - 開発者が運営する収集サーバー、広告、利用状況テレメトリはありません。
 - Xへのログインとタイムライン表示は、Microsoft Edge WebView2からXへ直接接続して行います。
+- Google／Apple認証への移動はアプリ内で止め、X用パスワードによるログインを案内します。
+- Microsoft Edgeなど、外部ブラウザーのCookieやログイン状態を読み取ったり取り込んだりはしません。
 - 自動翻訳は初期状態で無効です。有効にする前に、外部送信についてアプリ内で確認します。
 - 翻訳を実行すると、表示中の投稿本文がGoogleの翻訳用エンドポイントへ送信されます。
 - 設定、タイムライン構成、WebView2のCookie等は、原則として利用者のPC内に保存されます。
@@ -20,12 +22,17 @@
 閲覧履歴など、WebView2内でXが取り扱うデータには、Xのプライバシーポリシーが適用されます。
 本アプリの開発者が運営するサーバーへ、XのパスワードやCookieを送信する処理はありません。
 
-利用者がXのログイン画面で「Googleで続ける」または「Appleで続ける」を明示的に選んだ場合、
-本アプリは同じWebView2プロファイルを使う認証用ウィンドウで、Googleの
-`https://accounts.google.com/` またはAppleの `https://appleid.apple.com/` を表示します。
-認証情報は各サービスとXの間で処理され、本アプリ独自の設定ファイルやログへパスワード、
-認証Cookie、認証コードを保存する処理はありません。認証用ウィンドウは、X、Google、Appleの
-正規HTTPSホストだけへ移動できるよう制限しています。
+本アプリのログイン画面では、Xのメールアドレス、ユーザー名または電話番号と、X用パスワードを
+使用します。Xのログイン画面に表示される「Googleで続ける」または「Appleで続ける」を選ぶと、
+認証が本アプリとは別のブラウザーセッションへ移る場合があります。そのログイン状態を本アプリの
+WebView2プロファイルへ引き継げないため、本アプリはGoogle／Apple認証への移動を始める前に止め、
+X用パスワードを設定・再設定する方法を案内します。
+
+案内画面で利用者が「X用パスワードを設定・再設定」を選んだ場合に限り、Xのパスワード再設定ページを
+外部ブラウザーで開きます。本アプリは、Microsoft Edgeなど外部ブラウザーに保存されたCookieや
+ログイン状態を読み取ったり、コピーしたり、WebView2プロファイルへ取り込んだりしません。
+ログイン欄に入力した情報はXのWebページ内で処理され、本アプリ独自の設定ファイルやログへ
+パスワード、認証Cookie、認証コードを保存する処理はありません。
 
 ## 2. 翻訳機能
 
@@ -92,8 +99,10 @@ MSIX版は、Windowsのアプリ設定にあるリセットまたはアンイン
 本アプリから利用する第三者サービスには、それぞれの利用規約とプライバシーポリシーが適用されます。
 
 - X: `https://x.com/` / プライバシー: `https://x.com/en/privacy`
-- GoogleによるXへのログイン（利用者が選んだ場合）: `https://accounts.google.com/` / プライバシー: `https://policies.google.com/privacy`
-- AppleによるXへのログイン（利用者が選んだ場合）: `https://appleid.apple.com/` / プライバシー: `https://www.apple.com/legal/privacy/`
+- Google／AppleによるXへのログイン: Xの画面に選択肢が表示される場合がありますが、本アプリは
+  認証への移動を止めます。Xや外部ブラウザーから各サービスへアクセスした場合は、Google
+  (`https://policies.google.com/privacy`) またはApple
+  (`https://www.apple.com/legal/privacy/`) のプライバシーポリシーが適用されます。
 - Google翻訳用エンドポイント: `https://translate.googleapis.com/` / プライバシー: `https://policies.google.com/privacy`
 - GitHub Releases API: `https://api.github.com/` / プライバシー: `https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement`
 - Microsoft Edge WebView2 / Microsoft Store / winget / プライバシー: `https://privacy.microsoft.com/privacystatement`
@@ -112,6 +121,8 @@ The application does not operate a developer-controlled analytics or collection 
 through Microsoft Edge WebView2. Translation is disabled by default and requires an in-app disclosure before use.
 When translation is requested, the visible post text is sent to `translate.googleapis.com`. Settings, WebView2
 profiles and logs are stored locally. Unpackaged builds contact the GitHub Releases API to check for
-updates. If the user explicitly chooses Google or Apple on X's sign-in page, the corresponding authentication
-page is opened in an in-app WebView2 window that shares the same local profile with X. See the Japanese sections
-above for the complete current data-flow description.
+updates. The application intercepts attempts to start Google or Apple authentication from X's sign-in screen
+and instead explains how to sign in with an X password. Only when the user explicitly chooses the password-reset
+option does the application open X's password-reset page in an external browser. The application does not read,
+copy or import cookies or sign-in sessions from Microsoft Edge or any other external browser. See the Japanese
+sections above for the complete current data-flow description.

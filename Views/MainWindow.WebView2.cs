@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -25,6 +26,78 @@ namespace XTimelineViewer.Views
 {
     public sealed partial class MainWindow : Window
     {
+        /// <summary>
+        /// WebView2 一個分の「寿命」。ペイン削除・プロファイル切り替え中に
+        /// await していた処理が戻ってきても、破棄済みの CoreWebView2 を触らないために使う。
+        /// CoreWebView2 のイベントもここでまとめて解除する。
+        /// </summary>
+        private sealed class WebViewLifetime : IDisposable
+        {
+            private readonly CancellationTokenSource _cancellation = new();
+            private readonly List<Action> _detachHandlers = [];
+            private bool _disposed;
+
+            internal CancellationToken Token { get; }
+            internal bool IsDisposed => _disposed;
+
+            internal WebViewLifetime()
+            {
+                Token = _cancellation.Token;
+            }
+
+            internal void RegisterHandler(Action detach)
+            {
+                if (_disposed)
+                {
+                    detach();
+                    return;
+                }
+                _detachHandlers.Add(detach);
+            }
+
+            public void Dispose()
+            {
+                if (_disposed) return;
+                _disposed = true;
+                _cancellation.Cancel();
+
+                // 逆順に外すと、後から追加したハンドラーから先に止まる。
+                for (int i = _detachHandlers.Count - 1; i >= 0; i--)
+                {
+                    try { _detachHandlers[i](); }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[WebView2] Event detach failed: {ex.Message}");
+                    }
+                }
+                _detachHandlers.Clear();
+                _cancellation.Dispose();
+            }
+        }
+
+        private readonly Dictionary<WebView2, WebViewLifetime> _webViewLifetimes = [];
+
+        private WebViewLifetime BeginWebViewLifetime(WebView2 webView)
+        {
+            if (_webViewLifetimes.Remove(webView, out var previous))
+                previous.Dispose();
+
+            var lifetime = new WebViewLifetime();
+            _webViewLifetimes[webView] = lifetime;
+            return lifetime;
+        }
+
+        private bool IsWebViewLifetimeActive(WebView2 webView, WebViewLifetime lifetime) =>
+            !lifetime.IsDisposed &&
+            _webViewLifetimes.TryGetValue(webView, out var current) &&
+            ReferenceEquals(current, lifetime);
+
+        private void EndWebViewLifetime(WebView2 webView)
+        {
+            if (_webViewLifetimes.Remove(webView, out var lifetime))
+                lifetime.Dispose();
+        }
+
         // ── WebView2 init ─────────────────────────────────────────────────────
 
         private static string BuildHideListHeaderJs(bool hide) => $$"""
@@ -78,8 +151,13 @@ namespace XTimelineViewer.Views
         private static async Task ApplyHideListHeaderAsync(
             Microsoft.UI.Xaml.Controls.WebView2 webView, bool hide)
         {
-            await webView.CoreWebView2.ExecuteScriptAsync(BuildHideListHeaderJs(hide));
+            var core = webView.CoreWebView2;
+            if (core is null) return;
+            await ApplyHideListHeaderAsync(core, hide);
         }
+
+        private static async Task ApplyHideListHeaderAsync(CoreWebView2 core, bool hide) =>
+            await core.ExecuteScriptAsync(BuildHideListHeaderJs(hide));
 
         private static string BuildHideSidebarJs(bool hide) => $$"""
             (function(hide){
@@ -98,8 +176,13 @@ namespace XTimelineViewer.Views
         private static async Task ApplyHideSidebarAsync(
             Microsoft.UI.Xaml.Controls.WebView2 webView, bool hide)
         {
-            await webView.CoreWebView2.ExecuteScriptAsync(BuildHideSidebarJs(hide));
+            var core = webView.CoreWebView2;
+            if (core is null) return;
+            await ApplyHideSidebarAsync(core, hide);
         }
+
+        private static async Task ApplyHideSidebarAsync(CoreWebView2 core, bool hide) =>
+            await core.ExecuteScriptAsync(BuildHideSidebarJs(hide));
 
         // 編集状態レポーター（#258）。全ペインに注入し、編集中（モーダル表示／編集要素フォーカス）に
         // なったら postMessage('editing:true'/'editing:false') で C# に通知する。C# 側は「いずれかの
@@ -672,18 +755,33 @@ namespace XTimelineViewer.Views
         private static async Task ApplyHideComposeAsync(
             Microsoft.UI.Xaml.Controls.WebView2 webView, bool hide)
         {
-            await webView.CoreWebView2.ExecuteScriptAsync(BuildHideComposeJs(hide));
+            var core = webView.CoreWebView2;
+            if (core is null) return;
+            await ApplyHideComposeAsync(core, hide);
         }
 
-        private async Task LoadExtensionsAsync(WebView2 webView, string profileId)
+        private static async Task ApplyHideComposeAsync(CoreWebView2 core, bool hide) =>
+            await core.ExecuteScriptAsync(BuildHideComposeJs(hide));
+
+        private async Task LoadExtensionsAsync(
+            CoreWebView2 core,
+            string profileId,
+            CancellationToken cancellationToken)
         {
-            // 同じプロファイルを複数ペインで使う場合も、登録処理は一度だけ行う。
-            if (!_extensionsLoadedProfiles.Add(profileId)) return;
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // 完了済みのプロファイルだけ省略する。完了前に記録すると、
+            // WebView2 破棄で中断したときに次のペインも読み込みを飛ばしてしまう。
+            if (_extensionsLoadedProfiles.Contains(profileId)) return;
 
             // MSIX パッケージ内の extensions は WindowsApps 配下に置かれ WebView2 から直接アクセスできない。
             // LocalState へコピーしてから読み込む。アンパッケージド環境は BaseDirectory を使う。
             var extensionsDir = GetExtensionsDir();
-            if (!Directory.Exists(extensionsDir)) return;
+            if (!Directory.Exists(extensionsDir))
+            {
+                _extensionsLoadedProfiles.Add(profileId);
+                return;
+            }
 
             var errors = new System.Text.StringBuilder();
             var currentExtensionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -693,16 +791,19 @@ namespace XTimelineViewer.Views
             // 既存の同意状態をなるべく維持できる。
             foreach (var extDir in Directory.GetDirectories(extensionsDir))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
                     if ((File.GetAttributes(extDir) & System.IO.FileAttributes.ReparsePoint) != 0)
                         throw new InvalidDataException("Reparse-point extension directories are not allowed.");
-                    var ext = await webView.CoreWebView2.Profile.AddBrowserExtensionAsync(extDir);
+                    var ext = await core.Profile.AddBrowserExtensionAsync(extDir);
+                    cancellationToken.ThrowIfCancellationRequested();
                     currentExtensionIds.Add(ext.Id);
                     AddExtensionButton(ext, extDir);
                 }
                 catch (Exception ex)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     errors.AppendLine($"・{Path.GetFileName(extDir)}");
                     errors.AppendLine($"  {ex}");
                 }
@@ -713,19 +814,23 @@ namespace XTimelineViewer.Views
             // 同じ名前の古い登録だけをプロファイルから削除する。
             try
             {
-                var installed = await webView.CoreWebView2.Profile.GetBrowserExtensionsAsync();
+                var installed = await core.Profile.GetBrowserExtensionsAsync();
+                cancellationToken.ThrowIfCancellationRequested();
                 foreach (var existing in installed)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (!IsXTimelineTranslator(existing) || currentExtensionIds.Contains(existing.Id))
                         continue;
 
                     try
                     {
                         await existing.RemoveAsync();
+                        cancellationToken.ThrowIfCancellationRequested();
                         Debug.WriteLine($"[Extensions] Removed stale X Timeline Translator: {existing.Id}");
                     }
                     catch (Exception ex)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         errors.AppendLine($"・古い拡張機能 {existing.Id} の削除");
                         errors.AppendLine($"  {ex}");
                     }
@@ -733,6 +838,7 @@ namespace XTimelineViewer.Views
             }
             catch (Exception ex)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 // 列挙に失敗しても、現在の拡張機能の読み込み自体は継続する。
                 errors.AppendLine("・古い拡張機能の確認");
                 errors.AppendLine($"  {ex}");
@@ -740,6 +846,7 @@ namespace XTimelineViewer.Views
 
             if (errors.Length > 0)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var dlg = new ContentDialog
                 {
                     Title           = R.Get("ExtLoadError_Title"),
@@ -749,7 +856,7 @@ namespace XTimelineViewer.Views
                         Content   = new TextBlock
                         {
                             Text       = errors.ToString().TrimEnd()
-                            + "\n\n" + webView.CoreWebView2.Environment.BrowserVersionString,
+                            + "\n\n" + core.Environment.BrowserVersionString,
                             FontFamily = new FontFamily("Cascadia Mono, Consolas, Courier New"),
                             FontSize   = 12,
                             IsTextSelectionEnabled = true,
@@ -761,6 +868,9 @@ namespace XTimelineViewer.Views
                 };
                 await ShowDialogAsync(dlg);
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            _extensionsLoadedProfiles.Add(profileId);
         }
 
         private static bool IsXTimelineTranslator(CoreWebView2BrowserExtension extension) =>
@@ -884,8 +994,7 @@ namespace XTimelineViewer.Views
             if (isDark)
             {
                 optWebView.DefaultBackgroundColor = Windows.UI.Color.FromArgb(255, 32, 32, 32);
-                optWebView.CoreWebView2.NavigationCompleted += async (s, e) =>
-                {
+                
                     await optWebView.CoreWebView2.ExecuteScriptAsync("""
                         if (!window.matchMedia('(prefers-color-scheme: dark)').matches ||
                             getComputedStyle(document.body).backgroundColor === 'rgb(255, 255, 255)') {
@@ -895,8 +1004,7 @@ namespace XTimelineViewer.Views
                                 el.style.cssText += 'background:#333!important;color:#e0e0e0!important;border-color:#555!important';
                             });
                         }
-                    """);
-                };
+                    """);
             }
             optWebView.Source = new Uri($"chrome-extension://{info.ExtensionId}/{info.OptionsPage}");
             await ShowDialogAsync(dlg);
@@ -917,23 +1025,29 @@ namespace XTimelineViewer.Views
         /// アクティブなアカウントを指す。SPA のため NavigationCompleted 後に遅延描画されるので、
         /// 要素が現れるまで数回リトライする。取得できなければ（ログアウト等）null。
         /// </summary>
-        private static async Task<string?> TryReadActiveScreenNameAsync(WebView2 webView, int attempts = 6)
+        private static async Task<string?> TryReadActiveScreenNameAsync(
+            CoreWebView2 core,
+            CancellationToken cancellationToken,
+            int attempts = 6)
         {
             for (int i = 0; i < attempts; i++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    var result = await webView.CoreWebView2.ExecuteScriptAsync(
+                    var result = await core.ExecuteScriptAsync(
                         "document.querySelector('[data-testid=\"AppTabBar_Profile_Link\"]')?.href?.split('/').pop() ?? null");
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (result?.Trim('"') is { Length: > 0 } name && name != "null")
                         return name;
                 }
                 catch (Exception ex)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     Debug.WriteLine($"[Profile] TryReadActiveScreenNameAsync failed: {ex.Message}");
                     return null;
                 }
-                await Task.Delay(700);
+                await Task.Delay(700, cancellationToken);
             }
             return null;
         }
@@ -943,12 +1057,16 @@ namespace XTimelineViewer.Views
         /// リスト URL 解決の正の情報源はライブ取得（<see cref="EnsureListsUrlAsync"/>）だが、
         /// このキャッシュは初回ナビゲーションのちらつき低減用の初期推測として残している (#211)。
         /// </summary>
-        private async Task BackfillScreenNameAsync(WebView2 webView, string profileId)
+        private async Task BackfillScreenNameAsync(
+            CoreWebView2 core,
+            string profileId,
+            CancellationToken cancellationToken)
         {
             var profile = _profiles.FirstOrDefault(p => p.Id == profileId);
             if (profile is null || profile.ScreenName is { Length: > 0 }) return;
 
-            var name = await TryReadActiveScreenNameAsync(webView);
+            var name = await TryReadActiveScreenNameAsync(core, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             if (name is { Length: > 0 } && profile.ScreenName is not { Length: > 0 })
             {
                 profile.ScreenName = name;
@@ -962,32 +1080,151 @@ namespace XTimelineViewer.Views
         /// 現在アクティブなアカウントのハンドルでライブ解決する。委任アカウント切り替えにも追従する。
         /// 既に正しい URL ならナビゲートしない。
         /// </summary>
-        private async Task EnsureListsUrlAsync(WebView2 webView, TimelineConfig cfg)
+        private async Task EnsureListsUrlAsync(
+            WebView2 webView,
+            CoreWebView2 core,
+            TimelineConfig cfg,
+            CancellationToken cancellationToken)
         {
             if (!cfg.IsListsIndex) return;
 
-            var handle = await TryReadActiveScreenNameAsync(webView);
+            var handle = await TryReadActiveScreenNameAsync(core, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             if (handle is not { Length: > 0 }) return;  // ログアウト等は何もしない
 
             var target = BuildListsUrl(handle);
-            if (UrlHelper.IsOnBaseUrl(webView.CoreWebView2.Source, target)) return;  // 既に正しい
+            if (UrlHelper.IsOnBaseUrl(core.Source, target)) return;  // 既に正しい
 
             cfg.Url = target;
             PaneOf(webView)?.UpdateUrlHeader();
             await SaveTimelinesAsync();
+            cancellationToken.ThrowIfCancellationRequested();
             webView.Source = new Uri(target);
             Debug.WriteLine($"[Lists] Resolved active lists URL: {target}");
         }
 
-        private async Task InitWebViewAsync(WebView2 webView, TimelineConfig cfg)
+        private async Task HandleNewWindowRequestedAsync(
+            WebView2 webView,
+            WebViewLifetime lifetime,
+            string requestedUri)
+        {
+            if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+
+            if (UrlHelper.IsExternalIdentityProviderUri(requestedUri))
+            {
+                await ShowSocialSignInGuidanceAsync();
+                return;
+            }
+
+            if (Uri.TryCreate(requestedUri, UriKind.Absolute, out var external) &&
+                UrlHelper.IsSafeExternalUri(external))
+            {
+                await LaunchUriByEdgeProfileAsync(external);
+            }
+        }
+
+        private async Task HandleNavigationCompletedAsync(
+            WebView2 webView,
+            CoreWebView2 core,
+            TimelineConfig cfg,
+            WebViewLifetime lifetime,
+            bool isSuccess)
         {
             try
             {
-                var env = await GetOrCreateProfileEnvAsync(cfg.ProfileId);
-                await webView.EnsureCoreWebView2Async(env);
-                webView.CoreWebView2.SourceChanged += (s, e) =>
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+                if (!isSuccess)
                 {
-                    bool diverged = !UrlHelper.IsOnBaseUrl(webView.CoreWebView2.Source, cfg.Url);
+                    PaneOf(webView)?.ShowErrorState();
+                    return;
+                }
+
+                var current = core.Source;
+                var signInRequired = current.Contains("/i/flow/login", StringComparison.OrdinalIgnoreCase)
+                    || current.EndsWith("/login", StringComparison.OrdinalIgnoreCase);
+                if (signInRequired) PaneOf(webView)?.ShowErrorState(signInRequired: true);
+                else PaneOf(webView)?.HideNavigationState();
+
+                await ApplyHideSidebarAsync(core, cfg.HideSidebar);
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+
+                await ApplyHideComposeAsync(core, EffectiveHideCompose(cfg, core.Source));
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+
+                await ApplyHideListHeaderAsync(core, cfg.HideListHeader);
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+
+                var tsFlag = _appSettings.OpenTimestampInBrowser ? "true" : "false";
+                await core.ExecuteScriptAsync($"window._xtvOpenTimestampInBrowser = {tsFlag};");
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+
+                // プロファイルのスクリーンネームが未取得なら、ログイン中セッションから補完する。
+                await BackfillScreenNameAsync(core, cfg.ProfileId, lifetime.Token);
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+
+                // リスト一覧はアクティブアカウントのハンドルでライブ解決する（#211）。
+                await EnsureListsUrlAsync(webView, core, cfg, lifetime.Token);
+            }
+            catch (Exception ex) when (!IsWebViewLifetimeActive(webView, lifetime))
+            {
+                // Close() と await 継続の間に起き得る COMException 等も、
+                // この WebView2 が実際に破棄済みの場合だけ正常終了とみなす。
+                Debug.WriteLine($"[WebView2] Navigation completion stopped after cleanup: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                LogError("HandleNavigationCompletedAsync", ex);
+                PaneOf(webView)?.ShowErrorState();
+            }
+        }
+
+        private async Task HandleAppearanceSourceChangedAsync(
+            WebView2 webView,
+            CoreWebView2 core,
+            TimelineConfig cfg,
+            WebViewLifetime lifetime)
+        {
+            try
+            {
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+
+                if (cfg.HideCompose)
+                {
+                    await ApplyHideComposeAsync(core, EffectiveHideCompose(cfg, core.Source));
+                    if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+                }
+                if (cfg.HideListHeader)
+                    await ApplyHideListHeaderAsync(core, cfg.HideListHeader);
+            }
+            catch (Exception ex) when (!IsWebViewLifetimeActive(webView, lifetime))
+            {
+                Debug.WriteLine($"[WebView2] Source change stopped after cleanup: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                LogError("HandleAppearanceSourceChangedAsync", ex);
+            }
+        }
+
+        private async Task InitWebViewAsync(WebView2 webView, TimelineConfig cfg)
+        {
+            var lifetime = BeginWebViewLifetime(webView);
+            CoreWebView2? core = null;
+            try
+            {
+                var env = await GetOrCreateProfileEnvAsync(cfg.ProfileId);
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+                await webView.EnsureCoreWebView2Async(env);
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+
+                core = webView.CoreWebView2
+                    ?? throw new InvalidOperationException("WebView2 initialization completed without a CoreWebView2 instance.");
+
+                void OnNavigationSourceChanged(object? sender, CoreWebView2SourceChangedEventArgs args)
+                {
+                    if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+
+                    bool diverged = !UrlHelper.IsOnBaseUrl(core.Source, cfg.Url);
                     if (diverged)
                     {
                         _urlDivergedWebViews.Add(webView);
@@ -1002,12 +1239,14 @@ namespace XTimelineViewer.Views
                     if (_appSettings.MediaEnlargeEnabled &&
                         PaneOf(webView) is { } pane)
                     {
-                        if (UrlHelper.IsMediaPhotoUrl(webView.CoreWebView2.Source))
+                        if (UrlHelper.IsMediaPhotoUrl(core.Source))
                             EnlargePane(pane);
                         else if (_enlargedPane == pane)
                             RestorePaneSize();
                     }
-                };
+                }
+                core.SourceChanged += OnNavigationSourceChanged;
+                lifetime.RegisterHandler(() => core.SourceChanged -= OnNavigationSourceChanged);
 
                 // 動画の全画面ボタン（試験機能 #289）。ページが HTML 全画面 API を要求すると発火する。
                 // 既定では WebView2 は自コントロール内で全画面表示するため、細いペイン内に収まって
@@ -1015,30 +1254,44 @@ namespace XTimelineViewer.Views
                 // ユーザーが全画面ボタンを押したときだけ発火するので、動画の自動再生を誤検知しない。
                 // 動画の全画面ボタン（#289）に加え、メディア拡大ボタン（#293）から requestFullscreen した
                 // ときもここに合流する。どちらのトグルも OFF なら何もしない。
-                webView.CoreWebView2.ContainsFullScreenElementChanged += (s, e) =>
+                void OnContainsFullScreenElementChanged(object? sender, object args)
                 {
+                    if (!IsWebViewLifetimeActive(webView, lifetime)) return;
                     if (!_appSettings.VideoEnlargeEnabled && !_appSettings.MediaOverlayButtonEnabled) return;
                     if (PaneOf(webView) is not { } pane) return;
-                    if (webView.CoreWebView2.ContainsFullScreenElement)
+                    if (core.ContainsFullScreenElement)
                         EnlargePane(pane);
                     else if (_enlargedPane == pane)
                         RestorePaneSize();
-                };
+                }
+                core.ContainsFullScreenElementChanged += OnContainsFullScreenElementChanged;
+                lifetime.RegisterHandler(() => core.ContainsFullScreenElementChanged -= OnContainsFullScreenElementChanged);
 
                 // 動画DL 用（#304・試験機能）：GraphQL レスポンスを傍受し、progressive MP4 の直 URL を
                 // statusId 毎に保持する。JS からの直 fetch は CORS 不可のため、ここで拾って DL 時に使う。
-                webView.CoreWebView2.WebResourceResponseReceived += (s, args) =>
+                void OnWebResourceResponseReceived(object? sender, CoreWebView2WebResourceResponseReceivedEventArgs args)
                 {
+                    if (!IsWebViewLifetimeActive(webView, lifetime)) return;
                     if (!_appSettings.VideoFrameSaveEnabled) return;
                     if (args.Request.Uri.IndexOf("/graphql/", StringComparison.OrdinalIgnoreCase) < 0) return;
                     CaptureVideoVariantsAsync(args).FireAndForget(nameof(CaptureVideoVariantsAsync));
-                };
+                }
+                core.WebResourceResponseReceived += OnWebResourceResponseReceived;
+                lifetime.RegisterHandler(() => core.WebResourceResponseReceived -= OnWebResourceResponseReceived);
 
-                await LoadExtensionsAsync(webView, cfg.ProfileId);
+                await LoadExtensionsAsync(core, cfg.ProfileId, lifetime.Token);
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
                 ApplyThemeToWebViews();
             }
             catch (Exception ex)
             {
+                if (!IsWebViewLifetimeActive(webView, lifetime))
+                {
+                    Debug.WriteLine($"[WebView2] Initialization stopped after cleanup: {ex.Message}");
+                    return;
+                }
+
+                EndWebViewLifetime(webView);
                 LogError($"InitWebViewAsync (url={cfg.Url})", ex);
                 PaneOf(webView)?.ShowErrorState();
 
@@ -1076,32 +1329,43 @@ namespace XTimelineViewer.Views
             // 誰も観測できず無言で失敗していた (#339)。メソッド全体を保護する。
             try
             {
-
-
-
+                if (core is null || !IsWebViewLifetimeActive(webView, lifetime)) return;
                 // キーボードショートカット：ブラウザ既定アクセラレータを無効化し JS で代替処理
-                webView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(KeyboardShortcutScript);
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(TimestampInterceptScript);
+                core.Settings.AreBrowserAcceleratorKeysEnabled = false;
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(KeyboardShortcutScript);
+                lifetime.Token.ThrowIfCancellationRequested();
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(TimestampInterceptScript);
+                lifetime.Token.ThrowIfCancellationRequested();
                 // 編集状態レポーター（#258）：全ペインに注入し、編集中（リプライ/引用）を C# へ通知する。
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(EditStateReporterScript);
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(UnreadCounterScript);
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(TranslationStateBridgeScript);
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(SignInFlowHelper.GuardScript);
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(EditStateReporterScript);
+                lifetime.Token.ThrowIfCancellationRequested();
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(UnreadCounterScript);
+                lifetime.Token.ThrowIfCancellationRequested();
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(TranslationStateBridgeScript);
+                lifetime.Token.ThrowIfCancellationRequested();
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(SignInFlowHelper.GuardScript);
+                lifetime.Token.ThrowIfCancellationRequested();
                 // メディア拡大ボタン（#293）：全ペインに注入。config を先に入れてから本体を注入する。
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(BuildMediaOverlayButtonConfigJs());
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(MediaOverlayButtonScript);
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(BuildMediaOverlayButtonConfigJs());
+                lifetime.Token.ThrowIfCancellationRequested();
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(MediaOverlayButtonScript);
+                lifetime.Token.ThrowIfCancellationRequested();
                 // ［…］メニューに「直前のリポストを検索」（#315）：全ペインに注入。config を先に入れてから本体を注入する。
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(BuildPriorRepostConfigJs());
-                await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(PriorRepostSearchScript);
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(BuildPriorRepostConfigJs());
+                lifetime.Token.ThrowIfCancellationRequested();
+                await core.AddScriptToExecuteOnDocumentCreatedAsync(PriorRepostSearchScript);
+                lifetime.Token.ThrowIfCancellationRequested();
                 // ホーム自動更新（#207）。ホームペインにのみ注入し、設定で ON/OFF・間隔を制御する。
                 if (IsHomeConfig(cfg))
                 {
-                    await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(BuildHomeAutoLoadConfigJs());
-                    await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(HomeAutoLoadScript);
+                    await core.AddScriptToExecuteOnDocumentCreatedAsync(BuildHomeAutoLoadConfigJs());
+                    lifetime.Token.ThrowIfCancellationRequested();
+                    await core.AddScriptToExecuteOnDocumentCreatedAsync(HomeAutoLoadScript);
+                    lifetime.Token.ThrowIfCancellationRequested();
                 }
-                webView.CoreWebView2.WebMessageReceived += (s, e) =>
+                void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
                 {
+                    if (!IsWebViewLifetimeActive(webView, lifetime)) return;
                     // Web メッセージは Windows 側の機能を呼べるため、X 本体から届いたものだけを受理する。
                     // cfg.Url だけを信頼すると、細工した .url から第三者オリジンを登録された場合に危険。
                     if (!UrlHelper.IsXUrl(e.Source))
@@ -1117,24 +1381,24 @@ namespace XTimelineViewer.Views
                     {
                         LogDebug("Rejected a non-string WebView message.");
                     }
-                };
+                }
+                core.WebMessageReceived += OnWebMessageReceived;
+                lifetime.RegisterHandler(() => core.WebMessageReceived -= OnWebMessageReceived);
 
                 // 外部リンクをシステム既定ブラウザーまたは指定 Edge プロファイルで開く
-                webView.CoreWebView2.NewWindowRequested += async (s, args) =>
+                void OnNewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs args)
                 {
                     args.Handled = true;
-                    if (UrlHelper.IsExternalIdentityProviderUri(args.Uri))
-                    {
-                        ShowSocialSignInGuidanceAsync().FireAndForget(nameof(ShowSocialSignInGuidanceAsync));
-                        return;
-                    }
-                    if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var external) &&
-                        UrlHelper.IsSafeExternalUri(external))
-                        await LaunchUriByEdgeProfileAsync(external);
-                };
+                    if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+                    HandleNewWindowRequestedAsync(webView, lifetime, args.Uri)
+                        .FireAndForget(nameof(HandleNewWindowRequestedAsync));
+                }
+                core.NewWindowRequested += OnNewWindowRequested;
+                lifetime.RegisterHandler(() => core.NewWindowRequested -= OnNewWindowRequested);
 
-                webView.CoreWebView2.NavigationStarting += async (s, args) =>
+                void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs args)
                 {
+                    if (!IsWebViewLifetimeActive(webView, lifetime)) return;
                     if (!Uri.TryCreate(args.Uri, UriKind.Absolute, out var nav)) return;
 
                     if (UrlHelper.IsExternalIdentityProviderUri(args.Uri))
@@ -1148,60 +1412,50 @@ namespace XTimelineViewer.Views
                     {
                         args.Cancel = true;
                         if (UrlHelper.IsSafeExternalUri(nav))
-                            await LaunchUriByEdgeProfileAsync(nav);
+                            LaunchUriByEdgeProfileAsync(nav).FireAndForget(nameof(LaunchUriByEdgeProfileAsync));
                         return;
                     }
 
                     PaneOf(webView)?.ShowLoadingState();
-                };
+                }
+                core.NavigationStarting += OnNavigationStarting;
+                lifetime.RegisterHandler(() => core.NavigationStarting -= OnNavigationStarting);
 
-                webView.CoreWebView2.NavigationCompleted += async (s, args) =>
+                void OnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs args)
                 {
-                    if (args.IsSuccess)
-                    {
-                        var current = webView.CoreWebView2.Source;
-                        var signInRequired = current.Contains("/i/flow/login", StringComparison.OrdinalIgnoreCase)
-                            || current.EndsWith("/login", StringComparison.OrdinalIgnoreCase);
-                        if (signInRequired) PaneOf(webView)?.ShowErrorState(signInRequired: true);
-                        else PaneOf(webView)?.HideNavigationState();
+                    if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+                    HandleNavigationCompletedAsync(webView, core, cfg, lifetime, args.IsSuccess)
+                        .FireAndForget(nameof(HandleNavigationCompletedAsync));
+                }
+                core.NavigationCompleted += OnNavigationCompleted;
+                lifetime.RegisterHandler(() => core.NavigationCompleted -= OnNavigationCompleted);
 
-                        await ApplyHideSidebarAsync(webView, cfg.HideSidebar);
-                        await ApplyHideComposeAsync(webView, EffectiveHideCompose(cfg, webView.CoreWebView2.Source));
-                        await ApplyHideListHeaderAsync(webView, cfg.HideListHeader);
-
-                        var tsFlag = _appSettings.OpenTimestampInBrowser ? "true" : "false";
-                        await webView.CoreWebView2.ExecuteScriptAsync(
-                            $"window._xtvOpenTimestampInBrowser = {tsFlag};");
-
-                        // プロファイルのスクリーンネームが未取得なら、ログイン中セッションから補完する
-                        // （初期推測用のキャッシュ。リスト URL 解決の正は EnsureListsUrlAsync）。
-                        await BackfillScreenNameAsync(webView, cfg.ProfileId);
-
-                        // リスト一覧はアクティブアカウントのハンドルでライブ解決する（委任アカウント対応 #211）
-                        await EnsureListsUrlAsync(webView, cfg);
-                    }
-                    else
-                    {
-                        PaneOf(webView)?.ShowErrorState();
-                    }
-                };
-
-                webView.CoreWebView2.SourceChanged += async (s, args) =>
+                void OnAppearanceSourceChanged(object? sender, CoreWebView2SourceChangedEventArgs args)
                 {
-                    if (cfg.HideCompose)
-                        await ApplyHideComposeAsync(webView, EffectiveHideCompose(cfg, webView.CoreWebView2.Source));
-                    if (cfg.HideListHeader)
-                        await ApplyHideListHeaderAsync(webView, cfg.HideListHeader);
-                };
+                    if (!IsWebViewLifetimeActive(webView, lifetime)) return;
+                    HandleAppearanceSourceChangedAsync(webView, core, cfg, lifetime)
+                        .FireAndForget(nameof(HandleAppearanceSourceChangedAsync));
+                }
+                core.SourceChanged += OnAppearanceSourceChanged;
+                lifetime.RegisterHandler(() => core.SourceChanged -= OnAppearanceSourceChanged);
 
+                if (!IsWebViewLifetimeActive(webView, lifetime)) return;
                 webView.Source = new Uri(cfg.Url);
                 StartHardReloadTimer(webView, cfg);
             }
             catch (Exception ex)
             {
+                if (!IsWebViewLifetimeActive(webView, lifetime))
+                {
+                    Debug.WriteLine($"[WebView2] Post-initialization stopped after cleanup: {ex.Message}");
+                    return;
+                }
+
+                EndWebViewLifetime(webView);
                 LogError($"InitWebViewAsync/post-init (url={cfg.Url})", ex);
                 PaneOf(webView)?.ShowErrorState();
             }
         }
     }
 }
+

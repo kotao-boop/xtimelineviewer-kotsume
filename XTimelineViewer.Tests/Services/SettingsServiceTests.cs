@@ -29,6 +29,17 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
+    public void LoadSettingsResult_MissingFile_DistinguishesMissingFromEmptyDefaults()
+    {
+        var result = SettingsService.LoadSettingsResult(At("settings.json"));
+
+        Assert.Equal(PersistenceLoadStatus.Missing, result.Status);
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
+        Assert.Equal("Default", result.Value.Theme);
+    }
+
+    [Fact]
     public void LoadSettings_ValidJson_ReturnsCorrectValues()
     {
         File.WriteAllText(At("settings.json"),
@@ -47,6 +58,51 @@ public class SettingsServiceTests : IDisposable
         var s = SettingsService.LoadSettings(At("settings.json"));
         Assert.NotNull(s);
         Assert.Equal("Default", s.Theme);
+    }
+
+    [Fact]
+    public void LoadSettingsResult_InvalidJson_ReportsCorrupt()
+    {
+        File.WriteAllText(At("settings.json"), "not { valid json }");
+
+        var result = SettingsService.LoadSettingsResult(At("settings.json"));
+
+        Assert.Equal(PersistenceLoadStatus.Corrupt, result.Status);
+        Assert.IsType<System.Text.Json.JsonException>(result.Error);
+        Assert.Equal("Default", result.Value.Theme);
+    }
+
+    [Fact]
+    public void LoadSettingsResult_NullRoot_ReportsCorrupt()
+    {
+        File.WriteAllText(At("settings.json"), "null");
+
+        var result = SettingsService.LoadSettingsResult(At("settings.json"));
+
+        Assert.Equal(PersistenceLoadStatus.Corrupt, result.Status);
+        Assert.Equal("Default", result.Value.Theme);
+    }
+
+    [Fact]
+    public void LoadSettingsResult_DirectoryPath_ReportsAccessError()
+    {
+        var result = SettingsService.LoadSettingsResult(_tempDir);
+
+        Assert.Equal(PersistenceLoadStatus.AccessError, result.Status);
+        Assert.NotNull(result.Error);
+    }
+
+    [Fact]
+    public void LoadSettingsResult_LockedFile_ReportsIoError()
+    {
+        var path = At("settings.json");
+        File.WriteAllText(path, "{}");
+        using var held = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        var result = SettingsService.LoadSettingsResult(path);
+
+        Assert.Equal(PersistenceLoadStatus.IoError, result.Status);
+        Assert.NotNull(result.Error);
     }
 
     // ── SaveSettings / Round-trip ─────────────────────────────────────────────
@@ -75,6 +131,116 @@ public class SettingsServiceTests : IDisposable
 
         Assert.Equal("Light",  loaded.Theme);
         Assert.Equal("en-US",  loaded.Language);
+    }
+
+    [Fact]
+    public void SaveSettings_ReplacingFile_PreservesPreviousVersionAsBackup()
+    {
+        var path = At("settings.json");
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Light" });
+
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Dark" });
+
+        Assert.Equal("Dark", SettingsService.LoadSettings(path).Theme);
+        Assert.Equal("Light", SettingsService.LoadSettings(path + ".bak").Theme);
+        Assert.Empty(Directory.GetFiles(_tempDir, "settings.json.*.tmp"));
+    }
+
+    [Fact]
+    public void LoadSettingsBackupResult_ReturnsPreviousVersionExplicitly()
+    {
+        var path = At("settings.json");
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Light" });
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Dark" });
+
+        var result = SettingsService.LoadSettingsBackupResult(path);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Light", result.Value.Theme);
+    }
+
+    [Fact]
+    public void RestoreSettingsFromBackup_ArchivesCorruptPrimaryAndKeepsBackup()
+    {
+        var path = At("settings.json");
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Light" });
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Dark" });
+        File.WriteAllText(path, "broken primary");
+
+        var result = SettingsService.RestoreSettingsFromBackup(path);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.ArchivedPrimaryPath);
+        Assert.True(File.Exists(result.ArchivedPrimaryPath));
+        Assert.Equal("broken primary", File.ReadAllText(result.ArchivedPrimaryPath));
+        Assert.Equal("Light", SettingsService.LoadSettings(path).Theme);
+        Assert.Equal("Light", SettingsService.LoadSettings(path + ".bak").Theme);
+        Assert.Empty(Directory.GetFiles(_tempDir, "settings.json.*.tmp"));
+    }
+
+    [Fact]
+    public void RestoreSettingsFromBackup_InvalidBackup_DoesNotTouchPrimary()
+    {
+        var path = At("settings.json");
+        File.WriteAllText(path, "primary stays");
+        File.WriteAllText(path + ".bak", "invalid backup");
+
+        var result = SettingsService.RestoreSettingsFromBackup(path);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(PersistenceLoadStatus.Corrupt, result.Status);
+        Assert.Null(result.ArchivedPrimaryPath);
+        Assert.Equal("primary stays", File.ReadAllText(path));
+        Assert.Equal("invalid backup", File.ReadAllText(path + ".bak"));
+    }
+
+    [Fact]
+    public void RestoreSettingsFromBackup_WhenReplaceFails_KeepsPrimaryAndBackup()
+    {
+        var path = At("settings.json");
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Light" });
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Dark" });
+
+        PersistenceRestoreResult result;
+        using (var held = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            result = SettingsService.RestoreSettingsFromBackup(path);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(PersistenceLoadStatus.IoError, result.Status);
+        Assert.Null(result.ArchivedPrimaryPath);
+        Assert.Equal("Dark", SettingsService.LoadSettings(path).Theme);
+        Assert.Equal("Light", SettingsService.LoadSettings(path + ".bak").Theme);
+        Assert.Empty(Directory.GetFiles(_tempDir, "settings.json.*.tmp"));
+    }
+
+    [Fact]
+    public void SaveSettings_WhenAtomicReplaceFails_KeepsExistingFile()
+    {
+        var path = At("settings.json");
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Light" });
+        Directory.CreateDirectory(path + ".bak");
+
+        Assert.ThrowsAny<Exception>(() =>
+            SettingsService.SaveSettings(path, new AppSettings { Theme = "Dark" }));
+
+        Assert.Equal("Light", SettingsService.LoadSettings(path).Theme);
+        Assert.Empty(Directory.GetFiles(_tempDir, "settings.json.*.tmp"));
+    }
+
+    [Fact]
+    public void SaveSettings_CorruptPrimary_BlocksOverwriteAndKeepsBackup()
+    {
+        var path = At("settings.json");
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Light" });
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Dark" });
+        File.WriteAllText(path, "broken primary");
+
+        var error = Assert.Throws<PersistenceSaveBlockedException>(() =>
+            SettingsService.SaveSettings(path, new AppSettings { Theme = "Default" }));
+
+        Assert.Equal(PersistenceLoadStatus.Corrupt, error.LoadStatus);
+        Assert.Equal("broken primary", File.ReadAllText(path));
+        Assert.Equal("Light", SettingsService.LoadSettings(path + ".bak").Theme);
     }
 
     // ── 後方互換 ──────────────────────────────────────────────────────────────
@@ -182,6 +348,30 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
+    public void LoadProfilesResult_EmptyList_IsSuccess()
+    {
+        File.WriteAllText(At("profiles.json"), "[]");
+
+        var result = SettingsService.LoadProfilesResult(At("profiles.json"));
+
+        Assert.Equal(PersistenceLoadStatus.Success, result.Status);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
+    }
+
+    [Fact]
+    public void LoadProfilesResult_InvalidJson_ReportsCorruptInsteadOfEmptySuccess()
+    {
+        File.WriteAllText(At("profiles.json"), "not json");
+
+        var result = SettingsService.LoadProfilesResult(At("profiles.json"));
+
+        Assert.Equal(PersistenceLoadStatus.Corrupt, result.Status);
+        Assert.False(result.IsSuccess);
+        Assert.Empty(result.Value);
+    }
+
+    [Fact]
     public void LoadProfiles_ValidJson_ReturnsProfiles()
     {
         File.WriteAllText(At("profiles.json"),
@@ -213,6 +403,90 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal("aaa",      loaded[0].Id);
         Assert.Equal("Work",     loaded[0].Name);
         Assert.Equal("Personal", loaded[1].Name);
+    }
+
+    [Fact]
+    public void SaveProfiles_ReplacingFile_PreservesPreviousVersionAsBackup()
+    {
+        var path = At("profiles.json");
+        SettingsService.SaveProfiles(path, [new ProfileConfig { Id = "old", Name = "Old" }]);
+
+        SettingsService.SaveProfiles(path, [new ProfileConfig { Id = "new", Name = "New" }]);
+
+        Assert.Equal("new", Assert.Single(SettingsService.LoadProfiles(path)).Id);
+        Assert.Equal("old", Assert.Single(SettingsService.LoadProfiles(path + ".bak")).Id);
+        Assert.Empty(Directory.GetFiles(_tempDir, "profiles.json.*.tmp"));
+    }
+
+    [Fact]
+    public void LoadProfilesBackupResult_ReturnsPreviousVersionExplicitly()
+    {
+        var path = At("profiles.json");
+        SettingsService.SaveProfiles(path, [new ProfileConfig { Id = "old", Name = "Old" }]);
+        SettingsService.SaveProfiles(path, [new ProfileConfig { Id = "new", Name = "New" }]);
+
+        var result = SettingsService.LoadProfilesBackupResult(path);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("old", Assert.Single(result.Value).Id);
+    }
+
+    [Fact]
+    public void RestoreProfilesFromBackup_ArchivesPrimaryAndKeepsBackup()
+    {
+        var path = At("profiles.json");
+        SettingsService.SaveProfiles(path, [new ProfileConfig { Id = "old", Name = "Old" }]);
+        SettingsService.SaveProfiles(path, [new ProfileConfig { Id = "new", Name = "New" }]);
+        File.WriteAllText(path, "broken primary");
+
+        var result = SettingsService.RestoreProfilesFromBackup(path);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.ArchivedPrimaryPath);
+        Assert.Equal("broken primary", File.ReadAllText(result.ArchivedPrimaryPath));
+        Assert.Equal("old", Assert.Single(SettingsService.LoadProfiles(path)).Id);
+        Assert.Equal("old", Assert.Single(SettingsService.LoadProfiles(path + ".bak")).Id);
+    }
+
+    [Fact]
+    public void ArchivePrimaryForRecovery_MissingFile_DoesNothing()
+    {
+        var result = JsonFilePersistence.ArchivePrimaryForRecovery(At("missing.json"));
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void ArchivePrimaryForRecovery_ThenInitialize_KeepsArchiveAndBackup()
+    {
+        var path = At("settings.json");
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Light" });
+        SettingsService.SaveSettings(path, new AppSettings { Theme = "Dark" });
+        File.WriteAllText(path, "broken primary");
+
+        var archivePath = JsonFilePersistence.ArchivePrimaryForRecovery(path);
+        SettingsService.SaveSettings(path, new AppSettings());
+
+        Assert.NotNull(archivePath);
+        Assert.Equal("broken primary", File.ReadAllText(archivePath));
+        Assert.Equal("Default", SettingsService.LoadSettings(path).Theme);
+        Assert.Equal("Light", SettingsService.LoadSettings(path + ".bak").Theme);
+    }
+
+    [Fact]
+    public void ArchivePrimaryForRecovery_WhenMoveFails_ThrowsAndKeepsPrimary()
+    {
+        var path = At("settings.json");
+        File.WriteAllText(path, "primary stays");
+
+        using (var held = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            Assert.ThrowsAny<IOException>(() =>
+                JsonFilePersistence.ArchivePrimaryForRecovery(path));
+        }
+
+        Assert.Equal("primary stays", File.ReadAllText(path));
+        Assert.Empty(Directory.GetFiles(_tempDir, "settings.json.corrupt-*"));
     }
 
     // ── CleanupOrphanedProfileFolders ─────────────────────────────────────────

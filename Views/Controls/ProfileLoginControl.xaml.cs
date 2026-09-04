@@ -95,10 +95,9 @@ namespace XTimelineViewer.Views.Controls
                 LoginDetected?.Invoke(screenName);
             };
 
-            // Google / Apple サインインは window.open で認証画面を開く。既定動作に任せると
-            // 外部ブラウザーへ移り、そちらの Cookie はこのプロファイルへ戻ってこない。
-            // 同じ CoreWebView2Environment を使うアプリ内ウィンドウを NewWindow に渡し、
-            // 認証結果を元の X ログイン画面と安全に共有する。
+            // Google / Apple サインインは、新しいウィンドウまたは同一タブで外部認証へ
+            // 移動しようとする。本アプリは共有認証ウィンドウを作らず、下のイベント処理と
+            // ページ内ガードで移動を止め、X 用パスワードによるログイン方法を案内する。
             ConfigureSignInWebView(LoginWebView.CoreWebView2);
             await InstallSocialSignInGuardAsync(LoginWebView.CoreWebView2);
 
@@ -117,10 +116,9 @@ namespace XTimelineViewer.Views.Controls
             {
                 AppLog.Debug($"Sign-in popup requested: {UrlHelper.GetSafeUriForLog(args.Uri)}");
 
-                // Google は埋め込み WebView での OAuth を公式に禁止している。外部 Edge へ
-                // 任せても、そこで作られた X の Cookie は本アプリのプロファイルへ戻らず、
-                // 認証後に白画面になる。Apple も同じセッション分離が起きるため、意図せず
-                // ブラウザーへ飛ばす代わりに、X 用パスワードでのログイン方法を案内する。
+                // Google / Apple 認証が外部ブラウザーへ移ると、そのブラウザーの Cookie や
+                // ログイン状態を本アプリの WebView2 プロファイルへ引き継げない。外部の状態を
+                // 読み取ったり取り込んだりせず、ここで移動を止めて X 用パスワードを案内する。
                 if (UrlHelper.IsExternalIdentityProviderUri(args.Uri))
                 {
                     args.Handled = true;
@@ -162,10 +160,8 @@ namespace XTimelineViewer.Views.Controls
                     _                  => CoreWebView2PreferredColorScheme.Auto,
                 };
 
-                // X → Google/Apple → 追加確認画面のように、認証画面がさらに別画面を
-                // 開くことがある。最初の WebView2 だけにイベントを付けると、2段目は
-                // 既定動作で外部 Edge へ出てしまい、web_message が元の X へ戻らない。
-                // すべての子 WebView2 に同じ処理を再帰的に設定する。
+                // X 内部の確認画面が、さらに別のウィンドウを開く場合がある。外部認証への
+                // 移動が子 WebView2 から迂回しないよう、同じ停止処理を再帰的に設定する。
                 ConfigureSignInWebView(popupWebView.CoreWebView2);
                 await InstallSocialSignInGuardAsync(popupWebView.CoreWebView2);
 
