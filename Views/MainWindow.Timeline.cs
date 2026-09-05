@@ -165,7 +165,7 @@ namespace XTimelineViewer.Views
         /// </summary>
         private TimelineConfig CreateDefaultConfig(string url) => new()
         {
-            Url            = url,
+            Url            = UrlHelper.NormalizeXUrl(url),
             ProfileId      = SelectedToolbarProfileId ?? "default",
             HideSidebar    = _appSettings.DefaultHideSidebar,
             HideCompose    = _appSettings.DefaultHideCompose,
@@ -333,7 +333,7 @@ namespace XTimelineViewer.Views
                         "Grid2x2" => new LayoutPlanner.GridPlan(2, 2),
                         "Grid2x3" => new LayoutPlanner.GridPlan(2, 3),
                         "VerticalSplit" => new LayoutPlanner.GridPlan(2, 1),
-                        _ => LayoutPlanner.GetAutoGrid(arrangedPanes.Count),
+                        _ => LayoutPlanner.GetAutoGrid(arrangedPanes.Count, TimelineGrid.ActualWidth, TimelineGrid.ActualHeight),
                     };
                     AddGridDefinitions(mode, plan.Rows, plan.Columns, useSavedWeights: true);
 
@@ -356,9 +356,14 @@ namespace XTimelineViewer.Views
                         Grid.SetRow(pane, row);
                         Grid.SetColumn(pane, column);
                         pane.ConfigureResizeAffordances(
-                            horizontal: false,
-                            vertical: false,
+                            horizontal: plan.Columns > 1 && column < plan.Columns - 1,
+                            vertical: plan.Rows > 1 && row < plan.Rows - 1,
                             gridMode: true);
+                        Grid.SetColumnSpan(pane, 1);
+                        Grid.SetRowSpan(pane, 1);
+                        var remainder = arrangedPanes.Count % plan.Columns;
+                        if (remainder != 0 && i == arrangedPanes.Count - 1)
+                            Grid.SetColumnSpan(pane, plan.Columns - remainder + 1);
                         TimelineGrid.Children.Add(pane);
                     }
                     AddGridResizeHandles(plan.Rows, plan.Columns);
@@ -402,11 +407,11 @@ namespace XTimelineViewer.Views
             var bar = new Microsoft.UI.Xaml.Shapes.Rectangle
             {
                 Fill = brush,
-                Opacity = 0.38,
+                Opacity = 0.26,
                 HorizontalAlignment = verticalBoundary ? HorizontalAlignment.Center : HorizontalAlignment.Stretch,
                 VerticalAlignment = verticalBoundary ? VerticalAlignment.Stretch : VerticalAlignment.Center,
-                Width = verticalBoundary ? 2 : double.NaN,
-                Height = verticalBoundary ? double.NaN : 2,
+                Width = verticalBoundary ? 1 : double.NaN,
+                Height = verticalBoundary ? double.NaN : 1,
                 IsHitTestVisible = false,
             };
             var handle = new GridResizeHandle(bar)
@@ -972,7 +977,7 @@ namespace XTimelineViewer.Views
 
                 var dragging = _draggingPane;
 
-                MovePaneTo(dragging, TimelinePanel.Children.IndexOf(pane));
+                MovePaneTo(dragging, _configs.IndexOf(pane.Config));
 
                 dragging.Opacity = 1.0;
                 _draggingPane = null;

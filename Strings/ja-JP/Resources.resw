@@ -351,6 +351,9 @@
   <data name="Workspace_TabTooltip" xml:space="preserve"><value>「{0}」を開く（タイムライン {1} 個）</value></data>
   <data name="Workspace_AddOrManage" xml:space="preserve"><value>ワークスペースを保存・管理</value></data>
   <data name="Workspace_UpdateCurrent" xml:space="preserve"><value>現在の構成で上書き</value></data>
+  <data name="Workspace_OverwriteConfirmTitle" xml:space="preserve"><value>ワークスペースを上書きしますか？</value></data>
+  <data name="Workspace_OverwriteConfirmBody" xml:space="preserve"><value>「{0}」に保存されている配置を現在の構成で置き換えます。</value></data>
+  <data name="Workspace_OverwriteConfirm" xml:space="preserve"><value>上書きする</value></data>
   <data name="Workspace_Duplicate" xml:space="preserve"><value>ワークスペースを複製</value></data>
   <data name="ColumnCreator_Title" xml:space="preserve"><value>タイムラインを追加</value></data>
   <data name="ColumnCreator_Description" xml:space="preserve"><value>表示したい内容を選びます。検索条件も、この画面で分かりやすく組み立てられます。</value></data>

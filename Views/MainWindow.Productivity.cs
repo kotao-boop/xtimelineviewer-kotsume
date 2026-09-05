@@ -485,11 +485,13 @@ namespace XTimelineViewer.Views
                 }
             }
 
-            save.Click += (_, _) =>
+            save.Click += async (_, _) =>
             {
                 var name = nameBox.Text.Trim();
                 if (name.Length == 0) return;
                 var workspace = _workspaces.FirstOrDefault(w => w.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+                if (workspace is not null && !await ConfirmWorkspaceOverwriteAsync(workspace))
+                    return;
                 if (workspace is null)
                 {
                     workspace = new WorkspaceConfig { Name = name };
@@ -511,8 +513,26 @@ namespace XTimelineViewer.Views
             await ShowDialogAsync(dialog);
         }
 
+        private async Task<bool> ConfirmWorkspaceOverwriteAsync(WorkspaceConfig workspace)
+        {
+            if (Content?.XamlRoot is null) return false;
+            var dialog = new ContentDialog
+            {
+                Title = R.Get("Workspace_OverwriteConfirmTitle"),
+                Content = string.Format(R.Get("Workspace_OverwriteConfirmBody"), workspace.Name),
+                PrimaryButtonText = R.Get("Workspace_OverwriteConfirm"),
+                CloseButtonText = R.Get("Button_Cancel"),
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = Content.XamlRoot,
+            };
+            return await ShowDialogAsync(dialog) == ContentDialogResult.Primary;
+        }
+
         private async Task ApplyWorkspaceAsync(WorkspaceConfig workspace)
         {
+            await SaveTimelinesAsync();
+            SaveSettings();
+            SaveWorkspaces();
             foreach (var pane in Panes.ToList()) CleanupWebView(pane.WebView);
             TimelinePanel.Children.Clear();
             TimelineGrid.Children.Clear();

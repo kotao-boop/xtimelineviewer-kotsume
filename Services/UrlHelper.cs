@@ -24,6 +24,14 @@ namespace XTimelineViewer.Services
              string.Equals(uri.Host, "twitter.com", StringComparison.OrdinalIgnoreCase) ||
              string.Equals(uri.Host, "www.twitter.com", StringComparison.OrdinalIgnoreCase));
 
+        internal static string NormalizeXUrl(string? value)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || !IsXUri(uri))
+                return value?.Trim() ?? string.Empty;
+            var builder = new UriBuilder(uri) { Host = "x.com", Port = -1 };
+            return builder.Uri.ToString();
+        }
+
         /// <summary>外部ブラウザーへ渡してよい通常の Web URL。</summary>
         internal static bool IsSafeExternalUri(Uri? uri) =>
             uri is not null &&

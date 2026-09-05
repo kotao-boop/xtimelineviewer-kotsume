@@ -37,9 +37,12 @@ namespace XTimelineViewer.Views
             _enlargedPane = null;
 
             foreach (var p in Panes)
-                p.Visibility = Visibility.Visible;
+                p.Visibility = IsPaneEffectivelyVisible(p) ? Visibility.Visible : Visibility.Collapsed;
 
-            pane.Width = pane.Config.Width;
+            pane.Width = double.IsNaN(pane.Config.Width) || pane.Config.Width <= 0
+                ? double.NaN
+                : pane.Config.Width;
+            ApplyLayoutMode();
         }
 
         /// <summary>拡大中のペイン幅を、表示領域（TimelineScroll のビューポート）いっぱいに合わせる。</summary>

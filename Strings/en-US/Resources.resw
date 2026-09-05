@@ -351,6 +351,9 @@
   <data name="Workspace_TabTooltip" xml:space="preserve"><value>Open “{0}” ({1} timelines)</value></data>
   <data name="Workspace_AddOrManage" xml:space="preserve"><value>Save or manage workspaces</value></data>
   <data name="Workspace_UpdateCurrent" xml:space="preserve"><value>Update with current setup</value></data>
+  <data name="Workspace_OverwriteConfirmTitle" xml:space="preserve"><value>Overwrite this workspace?</value></data>
+  <data name="Workspace_OverwriteConfirmBody" xml:space="preserve"><value>Replace the saved setup “{0}” with the current setup.</value></data>
+  <data name="Workspace_OverwriteConfirm" xml:space="preserve"><value>Overwrite workspace</value></data>
   <data name="Workspace_Duplicate" xml:space="preserve"><value>Duplicate workspace</value></data>
   <data name="ColumnCreator_Title" xml:space="preserve"><value>Add a timeline</value></data>
   <data name="ColumnCreator_Description" xml:space="preserve"><value>Choose what to show. You can also build an advanced search without memorizing operators.</value></data>

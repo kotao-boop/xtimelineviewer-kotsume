@@ -23,6 +23,33 @@ namespace XTimelineViewer.Services
             return new GridPlan(rows, columns);
         }
 
+        internal static GridPlan GetAutoGrid(int visibleCount, double availableWidth, double availableHeight)
+        {
+            if (visibleCount <= 0) return new GridPlan(1, 1);
+            if (!double.IsFinite(availableWidth) || availableWidth <= 0) availableWidth = 1200;
+            if (!double.IsFinite(availableHeight) || availableHeight <= 0) availableHeight = 700;
+
+            // 1ページの列数は最大3列にして、文字やヘッダーが細くなりすぎないようにする。
+            var maxColumns = Math.Clamp((int)(availableWidth / 280), 1, Math.Min(3, visibleCount));
+            var best = new GridPlan((int)Math.Ceiling((double)visibleCount / maxColumns), maxColumns);
+            var bestScore = double.PositiveInfinity;
+            for (var columns = 1; columns <= maxColumns; columns++)
+            {
+                var rows = (int)Math.Ceiling((double)visibleCount / columns);
+                var emptyCells = rows * columns - visibleCount;
+                var cellWidth = availableWidth / columns;
+                var cellHeight = availableHeight / rows;
+                var aspectPenalty = Math.Abs(Math.Log(Math.Max(0.01, cellWidth / Math.Max(1, cellHeight))));
+                var score = emptyCells * 5 + aspectPenalty * 10 + rows * 0.01;
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    best = new GridPlan(rows, columns);
+                }
+            }
+            return best;
+        }
+
         /// <summary>
         /// 小さいウィンドウへ列を詰め込みすぎないため、1ページに表示できる列数を求める。
         /// 横は最大3列、縦は最大3行とし、各列の操作領域を保つ。
