@@ -274,7 +274,7 @@
   <data name="Empty_QuickAdd" xml:space="preserve"><value>すぐに追加</value></data>
   <data name="Empty_DisabledHint" xml:space="preserve"><value>先に X アカウントを追加すると、検索・投稿・タイムライン追加を使えます。</value></data>
   <data name="Layout_Tooltip" xml:space="preserve"><value>レイアウトを変更</value></data>
-  <data name="Layout_Auto" xml:space="preserve"><value>自動整列（現在の配置を維持）</value></data>
+  <data name="Layout_Auto" xml:space="preserve"><value>レスポンシブ配置（画面に合わせる）</value></data>
   <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>現在の配置のまま、列と行の大きさを均等にそろえる</value></data>
   <data name="Layout_PagePrevious" xml:space="preserve"><value>前のタイムラインを表示</value></data>
   <data name="Layout_PageNext" xml:space="preserve"><value>次のタイムラインを表示</value></data>
@@ -315,7 +315,8 @@
   <data name="Search_PanelTitle" xml:space="preserve"><value>X の検索結果</value></data>
   <data name="Search_PanelHint" xml:space="preserve"><value>必要なら、この結果をタイムラインとして固定できます。</value></data>
   <data name="Workspace_Title" xml:space="preserve"><value>ワークスペース</value></data>
-  <data name="Workspace_Description" xml:space="preserve"><value>タイムライン、並び順、表示状態、レイアウトをまとめて保存します。</value></data>
+  <data name="Workspace_Description" xml:space="preserve"><value>タイムライン、並び順、表示状態、レイアウトをまとめて保存します。開いているワークスペースの変更は自動保存されます。一時非表示や集中表示は保存されません。</value></data>
+  <data name="Workspace_SaveFailed" xml:space="preserve"><value>配置を保存できなかったため、切り替えを中止しました。保存先の空き容量やアクセス権を確認してください。</value></data>
   <data name="Workspace_SaveCurrent" xml:space="preserve"><value>現在の構成を保存</value></data>
   <data name="Workspace_Name" xml:space="preserve"><value>ワークスペース名</value></data>
   <data name="Workspace_Empty" xml:space="preserve"><value>保存済みのワークスペースはありません。</value></data>
@@ -351,6 +352,9 @@
   <data name="Workspace_TabTooltip" xml:space="preserve"><value>「{0}」を開く（タイムライン {1} 個）</value></data>
   <data name="Workspace_AddOrManage" xml:space="preserve"><value>ワークスペースを保存・管理</value></data>
   <data name="Workspace_UpdateCurrent" xml:space="preserve"><value>現在の構成で上書き</value></data>
+  <data name="Workspace_OverwriteConfirmTitle" xml:space="preserve"><value>ワークスペースを上書きしますか？</value></data>
+  <data name="Workspace_OverwriteConfirmBody" xml:space="preserve"><value>「{0}」に保存されている配置を現在の構成で置き換えます。</value></data>
+  <data name="Workspace_OverwriteConfirm" xml:space="preserve"><value>上書きする</value></data>
   <data name="Workspace_Duplicate" xml:space="preserve"><value>ワークスペースを複製</value></data>
   <data name="ColumnCreator_Title" xml:space="preserve"><value>タイムラインを追加</value></data>
   <data name="ColumnCreator_Description" xml:space="preserve"><value>表示したい内容を選びます。検索条件も、この画面で分かりやすく組み立てられます。</value></data>
@@ -430,4 +434,5 @@
   <data name="Settings_Restore_SuccessTitle" xml:space="preserve"><value>設定を復元しました</value></data>
   <data name="Settings_Restore_SuccessBody" xml:space="preserve"><value>{0}個の設定ファイルを復元し、画面へ反映しました。</value></data>
   <data name="Settings_Restore_ErrorTitle" xml:space="preserve"><value>バックアップを復元できませんでした</value></data>
+  <data name="Configuration_ReadFailed" xml:space="preserve"><value>保存データを読み込めなかったため、自動保存を停止しています。設定の「バックアップから復元」を使うか、設定ファイルを確認してからアプリを再起動してください。元のデータは保持されています。</value></data>
 </root>

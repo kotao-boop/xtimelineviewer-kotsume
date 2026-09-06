@@ -20,7 +20,13 @@ namespace XTimelineViewer.Services
             Color Accent,
             Color AccentText,
             ElementTheme BaseTheme,
-            bool OutlineFocusedPane = false);
+            bool OutlineFocusedPane = false,
+            Color Text = default,
+            Color SecondaryText = default,
+            Color Hover = default,
+            Color Pressed = default,
+            Color Disabled = default,
+            Color Focus = default);
 
         internal static bool TryGetPalette(string? theme, out Palette palette)
         {
@@ -86,9 +92,19 @@ namespace XTimelineViewer.Services
         };
 
         /// <summary>ThemeResource が参照するアプリ専用ブラシをウィンドウ単位で差し替える。</summary>
-        internal static void ApplyResources(FrameworkElement root, string? theme, bool highContrast = false)
+        internal static void ApplyResources(
+            FrameworkElement root,
+            string? theme,
+            bool highContrast = false,
+            ElementTheme actualTheme = ElementTheme.Default)
         {
-            var palette = ResolvePalette(theme, highContrast);
+            var palette = ResolvePalette(theme, highContrast, actualTheme);
+            var text = GetToken(palette.Text, palette, Token.Text);
+            var secondaryText = GetToken(palette.SecondaryText, palette, Token.SecondaryText);
+            var hover = GetToken(palette.Hover, palette, Token.Hover);
+            var pressed = GetToken(palette.Pressed, palette, Token.Pressed);
+            var disabled = GetToken(palette.Disabled, palette, Token.Disabled);
+            var focus = GetToken(palette.Focus, palette, Token.Focus);
             // Remove による親辞書へのフォールバックは、ThemeResource が以前のブラシを
             // 保持する場合がある。切替のたびに全役割を新しい Brush で明示的に置換する。
             root.Resources["AppSurfaceBrush"] = new SolidColorBrush(palette.Surface);
@@ -96,9 +112,32 @@ namespace XTimelineViewer.Services
             root.Resources["AppBorderBrush"] = new SolidColorBrush(palette.Border);
             root.Resources["AppAccentBrush"] = new SolidColorBrush(palette.Accent);
             root.Resources["AppAccentTextBrush"] = new SolidColorBrush(palette.AccentText);
+            root.Resources["AppTextBrush"] = new SolidColorBrush(text);
+            root.Resources["AppSecondaryTextBrush"] = new SolidColorBrush(secondaryText);
+            root.Resources["AppHoverBrush"] = new SolidColorBrush(hover);
+            root.Resources["AppPressedBrush"] = new SolidColorBrush(pressed);
+            root.Resources["AppDisabledBrush"] = new SolidColorBrush(disabled);
+            root.Resources["AppFocusBrush"] = new SolidColorBrush(focus);
+            root.Resources["TimelinePaneBackgroundBrush"] = new SolidColorBrush(palette.Surface);
+            root.Resources["TimelinePaneBorderBrush"] = new SolidColorBrush(palette.Border);
+            root.Resources["TimelineHeaderBackgroundBrush"] = new SolidColorBrush(palette.Header);
+            root.Resources["TimelineHeaderFocusedBackgroundBrush"] = new SolidColorBrush(palette.FocusedHeader);
         }
 
-        private static Palette ResolvePalette(string? theme, bool highContrast)
+        private enum Token
+        {
+            Text,
+            SecondaryText,
+            Hover,
+            Pressed,
+            Disabled,
+            Focus,
+        }
+
+        private static Palette ResolvePalette(
+            string? theme,
+            bool highContrast,
+            ElementTheme actualTheme = ElementTheme.Default)
         {
             if (highContrast)
             {
@@ -111,30 +150,79 @@ namespace XTimelineViewer.Services
                     ((SolidColorBrush)hc["TimelineHeaderFocusedBackgroundBrush"]).Color,
                     ((SolidColorBrush)hc["AppAccentBrush"]).Color,
                     ((SolidColorBrush)hc["AppAccentTextBrush"]).Color,
-                    ElementTheme.Default);
+                    ElementTheme.Default,
+                    Text: ((SolidColorBrush)hc["AppTextBrush"]).Color,
+                    SecondaryText: ((SolidColorBrush)hc["AppSecondaryTextBrush"]).Color,
+                    Hover: ((SolidColorBrush)hc["AppHoverBrush"]).Color,
+                    Pressed: ((SolidColorBrush)hc["AppPressedBrush"]).Color,
+                    Disabled: ((SolidColorBrush)hc["AppDisabledBrush"]).Color,
+                    Focus: ((SolidColorBrush)hc["AppFocusBrush"]).Color);
             }
             if (TryGetPalette(theme, out var custom)) return custom;
             var useLight = theme == "Light"
-                || (theme is null or "Default" && Application.Current.RequestedTheme == ApplicationTheme.Light);
+                || (theme is null or "Default"
+                    && (actualTheme == ElementTheme.Light
+                        || actualTheme == ElementTheme.Default && Application.Current.RequestedTheme == ApplicationTheme.Light));
             return useLight
                 ? new(
                     ColorHelper.FromArgb(255, 247, 247, 247), Colors.White,
                     ColorHelper.FromArgb(255, 210, 210, 210), ColorHelper.FromArgb(255, 235, 235, 240),
                     ColorHelper.FromArgb(255, 0, 120, 212), ColorHelper.FromArgb(255, 0, 120, 212),
-                    Colors.White, ElementTheme.Light)
+                    Colors.White, ElementTheme.Light,
+                    Text: ColorHelper.FromArgb(255, 32, 32, 32),
+                    SecondaryText: ColorHelper.FromArgb(255, 92, 92, 92),
+                    Hover: ColorHelper.FromArgb(255, 242, 242, 242),
+                    Pressed: ColorHelper.FromArgb(255, 229, 229, 229),
+                    Disabled: ColorHelper.FromArgb(150, 32, 32, 32),
+                    Focus: ColorHelper.FromArgb(255, 0, 120, 212))
                 : new(
                     ColorHelper.FromArgb(255, 32, 32, 32), ColorHelper.FromArgb(255, 40, 40, 40),
                     ColorHelper.FromArgb(255, 70, 70, 70), ColorHelper.FromArgb(255, 55, 55, 60),
                     ColorHelper.FromArgb(255, 29, 78, 137), ColorHelper.FromArgb(255, 96, 205, 255),
-                    ColorHelper.FromArgb(255, 7, 16, 24), ElementTheme.Dark);
+                    ColorHelper.FromArgb(255, 7, 16, 24), ElementTheme.Dark,
+                    Text: ColorHelper.FromArgb(255, 246, 246, 246),
+                    SecondaryText: ColorHelper.FromArgb(255, 190, 190, 190),
+                    Hover: ColorHelper.FromArgb(255, 55, 55, 55),
+                    Pressed: ColorHelper.FromArgb(255, 70, 70, 70),
+                    Disabled: ColorHelper.FromArgb(150, 246, 246, 246),
+                    Focus: ColorHelper.FromArgb(255, 96, 205, 255));
         }
 
         internal static Brush GetResizeBrush(string? theme, bool highContrast)
             => new SolidColorBrush(ResolvePalette(theme, highContrast).Border);
 
-        internal static Brush GetPaneBrush(string? theme, string role, ResourceDictionary fallback)
+        internal static Brush GetAppBrush(
+            string? theme,
+            string role,
+            ElementTheme actualTheme,
+            bool highContrast = false)
         {
-            if (!TryGetPalette(theme, out var palette)) return (Brush)fallback[role];
+            var palette = ResolvePalette(theme, highContrast, actualTheme);
+            var color = role switch
+            {
+                "AppSurfaceBrush" => palette.Surface,
+                "AppChromeBrush" => palette.Chrome,
+                "AppBorderBrush" => palette.Border,
+                "AppAccentBrush" => palette.Accent,
+                "AppAccentTextBrush" => palette.AccentText,
+                "AppTextBrush" => GetToken(palette.Text, palette, Token.Text),
+                "AppSecondaryTextBrush" => GetToken(palette.SecondaryText, palette, Token.SecondaryText),
+                "AppHoverBrush" => GetToken(palette.Hover, palette, Token.Hover),
+                "AppPressedBrush" => GetToken(palette.Pressed, palette, Token.Pressed),
+                "AppDisabledBrush" => GetToken(palette.Disabled, palette, Token.Disabled),
+                "AppFocusBrush" => GetToken(palette.Focus, palette, Token.Focus),
+                _ => Colors.Transparent,
+            };
+            return new SolidColorBrush(color);
+        }
+
+        internal static Brush GetPaneBrush(
+            string? theme,
+            string role,
+            ResourceDictionary fallback,
+            ElementTheme actualTheme = ElementTheme.Default)
+        {
+            var palette = ResolvePalette(theme, false, actualTheme);
             var color = role switch
             {
                 "TimelinePaneBackgroundBrush" => palette.Surface,
@@ -148,5 +236,31 @@ namespace XTimelineViewer.Services
 
         internal static bool UsesOutlineFocus(string? theme)
             => TryGetPalette(theme, out var palette) && palette.OutlineFocusedPane;
+
+        private static Color GetToken(Color value, Palette palette, Token token)
+            => value.A != 0 ? value : token switch
+            {
+                Token.Text => palette.BaseTheme == ElementTheme.Light
+                    ? ColorHelper.FromArgb(255, 32, 32, 32)
+                    : ColorHelper.FromArgb(255, 246, 246, 246),
+                Token.SecondaryText => palette.BaseTheme == ElementTheme.Light
+                    ? ColorHelper.FromArgb(255, 92, 92, 92)
+                    : ColorHelper.FromArgb(255, 190, 190, 190),
+                Token.Hover => Blend(palette.Chrome, GetToken(palette.Text, palette, Token.Text), .08),
+                Token.Pressed => Blend(palette.Chrome, GetToken(palette.Text, palette, Token.Text), .16),
+                Token.Disabled => WithAlpha(GetToken(palette.Text, palette, Token.Text), 150),
+                Token.Focus => palette.Accent,
+                _ => palette.Text,
+            };
+
+        private static Color WithAlpha(Color color, byte alpha)
+            => ColorHelper.FromArgb(alpha, color.R, color.G, color.B);
+
+        private static Color Blend(Color from, Color to, double amount)
+            => ColorHelper.FromArgb(
+                255,
+                (byte)(from.R + (to.R - from.R) * amount),
+                (byte)(from.G + (to.G - from.G) * amount),
+                (byte)(from.B + (to.B - from.B) * amount));
     }
 }

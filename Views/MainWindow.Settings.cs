@@ -14,19 +14,35 @@ namespace XTimelineViewer.Views
 {
     public sealed partial class MainWindow : Window
     {
+        private bool _configurationReadFailed;
+
+        private T ReadConfiguration<T>(PersistenceLoadResult<T> result)
+        {
+            if (result.Status is not (PersistenceLoadStatus.Success or PersistenceLoadStatus.Missing))
+            {
+                _configurationReadFailed = true;
+                LayoutSafetyBar.Message = R.Get("Configuration_ReadFailed");
+                LayoutSafetyBar.IsOpen = true;
+                if (result.Error is { } error) LogError("Configuration read", error);
+            }
+            return result.Value;
+        }
+
         private void LoadSettings()
         {
-            _appSettings = SettingsService.LoadSettings(SettingsFilePath);
+            _appSettings = ReadConfiguration(SettingsService.LoadSettingsResult(SettingsFilePath));
         }
 
         private void SaveSettings()
         {
-            SettingsService.SaveSettings(SettingsFilePath, _appSettings);
+            if (_configurationReadFailed) return;
+            try { SettingsService.SaveSettings(SettingsFilePath, _appSettings); }
+            catch (Exception ex) { ReportWorkspaceSaveFailure(ex); }
         }
 
         private void LoadProfiles()
         {
-            _profiles = SettingsService.LoadProfiles(ProfilesFilePath);
+            _profiles = ReadConfiguration(SettingsService.LoadProfilesResult(ProfilesFilePath));
             if (_profiles.Count == 0)
             {
                 _profiles.Add(new ProfileConfig { Id = "default", Name = "Default" });
@@ -36,6 +52,7 @@ namespace XTimelineViewer.Views
 
         private void SaveProfiles()
         {
+            if (_configurationReadFailed) return;
             SettingsService.SaveProfiles(ProfilesFilePath, _profiles);
         }
 
@@ -186,17 +203,22 @@ namespace XTimelineViewer.Views
         /// <summary>復元された設定を、アプリを再起動せず現在の画面へ反映する。</summary>
         private async System.Threading.Tasks.Task ReloadRestoredConfigurationAsync()
         {
+            _configurationReadFailed = false;
+            _loadingTimelines = true;
+            try
+            {
+            _presentation.Reset();
             foreach (var pane in Panes.ToList()) CleanupWebView(pane.WebView);
             TimelinePanel.Children.Clear();
             TimelineGrid.Children.Clear();
             _configs.Clear();
             _temporarilyHiddenTimelines.Clear();
 
-            _appSettings = SettingsService.LoadSettings(SettingsFilePath);
-            _profiles = SettingsService.LoadProfiles(ProfilesFilePath);
+            _appSettings = ReadConfiguration(SettingsService.LoadSettingsResult(SettingsFilePath));
+            _profiles = ReadConfiguration(SettingsService.LoadProfilesResult(ProfilesFilePath));
             if (_profiles.Count == 0)
                 _profiles.Add(new ProfileConfig { Id = "default", Name = "Default" });
-            _workspaces = WorkspaceStore.Load(WorkspacesFilePath);
+            _workspaces = ReadConfiguration(WorkspaceStore.LoadResult(WorkspacesFilePath));
 
             var locale = _appSettings.Language == "system" ? null : _appSettings.Language;
             R.Reload(locale);
@@ -206,12 +228,14 @@ namespace XTimelineViewer.Views
             RefreshToolbarProfiles();
             UpdateHasNamedProfiles();
 
-            foreach (var config in TimelineStore.Load(SaveFilePath)) AddTimeline(config);
+            foreach (var config in ReadConfiguration(TimelineStore.LoadResult(SaveFilePath))) AddTimeline(config);
             ViewModel.HasTimelines = _configs.Count > 0;
-            if (_configs.Count > 0) ApplyLayoutMode(_appSettings.LayoutMode);
+            ApplyLayoutMode(_appSettings.LayoutMode);
             RefreshTemporaryVisibilityUi();
             RefreshAllProfileBadges();
             UpdateMenuUpdateBadge();
+            }
+            finally { _loadingTimelines = false; }
 
             // 復元した内容を通常の原子的保存経路にも通し、次回起動を確実にする。
             SaveSettings();

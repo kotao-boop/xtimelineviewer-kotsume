@@ -44,4 +44,15 @@ public class LayoutPlannerTests
     [InlineData(0, 0, 6)]
     public void GetAutoPageCapacity_KeepsPanesUsable(double width, double height, int expected)
         => Assert.Equal(expected, LayoutPlanner.GetAutoPageCapacity(width, height));
+
+    [Theory]
+    [InlineData(3, 1, 3)]
+    [InlineData(5, 2, 3)]
+    [InlineData(7, 2, 4)]
+    public void GetAutoGrid_WithViewportPacksVisiblePanes(int count, int expectedRows, int expectedColumns)
+    {
+        var plan = LayoutPlanner.GetAutoGrid(count, 1600, 900);
+        Assert.Equal(expectedRows, plan.Rows);
+        Assert.Equal(expectedColumns, plan.Columns);
+    }
 }

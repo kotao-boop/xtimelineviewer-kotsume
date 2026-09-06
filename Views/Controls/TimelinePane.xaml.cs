@@ -314,7 +314,7 @@ namespace XTimelineViewer.Views.Controls
 
             PaneRoot.Background = highContrast
                 ? (Brush)themeDict["TimelinePaneBackgroundBrush"]
-                : ThemePaletteService.GetPaneBrush(appTheme, "TimelinePaneBackgroundBrush", themeDict);
+                : ThemePaletteService.GetPaneBrush(appTheme, "TimelinePaneBackgroundBrush", themeDict, theme);
 
             // コントラストテーマではフォーカスを「塗り」ではなく「枠」で示す（#341）。
             // ヘッダーを Highlight 色で塗ると、中の文字色までこちらで揃えない限り
@@ -325,7 +325,7 @@ namespace XTimelineViewer.Views.Controls
                 : "TimelinePaneBorderBrush";
             PaneRoot.BorderBrush = highContrast
                 ? (Brush)themeDict[borderRole]
-                : ThemePaletteService.GetPaneBrush(appTheme, borderRole, themeDict);
+                : ThemePaletteService.GetPaneBrush(appTheme, borderRole, themeDict, theme);
             PaneRoot.BorderThickness = new Thickness(outlineFocus ? 2 : 1);
 
             var headerRole = focused && !outlineFocus
@@ -333,13 +333,50 @@ namespace XTimelineViewer.Views.Controls
                 : "TimelineHeaderBackgroundBrush";
             HeaderGrid.Background = highContrast
                 ? (Brush)themeDict[headerRole]
-                : ThemePaletteService.GetPaneBrush(appTheme, headerRole, themeDict);
+                : ThemePaletteService.GetPaneBrush(appTheme, headerRole, themeDict, theme);
 
             var resizeBrush = highContrast
                 ? (Brush)themeDict["TimelinePaneBorderBrush"]
-                : ThemePaletteService.GetPaneBrush(appTheme, "TimelinePaneBorderBrush", themeDict);
+                : ThemePaletteService.GetPaneBrush(appTheme, "TimelinePaneBorderBrush", themeDict, theme);
             ResizeGripBar.Fill = resizeBrush;
             VerticalResizeGripBar.Fill = resizeBrush;
+
+            // ヘッダー内の文字・アイコンも同じパレットから明示的に設定する。
+            // WebView の本文には触れず、アプリ側の枠だけを更新する。
+            var text = ThemePaletteService.GetAppBrush(appTheme, "AppTextBrush", theme, highContrast);
+            var secondaryText = ThemePaletteService.GetAppBrush(
+                appTheme, "AppSecondaryTextBrush", theme, highContrast);
+            var accent = ThemePaletteService.GetAppBrush(appTheme, "AppAccentBrush", theme, highContrast);
+            var hover = ThemePaletteService.GetAppBrush(appTheme, "AppHoverBrush", theme, highContrast);
+            var pressed = ThemePaletteService.GetAppBrush(appTheme, "AppPressedBrush", theme, highContrast);
+
+            var headerText = focused && !outlineFocus
+                ? new SolidColorBrush(Microsoft.UI.Colors.White) : text;
+            var headerSecondary = focused && !outlineFocus ? headerText : secondaryText;
+            NumberLabelText.Foreground = headerSecondary;
+            TypeIcon.Foreground = headerText;
+            TitleLabel.Foreground = headerText;
+            UrlLabel.Foreground = headerSecondary;
+            AutoLoadIcon.Foreground = focused && !outlineFocus ? headerText : accent;
+            NavigationStateTitle.Foreground = text;
+            NavigationStateHint.Foreground = secondaryText;
+            TranslationIcon.Foreground = focused && !outlineFocus ? headerText : _translationEnabled ? accent : secondaryText;
+            TranslationMenuIcon.Foreground = _translationEnabled ? accent : secondaryText;
+            ApplyButtonPalette(NewItemsBtn, headerText, hover, pressed, text);
+            ApplyButtonPalette(RefreshBtn, headerText, hover, pressed, text);
+            ApplyButtonPalette(TranslationBtn, headerText, hover, pressed, text);
+            ApplyButtonPalette(ActionsBtn, headerText, hover, pressed, text);
+            ApplyButtonPalette(StatusRetryBtn, text, hover, pressed);
+            ApplyButtonPalette(StatusBrowserBtn, text, hover, pressed);
+        }
+
+        private static void ApplyButtonPalette(Button button, Brush foreground, Brush hover, Brush pressed, Brush? pointerForeground = null)
+        {
+            button.Foreground = foreground;
+            button.Resources["ButtonBackgroundPointerOver"] = hover;
+            button.Resources["ButtonBackgroundPressed"] = pressed;
+            button.Resources["ButtonForegroundPointerOver"] = pointerForeground ?? foreground;
+            button.Resources["ButtonForegroundPressed"] = pointerForeground ?? foreground;
         }
 
         // ── 外から触る要素 ────────────────────────────────────────────────────

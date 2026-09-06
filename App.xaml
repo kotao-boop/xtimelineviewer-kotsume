@@ -15,6 +15,12 @@
                     <SolidColorBrush x:Key="AppBorderBrush"                     Color="#464646"/>
                     <SolidColorBrush x:Key="AppAccentBrush"                     Color="#60CDFF"/>
                     <SolidColorBrush x:Key="AppAccentTextBrush"                 Color="#071018"/>
+                    <SolidColorBrush x:Key="AppTextBrush"                     Color="#F6F6F6"/>
+                    <SolidColorBrush x:Key="AppSecondaryTextBrush"            Color="#BEBEBE"/>
+                    <SolidColorBrush x:Key="AppHoverBrush"                    Color="#373737"/>
+                    <SolidColorBrush x:Key="AppPressedBrush"                  Color="#464646"/>
+                    <SolidColorBrush x:Key="AppDisabledBrush"                 Color="#96F6F6F6"/>
+                    <SolidColorBrush x:Key="AppFocusBrush"                    Color="#60CDFF"/>
                     <SolidColorBrush x:Key="TimelinePaneBackgroundBrush"          Color="#202020"/>
                     <SolidColorBrush x:Key="TimelinePaneBorderBrush"              Color="#464646"/>
                     <SolidColorBrush x:Key="TimelineHeaderBackgroundBrush"        Color="#37373C"/>
@@ -27,6 +33,12 @@
                     <SolidColorBrush x:Key="AppBorderBrush"                     Color="#D2D2D2"/>
                     <SolidColorBrush x:Key="AppAccentBrush"                     Color="#0078D4"/>
                     <SolidColorBrush x:Key="AppAccentTextBrush"                 Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="AppTextBrush"                     Color="#202020"/>
+                    <SolidColorBrush x:Key="AppSecondaryTextBrush"            Color="#5C5C5C"/>
+                    <SolidColorBrush x:Key="AppHoverBrush"                    Color="#F2F2F2"/>
+                    <SolidColorBrush x:Key="AppPressedBrush"                  Color="#E5E5E5"/>
+                    <SolidColorBrush x:Key="AppDisabledBrush"                 Color="#96202020"/>
+                    <SolidColorBrush x:Key="AppFocusBrush"                    Color="#0078D4"/>
                     <SolidColorBrush x:Key="TimelinePaneBackgroundBrush"          Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TimelinePaneBorderBrush"              Color="#D2D2D2"/>
                     <SolidColorBrush x:Key="TimelineHeaderBackgroundBrush"        Color="#EBEBF0"/>
@@ -42,6 +54,12 @@
                     <StaticResource x:Key="AppBorderBrush"                     ResourceKey="SystemColorWindowTextColorBrush"/>
                     <StaticResource x:Key="AppAccentBrush"                     ResourceKey="SystemColorHighlightColorBrush"/>
                     <StaticResource x:Key="AppAccentTextBrush"                 ResourceKey="SystemColorHighlightTextColorBrush"/>
+                    <StaticResource x:Key="AppTextBrush"                     ResourceKey="SystemColorWindowTextColorBrush"/>
+                    <StaticResource x:Key="AppSecondaryTextBrush"            ResourceKey="SystemColorGrayTextColorBrush"/>
+                    <StaticResource x:Key="AppHoverBrush"                    ResourceKey="SystemColorHighlightColorBrush"/>
+                    <StaticResource x:Key="AppPressedBrush"                  ResourceKey="SystemColorHighlightColorBrush"/>
+                    <StaticResource x:Key="AppDisabledBrush"                 ResourceKey="SystemColorGrayTextColorBrush"/>
+                    <StaticResource x:Key="AppFocusBrush"                    ResourceKey="SystemColorHighlightColorBrush"/>
                     <StaticResource x:Key="TimelinePaneBackgroundBrush"          ResourceKey="SystemColorWindowColorBrush"/>
                     <StaticResource x:Key="TimelinePaneBorderBrush"              ResourceKey="SystemColorWindowTextColorBrush"/>
                     <StaticResource x:Key="TimelineHeaderBackgroundBrush"        ResourceKey="SystemColorWindowColorBrush"/>

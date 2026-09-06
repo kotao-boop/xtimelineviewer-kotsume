@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Threading;
 using Microsoft.Web.WebView2.Core;
 using Windows.UI;
 
@@ -52,7 +53,7 @@ namespace XTimelineViewer.Views
             try
             {
                 var wv = CreateHiddenComposeHost();
-                ((Grid)Content).Children.Add(wv);
+                MainRoot.Children.Add(wv);
                 await AttachComposeBehavior(wv, profileId);  // env 生成 + ハンドラ + compose/post ナビゲート
                 _composeWarmWebView   = wv;
                 _composeWarmProfileId = profileId;
@@ -86,7 +87,7 @@ namespace XTimelineViewer.Views
             try
             {
                 _composeReadyViews.Remove(_composeWarmWebView);
-                ((Grid)Content).Children.Remove(_composeWarmWebView);
+                MainRoot.Children.Remove(_composeWarmWebView);
                 _composeWarmWebView.Close();
             }
             catch { /* 破棄失敗は無視 */ }
@@ -104,7 +105,7 @@ namespace XTimelineViewer.Views
             wv.VerticalAlignment   = VerticalAlignment.Top;
             Canvas.SetZIndex(wv, -1);
             Grid.SetRow(wv, 1);
-            ((Grid)Content).Children.Add(wv);
+            MainRoot.Children.Add(wv);
             _composeReadyViews.Remove(wv);
             try { wv.Source = new Uri("https://x.com/compose/post"); } catch { }  // 下書きリセット
             _composeWarmWebView   = wv;
@@ -139,7 +140,7 @@ namespace XTimelineViewer.Views
                 webView = _composeWarmWebView;
                 _composeWarmWebView = null;        // 借用中（閉じる時にホストへ戻す）
                 currentIsWarm = true;
-                ((Grid)Content).Children.Remove(webView);
+                MainRoot.Children.Remove(webView);
                 webView.Opacity          = 1;
                 webView.IsHitTestVisible = true;
                 Canvas.SetZIndex(webView, 0);
@@ -645,7 +646,7 @@ namespace XTimelineViewer.Views
                     var handle = parts[0];
                     var status = parts[1];
                     var hit = _videoMp4ByStatus.TryGetValue(status, out var mp4Url);
-                    LogDebug($"saveVideo status={status} handle={handle} hit={hit} mapTotal={_videoMp4ByStatus.Count}");
+                    LogDebug($"saveVideo hit={hit} cacheCount={_videoMp4ByStatus.Count}");
                     if (hit)
                         DownloadMediaAsync(senderWebView, handle, status, mp4Url!, "mp4", "videoSaved").FireAndForget(nameof(DownloadMediaAsync));
                     else
@@ -778,29 +779,23 @@ namespace XTimelineViewer.Views
 
         // 動画ダウンロード用（#304）: statusId → progressive MP4（最高ビットレート）直 URL。
         // X の GraphQL レスポンスを傍受して populate する。ffmpeg を使わず音声込み mp4 を得るための要。
-        private readonly ConcurrentDictionary<string, string> _videoMp4ByStatus = new();
+        private readonly BoundedCache<string, string> _videoMp4ByStatus = new(512);
+        private readonly SemaphoreSlim _videoCaptureSlots = new(2, 2);
 
         // GraphQL レスポンスから tweet の video_info.variants を拾い、statusId→最高画質 MP4 を辞書化する（#304）。
         // WebResourceResponseReceived から呼ぶ。失敗しても無視（動画DL 側で「取得できません」に degrade）。
-        internal async Task CaptureVideoVariantsAsync(CoreWebView2WebResourceResponseReceivedEventArgs args)
+        internal async Task CaptureVideoVariantsAsync(CoreWebView2WebResourceResponseReceivedEventArgs args, CancellationToken cancellationToken)
         {
-            // 一時診断（動画DL 調査）: 操作名を URL 末尾から抜く。
-            var uri = args.Request.Uri;
-            var op = uri;
-            var q = op.IndexOf('?'); if (q >= 0) op = op[..q];
-            var slash = op.LastIndexOf('/'); if (slash >= 0) op = op[(slash + 1)..];
+            if (!_videoCaptureSlots.Wait(0)) return;
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 using var raStream = await args.Response.GetContentAsync();
-                if (raStream is null) { LogDebug($"gql {op} status={args.Response.StatusCode} content=NULL"); return; }
-                byte[] bytes;
-                using (var netStream = raStream.AsStreamForRead())
-                using (var ms = new MemoryStream())
-                {
-                    await netStream.CopyToAsync(ms);
-                    bytes = ms.ToArray();
-                }
-                if (bytes.Length == 0) { LogDebug($"gql {op} status={args.Response.StatusCode} content=EMPTY"); return; }
+                cancellationToken.ThrowIfCancellationRequested();
+                if (raStream is null) return;
+                using var netStream = raStream.AsStreamForRead();
+                using var bytes = await BoundedStreamReader.ReadAsync(netStream, 4 * 1024 * 1024, cancellationToken);
+                if (bytes is null || bytes.Length == 0) return;
                 var pairs = await Task.Run(() =>
                 {
                     var list = new List<(string id, string url)>();
@@ -809,26 +804,18 @@ namespace XTimelineViewer.Views
                         using var doc = JsonDocument.Parse(bytes);
                         CollectVideoVariants(doc.RootElement, list);
                     }
-                    catch { /* JSON でない/スキーマ違い等は無視 */ }
+                    catch (JsonException) { }
                     return list;
-                });
-                foreach (var (id, url) in pairs) _videoMp4ByStatus[id] = url;
-                // 診断には件数と形式の有無だけを残す。投稿本文・URL・投稿IDはログへ書かない。
-                bool hasVI = false, hasMp4 = false;
-                try
-                {
-                    var text = System.Text.Encoding.UTF8.GetString(bytes);
-                    hasVI = text.Contains("video_info");
-                    hasMp4 = text.Contains("video/mp4");
-                }
-                catch { }
-                LogDebug($"gql {op} bytes={bytes.Length} hasVI={hasVI} hasMp4={hasMp4} videos={pairs.Count} mapTotal={_videoMp4ByStatus.Count}");
+                }, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var (id, url) in pairs) _videoMp4ByStatus.Set(id, url);
             }
+            catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                LogDebug($"gql {op} EXCEPTION {ex.GetType().Name}: {ex.Message}");
-                LogError("CaptureVideoVariants", ex);
+                LogDebug($"Video metadata unavailable: {ex.GetType().Name}");
             }
+            finally { _videoCaptureSlots.Release(); }
         }
 
         // rest_id + legacy を持つ tweet オブジェクトを再帰探索し、最高ビットレートの video/mp4 を集める。

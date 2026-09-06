@@ -6,6 +6,11 @@ namespace XTimelineViewer.Tests.Services;
 public class UrlHelperTests
 {
     [Theory]
+    [InlineData("https://twitter.com/example/status/1", "https://x.com/example/status/1")]
+    [InlineData("https://www.twitter.com/example", "https://x.com/example")]
+    public void NormalizeXUrl_UsesCanonicalXHost(string input, string expected)
+        => Assert.Equal(expected, UrlHelper.NormalizeXUrl(input));
+    [Theory]
     [InlineData("https://accounts.google.com/o/oauth2/auth?login_hint=user@example.com&code=secret#token", "https://accounts.google.com/o/oauth2/auth")]
     [InlineData("https://x.com/i/flow/login?state=secret", "https://x.com/i/flow/login")]
     [InlineData("intent://accounts.google.com/path#Intent;scheme=https;end", "intent:")]

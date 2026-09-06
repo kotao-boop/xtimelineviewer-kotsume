@@ -134,9 +134,10 @@ namespace XTimelineViewer.Views
         private TimelinePane? PaneOf(WebView2 webView) => Panes.FirstOrDefault(p => p.WebView == webView);
 
         private TimelinePane? _draggingPane;
-        private TimelinePane? _focusedPane;
-        private bool _focusModeActive;
-        private string _layoutModeBeforeFocus = "Classic";
+        private readonly TimelinePresentationState<TimelinePane> _presentation = new();
+        private TimelinePane? _focusedPane { get => _presentation.FocusedPane; set => _presentation.FocusedPane = value; }
+        private bool _focusModeActive { get => _presentation.FocusActive; set => _presentation.FocusActive = value; }
+        private string _layoutModeBeforeFocus { get => _presentation.ModeBeforeFocus ?? "Classic"; set => _presentation.ModeBeforeFocus = value; }
         // ペイン → ヘッダーの配色を再適用する処理。
         // 以前は List<Action> だったが、除去が参照一致になるため
         // デリゲート実体を持たない削除経路からは掃除できなかった（#362）。
@@ -170,7 +171,7 @@ namespace XTimelineViewer.Views
 
         // 画像表示中のペインの一時拡大（試験機能 #287）。ペイン → 元の TimelineConfig（幅の復元用）。
 
-        private TimelinePane? _enlargedPane;
+        private TimelinePane? _enlargedPane { get => _presentation.EnlargedPane; set => _presentation.EnlargedPane = value; }
 
         // キーボードショートカット処理スクリプト（各 WebView2 に注入）
         private static readonly string KeyboardShortcutScript = """
@@ -350,12 +351,12 @@ namespace XTimelineViewer.Views
         {
             this.InitializeComponent();
             InitializeBossMode();
-            AppWindow.Resize(new SizeInt32(1400, 900));
+            WindowSizingService.ResizeAndCenter(this, 1400, 900, 480, 400);
             // ツールバーが重なるほど狭くできないよう下限を引く（#342）
             if (AppWindow.Presenter is OverlappedPresenter presenter)
             {
-                presenter.PreferredMinimumWidth  = 480;
-                presenter.PreferredMinimumHeight = 400;
+                presenter.PreferredMinimumWidth  = (int)Math.Round(480 * WindowSizingService.GetScale(this));
+                presenter.PreferredMinimumHeight = (int)Math.Round(400 * WindowSizingService.GetScale(this));
             }
             var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
             if (File.Exists(iconPath)) AppWindow.SetIcon(iconPath);
@@ -399,7 +400,7 @@ namespace XTimelineViewer.Views
             InitializeBossMode();
             LoadProfiles();
             LoadWorkspaces();
-            CleanupOrphanedProfiles();
+            // バックアップ復元で再び必要になるログイン用フォルダーを起動時に削除しない。
             ApplySavedTheme();
             UpdateMenuUpdateBadge();
             InitializeAsync().FireAndForget(nameof(InitializeAsync));

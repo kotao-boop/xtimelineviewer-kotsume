@@ -7,6 +7,7 @@
     <!-- KeyboardAcceleratorPlacementMode=Hidden: ルート Grid のグローバルアクセラレータ
          （Ctrl+F / F3）の自動ツールチップが UI のあちこちに出るのを抑止する (#214)。
          ショートカット自体は引き続き機能する。 -->
+    <ContentControl x:Name="WorkspaceInteractionGate" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsTabStop="False">
     <Grid x:Name="MainRoot" Background="{ThemeResource AppSurfaceBrush}"
           KeyboardAcceleratorPlacementMode="Hidden">
         <Grid.KeyboardAccelerators>
@@ -58,9 +59,12 @@
                         <VisualState.Setters>
                             <Setter Target="AddTimelineToolbarLabel.Visibility" Value="Collapsed"/>
                             <Setter Target="PostLabel.Visibility" Value="Collapsed"/>
-                            <Setter Target="ExitFocusModeLabel.Visibility" Value="Collapsed"/>
+                            <Setter Target="ExitFocusModeLabel.Visibility" Value="Visible"/>
+                            <Setter Target="SearchBox.(Grid.Row)" Value="1"/>
+                            <Setter Target="SearchBox.(Grid.Column)" Value="0"/>
+                            <Setter Target="SearchBox.(Grid.ColumnSpan)" Value="3"/>
                             <Setter Target="ToolbarProfileCombo.MaxWidth" Value="180"/>
-                            <Setter Target="SearchBox.MaxWidth" Value="360"/>
+                            <Setter Target="SearchBox.MaxWidth" Value="10000"/>
                             <Setter Target="AddTimelineToolbarBtn.Padding" Value="8,0"/>
                             <Setter Target="PostBtn.Padding" Value="9,0"/>
                             <Setter Target="ExitFocusModeBtn.Padding" Value="9,0"/>
@@ -77,6 +81,9 @@
                             <Setter Target="ExitFocusModeLabel.Visibility" Value="Visible"/>
                             <Setter Target="ToolbarProfileCombo.MaxWidth" Value="240"/>
                             <Setter Target="SearchBox.MaxWidth" Value="480"/>
+                            <Setter Target="SearchBox.(Grid.Row)" Value="0"/>
+                            <Setter Target="SearchBox.(Grid.Column)" Value="1"/>
+                            <Setter Target="SearchBox.(Grid.ColumnSpan)" Value="1"/>
                             <Setter Target="AddTimelineToolbarBtn.Padding" Value="10,0"/>
                             <Setter Target="PostBtn.Padding" Value="12,0"/>
                             <Setter Target="ExitFocusModeBtn.Padding" Value="10,0"/>
@@ -93,11 +100,18 @@
                             <Setter Target="ExitFocusModeLabel.Visibility" Value="Visible"/>
                             <Setter Target="ToolbarProfileCombo.MaxWidth" Value="320"/>
                             <Setter Target="SearchBox.MaxWidth" Value="720"/>
+                            <Setter Target="SearchBox.(Grid.Row)" Value="0"/>
+                            <Setter Target="SearchBox.(Grid.Column)" Value="1"/>
+                            <Setter Target="SearchBox.(Grid.ColumnSpan)" Value="1"/>
                             <Setter Target="WorkspaceSectionIcon.Visibility" Value="Visible"/>
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             <!-- 重なり防止のため 3 列に分ける（#342）。以前は 1 セルに
                  左寄せ・中央・右寄せを重ねており、狭めると互いに重なっていた。 -->
             <Grid.ColumnDefinitions>
@@ -110,13 +124,13 @@
                         Spacing="6"
                         VerticalAlignment="Center">
                 <ComboBox x:Name="ToolbarProfileCombo"
-                          MinWidth="150"
+                          MinWidth="100"
                           MaxWidth="240"
-                          Height="32"
+                          MinHeight="36"
                           VerticalContentAlignment="Center"
                           SelectionChanged="ToolbarProfileCombo_SelectionChanged"/>
                 <Button x:Name="AddTimelineToolbarBtn"
-                        Height="32"
+                        MinHeight="36"
                         VerticalContentAlignment="Center"
                         Padding="10,0"
                         Click="AddTimelineToolbarBtn_Click"
@@ -129,7 +143,7 @@
                 <Button x:Name="PostBtn"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
-                        Height="32"
+                        MinHeight="36"
                         VerticalContentAlignment="Center"
                         Padding="12,0"
                         FontSize="14"
@@ -149,10 +163,10 @@
                             Grid.Column="1"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
-                            Height="32"
+                            MinHeight="36"
                             VerticalContentAlignment="Center"
                             MaxWidth="300"
-                            Margin="8,0"
+                            Margin="8,4"
                             QueryIcon="Find"
                             IsEnabled="{x:Bind ViewModel.HasNamedProfiles, Mode=OneWay}"
                             QuerySubmitted="SearchBox_QuerySubmitted"
@@ -370,7 +384,8 @@
                                 Spacing="4"/>
                 </ScrollViewer>
                 <Button x:Name="ExitFocusModeBtn"
-                        Height="32"
+                        Grid.Column="2"
+                        MinHeight="36"
                         Padding="10,0"
                         Visibility="Collapsed"
                         Click="ExitFocusModeBtn_Click"
@@ -384,7 +399,7 @@
         </Border>
 
         <!-- Content area -->
-        <Grid Grid.Row="2"
+        <Grid x:Name="ContentArea" Grid.Row="2" SizeChanged="ContentArea_SizeChanged"
               AllowDrop="True"
               DragOver="MainArea_DragOver"
               Drop="MainArea_Drop">
@@ -527,6 +542,7 @@
                     Grid.Column="1"
                     Width="480"
                     MaxWidth="560"
+                    Canvas.ZIndex="70"
                     Visibility="Collapsed"
                     BorderBrush="{ThemeResource AppBorderBrush}"
                     BorderThickness="1,0,0,0"
@@ -544,7 +560,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock x:Name="SearchPanelTitle" FontWeight="SemiBold"/>
-                            <TextBlock x:Name="SearchPanelHint" FontSize="11" Opacity="0.65"/>
+                            <TextBlock x:Name="SearchPanelHint" FontSize="11" Opacity="0.65" TextWrapping="Wrap"/>
                         </StackPanel>
                         <Button x:Name="SearchPinBtn" Grid.Column="1" Click="SearchPinBtn_Click"/>
                         <Button x:Name="SearchCloseBtn" Grid.Column="2" Click="SearchCloseBtn_Click" Width="32" Height="32" Padding="0">
@@ -558,4 +574,5 @@
             </Border>
         </Grid>
     </Grid>
+    </ContentControl>
 </Window>

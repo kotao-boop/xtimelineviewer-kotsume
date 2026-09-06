@@ -17,14 +17,9 @@ namespace XTimelineViewer.Services
         /// <summary>この大きさを超えたら世代交代する。</summary>
         internal const long DefaultMaxBytes = 1_000_000;
 
-        // 追記のたびにサイズを見ると I/O が増えるので、一定回数ごとに確認する。
-        // 起動時だけだと、長時間動かしっぱなしのセッションで上限を超え続ける。
-        private const int RotateCheckInterval = 200;
-
         private static readonly object Gate = new();
         private static string _filePath = DefaultFilePath();
         private static long   _maxBytes = DefaultMaxBytes;
-        private static int    _writesSinceCheck;
 
         internal static string FilePath => _filePath;
 
@@ -45,7 +40,6 @@ namespace XTimelineViewer.Services
             {
                 _filePath = filePath ?? DefaultFilePath();
                 _maxBytes = maxBytes;
-                _writesSinceCheck = 0;
             }
             RotateIfNeeded(_filePath, _maxBytes);
         }
@@ -60,25 +54,19 @@ namespace XTimelineViewer.Services
 
         private static void Append(string text)
         {
-            string path;
-            long   max;
-            bool   check;
+            // 1件の異常に長い例外でログ上限を飛び越えないようにする。
+            if (text.Length > 8192) text = text[..8192] + " [truncated]" + Environment.NewLine;
             lock (Gate)
             {
-                path = _filePath;
-                max  = _maxBytes;
-                check = ++_writesSinceCheck >= RotateCheckInterval;
-                if (check) _writesSinceCheck = 0;
+                // ローテーションと追記を同じロックで守り、長時間動作でも上限を保つ。
+                RotateIfNeeded(_filePath, _maxBytes);
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
+                    File.AppendAllText(_filePath, text);
+                }
+                catch { /* ログ書き込みの失敗で本来の処理を中断しない */ }
             }
-
-            if (check) RotateIfNeeded(path, max);
-
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                File.AppendAllText(path, text);
-            }
-            catch { /* ログ書き込みの失敗は無視する。ここで投げると本題が隠れる */ }
         }
 
         /// <summary>

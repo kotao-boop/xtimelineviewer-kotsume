@@ -79,6 +79,15 @@ namespace XTimelineViewer.Views
         private ContentDialog? _activeSearchDialog;  // 現在開いている検索ダイアログ（ESC クローズ用 #317）
         private WebView2? _searchPanelWebView;
 
+        private void ContentArea_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            var narrow = e.NewSize.Width < 850;
+            Grid.SetColumn(SearchSidePanel, narrow ? 0 : 1);
+            Grid.SetColumnSpan(SearchSidePanel, narrow ? 2 : 1);
+            SearchSidePanel.MaxWidth = double.PositiveInfinity;
+            SearchSidePanel.Width = narrow ? double.NaN : Math.Min(480, e.NewSize.Width * 0.4);
+        }
+
         private async Task OpenSearchPanelAsync(string input)
         {
             CloseSearchPanel();
@@ -101,8 +110,10 @@ namespace XTimelineViewer.Views
             try
             {
                 await InitSearchWebView(webView, profileId);
+                if (!ReferenceEquals(_searchPanelWebView, webView)) return;
                 webView.CoreWebView2.NavigationCompleted += (_, args) =>
                 {
+                    if (!ReferenceEquals(_searchPanelWebView, webView)) return;
                     SearchProgressRing.IsActive = false;
                     SearchProgressRing.Visibility = Visibility.Collapsed;
                 };
@@ -110,8 +121,10 @@ namespace XTimelineViewer.Views
             }
             catch (Exception ex)
             {
+                if (!ReferenceEquals(_searchPanelWebView, webView)) return;
                 SearchProgressRing.IsActive = false;
-                LogError($"OpenSearchPanelAsync (url={initialUrl})", ex);
+                SearchProgressRing.Visibility = Visibility.Collapsed;
+                LogError("OpenSearchPanelAsync", ex);
             }
             SearchBox.Text = "";
         }

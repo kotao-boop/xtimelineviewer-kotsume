@@ -24,17 +24,20 @@ namespace XTimelineViewer.Views
 
         private void LoadWorkspaces()
         {
-            _workspaces = WorkspaceStore.Load(WorkspacesFilePath);
+            _workspaces = ReadConfiguration(WorkspaceStore.LoadResult(WorkspacesFilePath));
             RefreshWorkspaceTabs();
         }
 
-        private void SaveWorkspaces() => WorkspaceStore.Save(WorkspacesFilePath, _workspaces);
+        private void SaveWorkspaces()
+        {
+            if (!_configurationReadFailed) WorkspaceStore.Save(WorkspacesFilePath, _workspaces);
+        }
 
         private void RefreshWorkspaceTabs()
         {
             if (WorkspaceTabsPanel is null) return;
             WorkspaceTabsPanel.Children.Clear();
-            WorkspaceBar.Visibility = _workspaces.Count == 0
+            WorkspaceBar.Visibility = _workspaces.Count == 0 && !_focusModeActive
                 ? Visibility.Collapsed
                 : Visibility.Visible;
 
@@ -60,8 +63,9 @@ namespace XTimelineViewer.Views
 
                 var menu = new MenuFlyout();
                 var update = new MenuFlyoutItem { Text = R.Get("Workspace_UpdateCurrent") };
-                update.Click += (_, _) =>
+                update.Click += async (_, _) =>
                 {
+                    if (!await ConfirmWorkspaceOverwriteAsync(workspace)) return;
                     workspace.LayoutMode = _appSettings.LayoutMode;
                     workspace.Timelines = _configs.Select(c => c.Clone()).ToList();
                     CopyCurrentLayoutWeightsToWorkspace(workspace);
@@ -144,6 +148,25 @@ namespace XTimelineViewer.Views
             workspace.RowWeights = _appSettings.LayoutRowWeights.TryGetValue(workspace.LayoutMode, out var rows)
                 ? [.. rows]
                 : [];
+        }
+
+        private void SaveActiveWorkspace()
+        {
+            if (_switchingWorkspace || _loadingTimelines || _configurationReadFailed) return;
+            var index = _workspaces.FindIndex(w => w.Id == _appSettings.ActiveWorkspaceId);
+            if (index < 0) return;
+            var snapshot = _workspaces[index].Clone();
+            snapshot.LayoutMode = _appSettings.LayoutMode;
+            snapshot.Timelines = _configs.Select(c => c.Clone()).ToList();
+            CopyCurrentLayoutWeightsToWorkspace(snapshot);
+            var updated = _workspaces.ToList();
+            updated[index] = snapshot;
+            WorkspaceStore.Save(WorkspacesFilePath, updated);
+            var current = _workspaces[index];
+            current.LayoutMode = snapshot.LayoutMode;
+            current.Timelines = snapshot.Timelines;
+            current.ColumnWeights = snapshot.ColumnWeights;
+            current.RowWeights = snapshot.RowWeights;
         }
 
         private void RefreshToolbarProfiles()
@@ -402,6 +425,16 @@ namespace XTimelineViewer.Views
             var list = new StackPanel { Spacing = 8 };
             root.Children.Add(nameBox);
             root.Children.Add(save);
+            var overwriteWarning = new TextBlock { TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+            var confirmOverwrite = new Button { Content = R.Get("Workspace_OverwriteConfirm"), Visibility = Visibility.Collapsed };
+            root.Children.Add(overwriteWarning);
+            root.Children.Add(confirmOverwrite);
+            string? confirmedName = null;
+            nameBox.TextChanged += (_, _) =>
+            {
+                confirmedName = null;
+                overwriteWarning.Visibility = confirmOverwrite.Visibility = Visibility.Collapsed;
+            };
             root.Children.Add(new NavigationViewItemSeparator());
             root.Children.Add(list);
 
@@ -485,11 +518,18 @@ namespace XTimelineViewer.Views
                 }
             }
 
-            save.Click += (_, _) =>
+            void SaveNamedWorkspace(bool confirmed)
             {
                 var name = nameBox.Text.Trim();
                 if (name.Length == 0) return;
                 var workspace = _workspaces.FirstOrDefault(w => w.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+                if (workspace is not null && (!confirmed || confirmedName != name))
+                {
+                    confirmedName = name;
+                    overwriteWarning.Text = string.Format(R.Get("Workspace_OverwriteConfirmBody"), name);
+                    overwriteWarning.Visibility = confirmOverwrite.Visibility = Visibility.Visible;
+                    return;
+                }
                 if (workspace is null)
                 {
                     workspace = new WorkspaceConfig { Name = name };
@@ -505,31 +545,80 @@ namespace XTimelineViewer.Views
                 RefreshWorkspaceTabs();
                 nameBox.Text = string.Empty;
                 Rebuild();
-            };
+            }
+            save.Click += (_, _) => SaveNamedWorkspace(false);
+            confirmOverwrite.Click += (_, _) => SaveNamedWorkspace(true);
 
             Rebuild();
             await ShowDialogAsync(dialog);
         }
 
+        private async Task<bool> ConfirmWorkspaceOverwriteAsync(WorkspaceConfig workspace)
+        {
+            if (Content?.XamlRoot is null) return false;
+            var dialog = new ContentDialog
+            {
+                Title = R.Get("Workspace_OverwriteConfirmTitle"),
+                Content = string.Format(R.Get("Workspace_OverwriteConfirmBody"), workspace.Name),
+                PrimaryButtonText = R.Get("Workspace_OverwriteConfirm"),
+                CloseButtonText = R.Get("Button_Cancel"),
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = Content.XamlRoot,
+            };
+            return await ShowDialogAsync(dialog) == ContentDialogResult.Primary;
+        }
+
         private async Task ApplyWorkspaceAsync(WorkspaceConfig workspace)
         {
-            foreach (var pane in Panes.ToList()) CleanupWebView(pane.WebView);
-            TimelinePanel.Children.Clear();
-            TimelineGrid.Children.Clear();
-            _configs.Clear();
+            if (_switchingWorkspace || _configurationReadFailed) return;
+            workspace = _workspaces.FirstOrDefault(w => w.Id == workspace.Id) ?? workspace;
+            try { SaveActiveWorkspace(); }
+            catch (Exception ex) { ReportWorkspaceSaveFailure(ex); return; }
+            _switchingWorkspace = true;
+            WorkspaceInteractionGate.IsEnabled = false;
+            try
+            {
+                await TimelineStore.SaveAsync(SaveFilePath, _configs);
+                SaveSettings();
+            }
+            catch (Exception ex)
+            {
+                _switchingWorkspace = false;
+                WorkspaceInteractionGate.IsEnabled = true;
+                ReportWorkspaceSaveFailure(ex);
+                return;
+            }
+            try
+            {
+                _presentation.Reset();
+                _draggingPane = null;
+                _autoLayoutPage = 0;
+                CloseSearchPanel();
+                foreach (var pane in Panes.ToList()) CleanupWebView(pane.WebView);
+                _videoMp4ByStatus.Clear();
+                TimelinePanel.Children.Clear();
+                TimelineGrid.Children.Clear();
+                _configs.Clear();
 
-            _appSettings.LayoutMode = workspace.LayoutMode;
-            _appSettings.ActiveWorkspaceId = workspace.Id;
-            if (workspace.ColumnWeights.Count > 0)
+                _appSettings.LayoutMode = workspace.LayoutMode;
+                _appSettings.ActiveWorkspaceId = workspace.Id;
                 _appSettings.LayoutColumnWeights[workspace.LayoutMode] = [.. workspace.ColumnWeights];
-            if (workspace.RowWeights.Count > 0)
                 _appSettings.LayoutRowWeights[workspace.LayoutMode] = [.. workspace.RowWeights];
-            foreach (var config in workspace.Timelines.Select(t => t.Clone())) AddTimeline(config);
-            ViewModel.HasTimelines = _configs.Count > 0;
-            if (_configs.Count > 0) ApplyLayoutMode();
+                foreach (var config in workspace.Timelines.Select(t => t.Clone())) AddTimeline(config);
+                ViewModel.HasTimelines = _configs.Count > 0;
+                ApplyLayoutMode();
+            }
+            finally { _switchingWorkspace = false; WorkspaceInteractionGate.IsEnabled = true; }
             await SaveTimelinesAsync();
             SaveSettings();
             RefreshWorkspaceTabs();
+        }
+
+        private void ReportWorkspaceSaveFailure(Exception ex)
+        {
+            LogError("Workspace save", ex);
+            LayoutSafetyBar.Message = R.Get("Workspace_SaveFailed");
+            LayoutSafetyBar.IsOpen = true;
         }
 
         private void OpenCommandPalette_Click(object sender, RoutedEventArgs e)
@@ -556,7 +645,8 @@ namespace XTimelineViewer.Views
                 new(R.Get("Menu_Workspaces"), "workspace save switch", () => ShowWorkspacesAsync().FireAndForget(nameof(ShowWorkspacesAsync))),
                 new(R.Get("Menu_Settings"), "settings preferences", () => OpenSettingsWindow()),
                 new(R.Get("Menu_NewProfile"), "profile account login", () => NewProfileMenuItem_Click(this, new RoutedEventArgs())),
-                new(R.Get("Layout_Auto"), "layout auto arrange equalize 自動 整列", NormalizeCurrentLayout),
+                new(R.Get("Layout_Auto"), "layout auto responsive 自動 画面", () => SetLayoutFromCommand("Auto")),
+                new(R.Get("Layout_Auto_Tooltip"), "layout arrange equalize 整列 均等", NormalizeCurrentLayout),
                 new(R.Get("Layout_Classic"), "layout classic", () => SetLayoutFromCommand("Classic")),
                 new(R.Get("Layout_Grid2x2"), "layout grid 2x2", () => SetLayoutFromCommand("Grid2x2")),
                 new(R.Get("Layout_Grid2x3"), "layout grid 2x3", () => SetLayoutFromCommand("Grid2x3")),
@@ -607,6 +697,7 @@ namespace XTimelineViewer.Views
                 return;
             }
             if (_focusModeActive) ExitFocusMode();
+            if (_enlargedPane is not null) RestorePaneSize();
             if (mode == "Auto") _autoLayoutPage = 0;
             var safeMode = LayoutPlanner.GetSafeMode(mode, Panes.Count(IsPaneEffectivelyVisible));
             if (safeMode != mode)
@@ -617,6 +708,8 @@ namespace XTimelineViewer.Views
             _appSettings.LayoutMode = safeMode;
             SaveSettings();
             ApplyLayoutMode(safeMode);
+            try { SaveActiveWorkspace(); }
+            catch (Exception ex) { ReportWorkspaceSaveFailure(ex); }
             UpdateLayoutSuggestion();
         }
 
