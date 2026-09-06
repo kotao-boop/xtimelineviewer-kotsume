@@ -1273,8 +1273,10 @@ namespace XTimelineViewer.Views
                 {
                     if (!IsWebViewLifetimeActive(webView, lifetime)) return;
                     if (!_appSettings.VideoFrameSaveEnabled) return;
-                    if (args.Request.Uri.IndexOf("/graphql/", StringComparison.OrdinalIgnoreCase) < 0) return;
-                    CaptureVideoVariantsAsync(args).FireAndForget(nameof(CaptureVideoVariantsAsync));
+                    if (!Uri.TryCreate(args.Request.Uri, UriKind.Absolute, out var requestUri)
+                        || !UrlHelper.IsXUri(requestUri)
+                        || !requestUri.AbsolutePath.Contains("/graphql/", StringComparison.Ordinal)) return;
+                    CaptureVideoVariantsAsync(args, lifetime.Token).FireAndForget(nameof(CaptureVideoVariantsAsync));
                 }
                 core.WebResourceResponseReceived += OnWebResourceResponseReceived;
                 lifetime.RegisterHandler(() => core.WebResourceResponseReceived -= OnWebResourceResponseReceived);

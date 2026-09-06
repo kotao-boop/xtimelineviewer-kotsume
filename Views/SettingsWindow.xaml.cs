@@ -176,9 +176,10 @@ namespace XTimelineViewer.Views
         public void ApplyTheme(string? themeName)
         {
             var root = (FrameworkElement)Content;
-            ThemePaletteService.ApplyResources(root, themeName, MainWindow.IsHighContrast());
             var theme = ThemePaletteService.GetBaseTheme(themeName);
             root.RequestedTheme = theme;
+            ThemePaletteService.ApplyResources(root, themeName, MainWindow.IsHighContrast(),
+                theme == ElementTheme.Default ? root.ActualTheme : theme);
             var surface = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppSurfaceBrush"];
             SettingsRoot.Background = surface;
             NavView.Background = surface;

@@ -4,6 +4,23 @@
 
 const translationConsentKey = 'xtv_translation_external_consent_v1';
 const maxTranslationChars = 10000;
+const supportedTargetLanguages = Object.freeze(['ja', 'en']);
+const defaultTargetLanguage = 'ja';
+const maxTranslationAttempts = 2;
+const retryDelayMs = 250;
+
+function normalizeTargetLanguage(value) {
+    return supportedTargetLanguages.includes(value) ? value : defaultTargetLanguage;
+}
+
+function shouldRetryTranslation(error, response) {
+    if (response) return response.status >= 500 || response.status === 429;
+    return error?.name !== 'AbortError';
+}
+
+function wait(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
 
 function getStoredConsent() {
     return new Promise((resolve) => {
@@ -35,12 +52,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return false;
         }
         const text = typeof request.text === 'string' ? request.text.trim() : '';
-        const targetLang = 'ja';
+        const targetLang = normalizeTargetLanguage(request.targetLang);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         getStoredConsent()
-            .then((consented) => {
+            .then(async (consented) => {
                 if (!consented) throw new Error('Translation consent is not active.');
                 if (!text || text.length > maxTranslationChars) {
                     throw new Error('Translation text is empty or too long.');
@@ -49,15 +66,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const body = new URLSearchParams({
                     client: 'gtx', sl: 'auto', tl: targetLang, dt: 't', q: text
                 });
-                return fetch('https://translate.googleapis.com/translate_a/single', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                    body: body.toString(),
-                    credentials: 'omit',
-                    cache: 'no-store',
-                    referrerPolicy: 'no-referrer',
-                    signal: controller.signal
-                });
+                let lastError;
+                for (let attempt = 1; attempt <= maxTranslationAttempts; attempt++) {
+                    let response;
+                    try {
+                        response = await fetch('https://translate.googleapis.com/translate_a/single', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                            body: body.toString(),
+                            credentials: 'omit',
+                            cache: 'no-store',
+                            referrerPolicy: 'no-referrer',
+                            signal: controller.signal
+                        });
+                        if (response.ok || !shouldRetryTranslation(null, response) || attempt === maxTranslationAttempts) {
+                            return response;
+                        }
+                        lastError = new Error(`HTTP error! status: ${response.status}`);
+                    } catch (error) {
+                        lastError = error;
+                        if (!shouldRetryTranslation(error, null) || attempt === maxTranslationAttempts) throw error;
+                    }
+                    await wait(retryDelayMs * attempt);
+                }
+                throw lastError || new Error('Translation request failed');
             })
             .then(response => {
                 if (!response.ok) {

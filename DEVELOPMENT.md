@@ -47,6 +47,7 @@ dotnet test XTimelineViewer.Tests/XTimelineViewer.Tests.csproj -c Release
 ```powershell
 node --check extensions/xtv-translator/content.js
 node --check extensions/xtv-translator/background.js
+node scripts/test-translator.js
 ```
 
 実際にアプリを起動して基本画面を確認する場合は、`./ui-smoke.ps1`を実行する。このテストは、ツールバー、メニュー、設定画面などが表示されることをWindows UI Automationで確認し、結果のスクリーンショットを`test-screenshots/`へ保存する。Xへのログインが必要なタイムライン検査は、ローカルに`timelines.json`がある場合だけ実行される。
@@ -115,7 +116,7 @@ SignPathの承認と実際の署名が完了するまでは、GitHub版を署名
 
 ### Microsoft Store版
 
-Microsoft Store版は未公開であり、提出に向けて準備中である。`.github/workflows/store-package.yml`は提出候補を手動で作成するが、次の条件を満たすまで公開または提出しない。
+Microsoft Store版は公開中で、2026年9月6日に確認した公開パッケージはv2.7.1である。GitHubのv2.8.0とは別の提出・更新経路になる。`.github/workflows/store-package.yml`は更新の提出候補を手動で作成する。更新時も次の条件を確認する。
 
 - Partner Centerで予約した正式な製品ID（Identity）を設定する。
 - x64版とARM64版の両方でWindows App Certification Kit（WACK）を実行する。

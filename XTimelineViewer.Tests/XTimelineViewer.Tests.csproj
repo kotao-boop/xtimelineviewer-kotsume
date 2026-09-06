@@ -43,6 +43,8 @@
     <Compile Include="..\Services\SettingsBackupService.cs" Link="Services\SettingsBackupService.cs" />
     <Compile Include="..\Services\SignInFlowHelper.cs" Link="Services\SignInFlowHelper.cs" />
     <Compile Include="..\Services\LayoutPlanner.cs" Link="Services\LayoutPlanner.cs" />
+    <Compile Include="..\Services\BoundedCache.cs" Link="Services\BoundedCache.cs" />
+    <Compile Include="..\Services\BoundedStreamReader.cs" Link="Services\BoundedStreamReader.cs" />
     <Compile Include="..\ViewModels\SettingsViewModel.cs" Link="ViewModels\SettingsViewModel.cs" />
   </ItemGroup>
 

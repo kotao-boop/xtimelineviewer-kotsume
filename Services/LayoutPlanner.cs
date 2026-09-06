@@ -29,8 +29,8 @@ namespace XTimelineViewer.Services
             if (!double.IsFinite(availableWidth) || availableWidth <= 0) availableWidth = 1200;
             if (!double.IsFinite(availableHeight) || availableHeight <= 0) availableHeight = 700;
 
-            // 1ページの列数は最大3列にして、文字やヘッダーが細くなりすぎないようにする。
-            var maxColumns = Math.Clamp((int)(availableWidth / 280), 1, Math.Min(3, visibleCount));
+            // 全ペインを画面内へ配置する。列数を固定せず、画面比率と本数から選ぶ。
+            var maxColumns = Math.Max(1, visibleCount);
             var best = new GridPlan((int)Math.Ceiling((double)visibleCount / maxColumns), maxColumns);
             var bestScore = double.PositiveInfinity;
             for (var columns = 1; columns <= maxColumns; columns++)
@@ -39,8 +39,8 @@ namespace XTimelineViewer.Services
                 var emptyCells = rows * columns - visibleCount;
                 var cellWidth = availableWidth / columns;
                 var cellHeight = availableHeight / rows;
-                var aspectPenalty = Math.Abs(Math.Log(Math.Max(0.01, cellWidth / Math.Max(1, cellHeight))));
-                var score = emptyCells * 5 + aspectPenalty * 10 + rows * 0.01;
+                var aspectPenalty = Math.Abs(Math.Log(Math.Max(0.01, cellWidth / Math.Max(1, cellHeight) / 0.8)));
+                var score = emptyCells * 2 + aspectPenalty * 10 + rows * 0.01;
                 if (score < bestScore)
                 {
                     bestScore = score;
@@ -48,6 +48,21 @@ namespace XTimelineViewer.Services
                 }
             }
             return best;
+        }
+
+        internal static int GetColumnSpan(int index, int count, int columns)
+            => index == count - 1 && count % columns != 0 ? columns - count % columns + 1 : 1;
+
+        internal static double[] ResizePair(double[] sizes, int boundary, double delta, double minimum)
+        {
+            var result = (double[])sizes.Clone();
+            if (boundary < 0 || boundary + 1 >= sizes.Length) return result;
+            var total = sizes[boundary] + sizes[boundary + 1];
+            if (!double.IsFinite(total) || total <= 0 || !double.IsFinite(delta)) return result;
+            minimum = Math.Min(Math.Max(0, minimum), total / 3);
+            result[boundary] = Math.Clamp(sizes[boundary] + delta, minimum, total - minimum);
+            result[boundary + 1] = total - result[boundary];
+            return result;
         }
 
         /// <summary>

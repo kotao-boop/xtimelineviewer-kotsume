@@ -274,7 +274,7 @@
   <data name="Empty_QuickAdd" xml:space="preserve"><value>Quick add</value></data>
   <data name="Empty_DisabledHint" xml:space="preserve"><value>Add an X account first to use search, posting, and timelines.</value></data>
   <data name="Layout_Tooltip" xml:space="preserve"><value>Change layout</value></data>
-  <data name="Layout_Auto" xml:space="preserve"><value>Auto-arrange (keep current layout)</value></data>
+  <data name="Layout_Auto" xml:space="preserve"><value>Responsive layout (fit window)</value></data>
   <data name="Layout_Auto_Tooltip" xml:space="preserve"><value>Equalize column and row sizes without changing the current layout</value></data>
   <data name="Layout_PagePrevious" xml:space="preserve"><value>Show previous timelines</value></data>
   <data name="Layout_PageNext" xml:space="preserve"><value>Show next timelines</value></data>
@@ -315,7 +315,8 @@
   <data name="Search_PanelTitle" xml:space="preserve"><value>X search results</value></data>
   <data name="Search_PanelHint" xml:space="preserve"><value>You can pin these results as a timeline when needed.</value></data>
   <data name="Workspace_Title" xml:space="preserve"><value>Workspaces</value></data>
-  <data name="Workspace_Description" xml:space="preserve"><value>Save timelines, order, visibility, and layout together.</value></data>
+  <data name="Workspace_Description" xml:space="preserve"><value>Save timelines, order, visibility, and layout together. Changes to the open workspace are saved automatically. Temporary hiding and focus view are not saved.</value></data>
+  <data name="Workspace_SaveFailed" xml:space="preserve"><value>The setup could not be saved, so switching was cancelled. Check free disk space and access permissions.</value></data>
   <data name="Workspace_SaveCurrent" xml:space="preserve"><value>Save current setup</value></data>
   <data name="Workspace_Name" xml:space="preserve"><value>Workspace name</value></data>
   <data name="Workspace_Empty" xml:space="preserve"><value>No saved workspaces yet.</value></data>
@@ -433,4 +434,5 @@
   <data name="Settings_Restore_SuccessTitle" xml:space="preserve"><value>Settings restored</value></data>
   <data name="Settings_Restore_SuccessBody" xml:space="preserve"><value>Restored {0} configuration files and applied them to the app.</value></data>
   <data name="Settings_Restore_ErrorTitle" xml:space="preserve"><value>Couldn't restore the backup</value></data>
+  <data name="Configuration_ReadFailed" xml:space="preserve"><value>Saved data could not be read, so automatic saving is paused. Use Restore from backup in Settings, or check the configuration files and restart the app. The original data has been kept.</value></data>
 </root>

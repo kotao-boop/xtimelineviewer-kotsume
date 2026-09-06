@@ -48,6 +48,7 @@ jobs:
         run: |
           node --check extensions/xtv-translator/content.js
           node --check extensions/xtv-translator/background.js
+          node scripts/test-translator.js
 
       - name: Build native launchers from source
         shell: pwsh

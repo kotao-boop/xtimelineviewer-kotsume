@@ -21,9 +21,14 @@ namespace XTimelineViewer.Views
         internal static void ApplyTitleBarTheme(Window window, ElementTheme theme)
         {
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            var dark = theme == ElementTheme.Dark ? 1
-                     : theme == ElementTheme.Light ? 0
-                     : (Application.Current.RequestedTheme == ApplicationTheme.Dark ? 1 : 0);
+            // Default はアプリ全体の RequestedTheme ではなく、このウィンドウの
+            // ActualTheme を使う。設定ウィンドウなど、ウィンドウ単位でテーマを
+            // 適用したときに別ウィンドウの状態を拾わないようにする。
+            var actual = theme == ElementTheme.Default
+                && window.Content is FrameworkElement root
+                ? root.ActualTheme
+                : theme;
+            var dark = actual == ElementTheme.Dark ? 1 : 0;
             DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, sizeof(int));
         }
 
@@ -81,9 +86,12 @@ namespace XTimelineViewer.Views
         private void ApplySavedTheme()
         {
             var root = (FrameworkElement)Content;
-            ThemePaletteService.ApplyResources(root, _appSettings.Theme, IsHighContrast());
             var theme = ThemePaletteService.GetBaseTheme(_appSettings.Theme);
             root.RequestedTheme = theme;
+            // Light/Dark/custom は設定値から確定し、Default だけはこのウィンドウの
+            // ActualTheme を使う。Application.Current.RequestedTheme へ依存しない。
+            var actualTheme = theme == ElementTheme.Default ? root.ActualTheme : theme;
+            ThemePaletteService.ApplyResources(root, _appSettings.Theme, IsHighContrast(), actualTheme);
             ApplyChromeBrushes(root);
             ApplyTitleBarTheme(this, theme);
             ApplyThemeToWebViews();
@@ -97,6 +105,9 @@ namespace XTimelineViewer.Views
             var border = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppBorderBrush"];
             var accent = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppAccentBrush"];
             var accentText = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppAccentTextBrush"];
+            var text = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppTextBrush"];
+            var secondaryText = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppSecondaryTextBrush"];
+            var hover = (Microsoft.UI.Xaml.Media.Brush)root.Resources["AppHoverBrush"];
             MainRoot.Background = surface;
             ToolbarRoot.Background = chrome;
             ToolbarRoot.BorderBrush = border;
@@ -109,6 +120,29 @@ namespace XTimelineViewer.Views
             HiddenTimelineCountBadge.Background = accent;
             HiddenTimelineCountText.Foreground = accentText;
             UpdateBadgeDot.Fill = accent;
+
+            // アプリの枠だけは X のページ本体と切り離し、同じパレットの文字色を
+            // 明示する。標準コントロールの既定ブラシが直前のテーマを保持しても、
+            // 切替直後に古い色が残らない。
+            ToolbarProfileCombo.Foreground = text;
+            AddTimelineToolbarBtn.Foreground = text;
+            SearchBox.Foreground = text;
+            WorkspaceSectionIcon.Foreground = secondaryText;
+            ExitFocusModeBtn.Foreground = text;
+            DropHintTitle.Foreground = text;
+            DropHintSubtitle.Foreground = secondaryText;
+            EmptyDisabledHint.Foreground = secondaryText;
+            EmptyQuickAddLabel.Foreground = secondaryText;
+            EmptyDropHintText.Foreground = secondaryText;
+            SearchPanelTitle.Foreground = text;
+            SearchPanelHint.Foreground = secondaryText;
+            AutoPageStatusText.Foreground = text;
+            AutoPagePreviousBtn.Foreground = text;
+            AutoPageNextBtn.Foreground = text;
+            // 検索／ツールバーの常駐ボタンは同じ hover 色を使うことで、
+            // カスタムテーマでもライト・ダーク間の残色を防ぐ。
+            SearchPinBtn.Background = hover;
+            SearchCloseBtn.Background = hover;
         }
 
         private void ThemeItem_Click(object sender, RoutedEventArgs _)

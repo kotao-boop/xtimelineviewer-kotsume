@@ -9,7 +9,7 @@ on:
       version:
         description: 'Version to test without publishing (MAJOR.MINOR.PATCH)'
         required: true
-        default: '2.7.1'
+        default: '2.8.0'
 
 permissions:
   contents: read
@@ -92,6 +92,7 @@ jobs:
         run: |
           node --check extensions/xtv-translator/content.js
           node --check extensions/xtv-translator/background.js
+          node scripts/test-translator.js
 
       # EffectivePlatformを明示し、WebView2のネイティブDLLを対象RIDと一致させる。
       - name: Publish app (x64)

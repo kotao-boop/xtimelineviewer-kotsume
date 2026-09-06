@@ -117,7 +117,7 @@ public class ProductivityFeatureStructureTests
         Assert.Contains("usableWidth / visible.Count", mainWindow);
         Assert.DoesNotContain("Math.Clamp(available / visible.Count, 280, 600)", mainWindow);
         Assert.DoesNotContain("AutoArrangeBtn_Click(object sender, RoutedEventArgs e)\n            => SetLayoutFromCommand(\"Auto\")", mainWindow, StringComparison.Ordinal);
-        Assert.Contains("else if (mode == \"Auto\") NormalizeCurrentLayout()", mainWindow, StringComparison.Ordinal);
+        Assert.Contains("SetLayoutFromCommand(mode)", mainWindow, StringComparison.Ordinal);
         var productivity = ReadRepoFile("Views/MainWindow.Productivity.cs");
         Assert.Contains("NormalizeCurrentLayout)", productivity, StringComparison.Ordinal);
     }

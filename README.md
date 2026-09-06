@@ -22,13 +22,14 @@ Microsoft Store版は、Microsoftによる署名と自動更新に対応して�
 ### 🗖 多彩なレイアウトテンプレート（縦横グリッド分割）
 大型モニター（4K、ウルトラワイド）や縦置きモニター、ノートPCなど、あらゆる画面環境に最適な配置をワンクリックで選択できます。
 - **クラシック**: 従来の横スクロール型マルチカラム（ドラッグで幅を自由調整可能）
+- **レスポンシブ配置**: 画面の縦横比と本数に合わせて行・列を調整し、最後の行の空きも使って表示
 - **2 × 2 グリッド（4分割）**: 4つのタイムラインを均等に正方形配置（ホーム、通知、検索、リスト等）
 - **2 × 3 グリッド（6分割）**: ウルトラワイド画面に最適な6画面ダッシュボード
 - **上下 2 分割**: 縦置き（ピボット）モニター向けにタイムラインを上下に2段積み
 - **集中表示**: 選んだタイムラインだけを一時的に大きく表示。終了すると直前の配置へ戻ります
 
 ### ↔ マウスとキーボードによるサイズ変更
-現在の配置で動かせる境界線をマウスでドラッグし、列の幅や行の高さを直感的に調整できます。`Alt + Shift + 矢印キー`でも少しずつ変更でき、調整結果は自動的に保存されます。
+現在の配置で動かせる境界線をマウスでドラッグし、列の幅や行の高さを直感的に調整できます。`Alt + Shift + 矢印キー`でも少しずつ変更でき、調整結果は自動的に保存されます。グリッドの境界は `Tab` で選んで矢印キーでも動かせます。ツールバーの整列ボタンは、選択中の配置を保ったまま大きさをそろえます。
 
 ### 🌐 ツイート自動翻訳機能
 各タイムラインの三点メニューから自動翻訳を切り替えられます。必要な場合は設定で列ヘッダーに地球ボタンを表示できます。Xの画面や投稿を覆わず、海外のツイートをタイムライン上で直接日本語に翻訳して表示します。翻訳は初期状態でOFFです。初回利用時に、投稿本文がGoogleの翻訳用エンドポイントへ送信されることを画面で確認してから有効になります。列の詳細設定から同意をいつでも取り消せます。
@@ -53,12 +54,12 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 [ダウンロード案内](DOWNLOADS.md)から、お好みの形式を確認してご利用いただけます。
 
 > [!WARNING]
-> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.7.1のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
+> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.8.0のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
 
 | 形式 | ファイル名 | 説明 |
 |---|---|---|
-| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.7.1-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
-| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.7.1-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
+| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.8.0-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
+| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.8.0-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
 
 ### Microsoft Store版の状況
 
@@ -134,7 +135,7 @@ Google／AppleでXアカウントを登録した場合も、この画面ではX�
 
 ## Code signing policy
 
-**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.7.1 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
+**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.8.0 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
 
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 

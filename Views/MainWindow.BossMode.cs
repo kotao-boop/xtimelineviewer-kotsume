@@ -45,6 +45,12 @@ public sealed partial class MainWindow
             args.Handled = true;
             return;
         }
+        if (_enlargedPane is not null)
+        {
+            RestorePaneSize();
+            args.Handled = true;
+            return;
+        }
         if (_focusModeActive)
         {
             ExitFocusMode();

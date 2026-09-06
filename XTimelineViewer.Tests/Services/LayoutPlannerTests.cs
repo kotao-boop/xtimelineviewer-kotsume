@@ -48,7 +48,7 @@ public class LayoutPlannerTests
     [Theory]
     [InlineData(3, 1, 3)]
     [InlineData(5, 2, 3)]
-    [InlineData(7, 3, 3)]
+    [InlineData(7, 2, 4)]
     public void GetAutoGrid_WithViewportPacksVisiblePanes(int count, int expectedRows, int expectedColumns)
     {
         var plan = LayoutPlanner.GetAutoGrid(count, 1600, 900);
