@@ -265,6 +265,14 @@ function waitFor(milliseconds = 0) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
+async function waitUntil(predicate, message = 'expected async state', timeoutMs = 5000) {
+    const deadline = Date.now() + timeoutMs;
+    while (!predicate()) {
+        assert.ok(Date.now() < deadline, message);
+        await waitFor(20);
+    }
+}
+
 async function testStaleTranslationIsDiscarded() {
     const pending = [];
     const env = await loadContent({
@@ -273,14 +281,14 @@ async function testStaleTranslationIsDiscarded() {
     });
     const tweet = makeTweet(env.document, 'text A');
     env.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => pending.length === 1);
     assert.equal(pending.length, 1);
     assert.equal(pending[0].request.text, 'text A');
 
     // X が同じ article/text 要素を再利用して本文だけ B に差し替えた状態。
     tweet.textElement.innerText = 'text B';
     env.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => pending.length === 2);
     assert.equal(pending.length, 2);
     assert.equal(pending[1].request.text, 'text B');
 
@@ -310,7 +318,7 @@ async function testFailureCanBeRetriedManually() {
     });
     const tweet = makeTweet(env.document, 'retry me');
     env.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => tweet.article.querySelector('.xtv-manual-btn'));
     let button = tweet.article.querySelector('.xtv-manual-btn');
     assert.ok(button, '自動翻訳OFFでは手動ボタンが表示される');
 
@@ -342,14 +350,14 @@ async function testCacheSeparatesLanguageAndIsBounded() {
     });
     makeTweet(env.document, 'same text');
     env.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => env.document.querySelectorAll('.xtv-trans-body').length === env.document.querySelectorAll('article').length);
     assert.equal(calls.length, 1);
     assert.equal(calls[0].targetLang, 'ja');
 
     // 同じ本文・同じ対象言語はキャッシュから返る。
     makeTweet(env.document, 'same text');
     env.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => env.document.querySelectorAll('.xtv-trans-body').length === env.document.querySelectorAll('article').length);
     assert.equal(calls.length, 1);
 
     // 対象言語が変わると同じ本文でも別キャッシュエントリになる。
@@ -357,7 +365,7 @@ async function testCacheSeparatesLanguageAndIsBounded() {
     env.document.documentElement.setAttribute('data-xtv-translation-language', 'en');
     makeTweet(env.document, 'same text');
     env.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => calls.length === 2);
     assert.equal(calls.length, 2);
     assert.equal(calls[1].targetLang, 'en');
 
@@ -365,12 +373,12 @@ async function testCacheSeparatesLanguageAndIsBounded() {
     const beforeCapacity = calls.length;
     for (let index = 0; index < 129; index++) makeTweet(env.document, `capacity-${index}`);
     env.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => calls.length === beforeCapacity + 129);
     const afterCapacity = calls.length;
     assert.equal(afterCapacity - beforeCapacity, 129);
     makeTweet(env.document, 'capacity-0');
     env.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => calls.length === afterCapacity + 1);
     assert.equal(calls.length, afterCapacity + 1, 'キャッシュ上限を超えた最古の項目は再取得される');
 }
 
@@ -453,7 +461,7 @@ async function testVisibleLanguageAndDeferredRetry() {
     env.observer.trigger();
     await waitFor(200);
     assert.equal(calls.length, 0, 'brief scroll exposure does not trigger a request');
-    await waitFor(400);
+    await waitUntil(() => calls.length === 1);
     assert.equal(calls.length, 1, 'only visible foreign-language posts are automatically translated');
     assert.ok(native.article.querySelector('.xtv-manual-btn'), 'native Japanese avoids automatic requests but permits manual translation');
     assert.equal(calls[0].targetLang, 'ja', 'app language overrides the X page language');
@@ -472,11 +480,11 @@ async function testVisibleLanguageAndDeferredRetry() {
     } });
     const tweet = makeTweet(deferred.document, 'deferred translation');
     deferred.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => tweet.article.querySelector('.xtv-translation-status'));
     assert.match(tweet.article.querySelector('.xtv-translation-status')?.innerText, /通信制限/);
     await waitFor(600);
     assert.equal(attempts, 1, 'no early retry during cooldown');
-    await waitFor(1000);
+    await waitUntil(() => attempts === 2);
     assert.equal(attempts, 2);
     assert.equal(tweet.article.querySelector('.xtv-trans-body')?.innerText, '再開成功');
     assert.equal(tweet.article.querySelector('.xtv-translation-status'), null);
@@ -488,7 +496,7 @@ async function testVisibleLanguageAndDeferredRetry() {
     } });
     const japanese = makeTweet(english.document, 'おはようございます');
     english.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => englishTarget === 'en');
     assert.equal(englishTarget, 'en');
     assert.equal(japanese.article.querySelector('.xtv-trans-body')?.innerText, 'Good morning');
 
@@ -499,7 +507,7 @@ async function testVisibleLanguageAndDeferredRetry() {
     } });
     const waitingTweet = makeTweet(waiting.document, 'leave viewport while waiting');
     waiting.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => waitingCalls === 1);
     assert.equal(waitingCalls, 1);
     waiting.document.hidden = true;
     await waitFor(1600);
@@ -513,7 +521,7 @@ async function testVisibleLanguageAndDeferredRetry() {
     } });
     const failedTweet = makeTweet(failed.document, 'do not automatically retry a permanent failure');
     failed.observer.trigger();
-    await waitFor(600);
+    await waitUntil(() => failedTweet.article.querySelector('.xtv-translation-status'));
     assert.ok(failedTweet.article.querySelector('.xtv-translation-status'));
     assert.ok(failedTweet.article.querySelector('.xtv-manual-btn'));
     failed.observer.trigger();
