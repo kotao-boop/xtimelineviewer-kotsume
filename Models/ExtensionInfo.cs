@@ -6,6 +6,7 @@ namespace XTimelineViewer.Models
         string? IconPath,
         string? OptionsPage,
         string? HomepageUrl,
-        string? ExtensionId
+        string? ExtensionId,
+        bool IsUserAdded = false
     );
 }

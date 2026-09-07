@@ -78,6 +78,7 @@ Partner Centerの正確なIdentityへ置き換えた後は、GitHub Actionsの
 - XをWebView2で表示すること
 - Xの公式クライアントではないこと
 - 翻訳は初期OFFで、同意後に投稿本文をGoogleの翻訳用エンドポイントへ送ること
+- 列の同意設定からGoogle方式を無効化でき、無効中はGoogleへの翻訳通信を行わないこと
 - GitHub Releases APIによる更新確認は未パッケージ版だけであること
 - ローカルのWebView2プロファイル、Cookie、設定、ログの保存と削除方法
 - `runFullTrust`はWinUI 3のデスクトップ画面、ローカルデータ、外部ブラウザー連携に使い、サービスのインストールや認証情報の取得には使わないこと

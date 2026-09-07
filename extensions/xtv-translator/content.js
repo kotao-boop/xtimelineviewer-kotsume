@@ -7,6 +7,9 @@
 
     const translationConsentKey = 'xtv_translation_external_consent_v1';
     const autoTranslateKey = 'xtv_auto_translate';
+    const translationProviderKey = 'xtv_translation_provider_v1';
+    const defaultTranslationProvider = 'google';
+    const supportedTranslationProviders = Object.freeze(['google', 'disabled']);
     const supportedTargetLanguages = Object.freeze(['ja', 'en']);
     const translationCacheLimit = 128;
     const maxTranslationChars = 10000;
@@ -16,6 +19,7 @@
     let retryDeadline = 0;
     let translationConsent = false;
     let autoTranslateEnabled = false;
+    let translationProvider = defaultTranslationProvider;
     let pendingConsent = null;
     let scanTimer = null;
     let scanRequested = false;
@@ -35,6 +39,10 @@
             settingsTitle: '翻訳データ送信の同意設定',
             status: value => value ? '同意済み' : '未同意',
             settingsNote: '同意を取り消すと自動翻訳もOFFになり、次回の翻訳時にもう一度説明を表示します。',
+            providerStatus: value => value ? 'Google方式：有効' : 'Google方式：無効',
+            providerNote: 'Google方式を無効にすると、この拡張機能からGoogleへ投稿本文を送信しません。別の翻訳拡張を使う場合にも利用できます。',
+            disableGoogle: 'Google方式を無効にする',
+            enableGoogle: 'Google方式を有効にする',
             close: '閉じる',
             revoke: '同意を取り消す',
             translating: '翻訳中...',
@@ -42,6 +50,7 @@
             rateLimited: '翻訳先の通信制限で休止中です。時間を空けて再開します。',
             failed: '翻訳できませんでした。通信状態を確認して再試行してください。',
             unavailable: '翻訳機能を利用できません。アプリを再起動してください。',
+            providerDisabled: 'Google方式は無効です。別の翻訳拡張を使うか、設定で有効にしてください。',
             tooLong: '投稿が長すぎるため翻訳できません。',
             retry: '翻訳を再試行',
             hide: '翻訳を非表示',
@@ -62,6 +71,10 @@
             settingsTitle: 'Translation data consent',
             status: value => value ? 'Consent given' : 'No consent',
             settingsNote: 'Withdrawing consent also turns off automatic translation. You will see this explanation again before the next translation.',
+            providerStatus: value => value ? 'Google method: enabled' : 'Google method: disabled',
+            providerNote: 'When the Google method is disabled, this extension does not send post text to Google. You can use another translation extension instead.',
+            disableGoogle: 'Disable Google method',
+            enableGoogle: 'Enable Google method',
             close: 'Close',
             revoke: 'Withdraw consent',
             translating: 'Translating...',
@@ -69,6 +82,7 @@
             rateLimited: 'Translation is rate limited. It will resume after a pause.',
             failed: 'Translation failed. Check your connection and try again.',
             unavailable: 'Translation is unavailable. Please restart the app.',
+            providerDisabled: 'The Google method is disabled. Use another translation extension or enable it in settings.',
             tooLong: 'This post is too long to translate.',
             retry: 'Retry translation',
             hide: 'Hide translation',
@@ -93,21 +107,29 @@
         return typeof chrome === 'undefined' ? null : chrome;
     }
 
+    function normalizeTranslationProvider(value) {
+        return supportedTranslationProviders.includes(value) ? value : defaultTranslationProvider;
+    }
+
     // 同意と自動翻訳の状態は X の localStorage ではなく、拡張機能専用の chrome.storage.local に保存します。
     function readStoredSettings() {
         return new Promise((resolve) => {
             const api = getChrome();
             if (!api?.storage?.local) {
-                resolve({ consent: false, auto: false });
+                resolve({ consent: false, auto: false, provider: defaultTranslationProvider });
                 return;
             }
-            api.storage.local.get([translationConsentKey, autoTranslateKey], (result) => {
+            api.storage.local.get([translationConsentKey, autoTranslateKey, translationProviderKey], (result) => {
                 if (api.runtime?.lastError) {
-                    resolve({ consent: false, auto: false });
+                    resolve({ consent: false, auto: false, provider: defaultTranslationProvider });
                     return;
                 }
                 const consent = result?.[translationConsentKey] === true;
-                resolve({ consent, auto: consent && result?.[autoTranslateKey] === true });
+                resolve({
+                    consent,
+                    auto: consent && result?.[autoTranslateKey] === true,
+                    provider: normalizeTranslationProvider(result?.[translationProviderKey])
+                });
             });
         });
     }
@@ -127,7 +149,9 @@
     }
 
     function publishTranslationState() {
-        document.documentElement.setAttribute('data-xtv-translation-state', autoTranslateEnabled ? 'on' : 'off');
+        document.documentElement.setAttribute(
+            'data-xtv-translation-state',
+            translationProvider === 'google' && autoTranslateEnabled ? 'on' : 'off');
     }
 
     function clearInjectedUi(tweet) {
@@ -154,6 +178,7 @@
     }
 
     function requestTranslationConsent() {
+        if (translationProvider !== 'google') return Promise.resolve(false);
         if (translationConsent) return Promise.resolve(true);
         if (pendingConsent) return pendingConsent;
         const text = ui[getLocale()];
@@ -268,6 +293,7 @@
     async function requestTranslation(text, targetLang = getTargetLanguage()) {
         const cached = cacheGet(targetLang, text);
         if (cached !== undefined) return cached;
+        if (translationProvider !== 'google') return { text: null, lang: '', code: 'provider_disabled' };
         if (!translationConsent) return { text: null, lang: '', code: 'consent' };
         if (typeof text !== 'string' || text.length > maxTranslationChars) {
             return { text: null, lang: '', code: 'input' };
@@ -342,6 +368,8 @@
                 state.pendingManual = state.pendingManual || !autoTranslateEnabled;
                 showStatus(tweet, textEl, result.code === 'busy' ? text.waiting : text.rateLimited);
                 retryScanAt(state.retryAt);
+            } else if (result?.code === 'provider_disabled') {
+                showStatus(tweet, textEl, text.providerDisabled);
             } else {
                 showStatus(tweet, textEl, result?.code === 'input' ? text.tooLong :
                     result?.code === 'unavailable' ? text.unavailable : text.failed);
@@ -392,6 +420,10 @@
 
     async function processTweet(tweet) {
         if (!tweet?.matches?.('article[data-testid="tweet"]')) return;
+        if (translationProvider !== 'google') {
+            clearInjectedUi(tweet);
+            return;
+        }
         const textEl = tweet.querySelector('[data-testid="tweetText"]');
         const state = getState(tweet);
         if (!textEl) {
@@ -465,6 +497,7 @@
     function showConsentSettings() {
         if (document.querySelector('.xtv-consent-overlay')) return;
         const text = ui[getLocale()];
+        const googleEnabled = translationProvider === 'google';
         const overlay = document.createElement('div');
         overlay.className = 'xtv-consent-overlay';
         overlay.setAttribute('role', 'dialog');
@@ -475,13 +508,16 @@
                 <div class="xtv-consent-brand">${text.brand}</div>
                 <h2 id="xtv-settings-title">${text.settingsTitle}</h2>
                 <p>${text.status(translationConsent)}</p>
+                <p>${text.providerStatus(googleEnabled)}</p>
                 <p class="xtv-consent-note">${text.settingsNote}</p>
+                <p class="xtv-consent-note">${text.providerNote}</p>
                 <div class="xtv-consent-links">
                     <a class="xtv-consent-link" href="https://github.com/kotao-boop/xtimelineviewer-kotsume/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">${text.appPrivacy}</a>
                     <a class="xtv-consent-link" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">${text.googlePrivacy}</a>
                 </div>
                 <div class="xtv-consent-actions">
                     <button type="button" class="xtv-consent-cancel">${text.close}</button>
+                    <button type="button" class="xtv-consent-provider">${googleEnabled ? text.disableGoogle : text.enableGoogle}</button>
                     ${translationConsent ? `<button type="button" class="xtv-consent-revoke">${text.revoke}</button>` : ''}
                 </div>
             </div>`;
@@ -491,6 +527,27 @@
             if (event.target === overlay) close();
         });
         overlay.querySelector('.xtv-consent-cancel')?.addEventListener('click', close);
+        overlay.querySelector('.xtv-consent-provider')?.addEventListener('click', async () => {
+            const nextProvider = googleEnabled ? 'disabled' : 'google';
+            try {
+                const changes = {
+                    [translationProviderKey]: nextProvider,
+                    [autoTranslateKey]: false,
+                };
+                // Google方式を無効にした場合は、以前の同意も一緒に取り消す。
+                // 再び有効にしたときに、投稿本文の送信について再確認できるようにする。
+                if (nextProvider === 'disabled') changes[translationConsentKey] = false;
+                await writeStoredSettings(changes);
+                translationProvider = nextProvider;
+                autoTranslateEnabled = false;
+                if (nextProvider === 'disabled') {
+                    translationConsent = false;
+                    translationCache.clear();
+                }
+                close();
+                refreshTranslationUi();
+            } catch (_) { /* 保存に失敗したときは表示状態を変えない */ }
+        });
         overlay.querySelector('.xtv-consent-revoke')?.addEventListener('click', async () => {
             try {
                 await writeStoredSettings({ [translationConsentKey]: false, [autoTranslateKey]: false });
@@ -514,6 +571,10 @@
             return;
         }
         if (command !== 'toggle') return;
+        if (translationProvider !== 'google') {
+            showConsentSettings();
+            return;
+        }
         if (!autoTranslateEnabled && !await requestTranslationConsent()) {
             publishTranslationState();
             return;
@@ -529,10 +590,11 @@
 
     const chromeApi = getChrome();
     chromeApi?.storage?.onChanged?.addListener(async (changes, areaName) => {
-        if (areaName !== 'local' || (!changes[translationConsentKey] && !changes[autoTranslateKey])) return;
+        if (areaName !== 'local' || (!changes[translationConsentKey] && !changes[autoTranslateKey] && !changes[translationProviderKey])) return;
         const settings = await readStoredSettings();
         translationConsent = settings.consent;
         autoTranslateEnabled = settings.auto;
+        translationProvider = settings.provider;
         if (!translationConsent) translationCache.clear();
         refreshTranslationUi();
     });
@@ -545,7 +607,12 @@
         const settings = await readStoredSettings();
         translationConsent = settings.consent;
         autoTranslateEnabled = settings.auto;
+        translationProvider = settings.provider;
         if (!translationConsent) {
+            try { await writeStoredSettings({ [autoTranslateKey]: false }); } catch (_) { }
+        }
+        if (translationProvider !== 'google' && autoTranslateEnabled) {
+            autoTranslateEnabled = false;
             try { await writeStoredSettings({ [autoTranslateKey]: false }); } catch (_) { }
         }
         publishTranslationState();

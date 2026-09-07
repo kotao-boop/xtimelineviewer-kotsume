@@ -14,6 +14,7 @@
 - Microsoft Edgeなど、外部ブラウザーのCookieやログイン状態を読み取ったり取り込んだりはしません。
 - 自動翻訳は初期状態で無効です。有効にする前に、外部送信についてアプリ内で確認します。
 - 翻訳を実行すると、表示中の投稿本文がGoogleの翻訳用エンドポイントへ送信されます。
+- 列の「翻訳データ送信の同意設定」からGoogle方式を無効にできます。無効中は、この拡張機能からGoogleへ翻訳通信を行いません。
 - 設定、タイムライン構成、WebView2のCookie等は、原則として利用者のPC内に保存されます。
 
 ## 1. Xの表示とログイン
@@ -48,9 +49,10 @@ Xのパスワードや本アプリの保存済みCookieを翻訳本文として�
 使用しないでください。
 
 自動翻訳は初期状態で無効です。各タイムラインの列ヘッダーにある地球ボタンでいつでも無効にできます。個別の
-「翻訳を表示」操作も、初回同意後にのみ通信します。同意状態とON/OFF設定は、XのWebページから
-読み書きできない拡張機能専用のローカルストレージに保存されます。画面右上の「同意設定」から、
-外部送信への同意は、列の詳細設定からいつでも取り消せます。取り消すと自動翻訳も無効になり、次回使用時に再確認します。
+「翻訳を表示」操作も、初回同意後にのみ通信します。同意状態、ON/OFF設定、翻訳先の選択は、XのWebページから
+読み書きできない拡張機能専用のローカルストレージに保存されます。列の詳細設定にある「同意設定」から、
+外部送信への同意を取り消したり、Google方式を無効にしたりできます。Google方式を無効にすると自動翻訳も
+停止し、再び有効にしたときは投稿本文の送信についてもう一度確認します。
 
 投稿本文はHTTPSのPOST本文として送信し、URLのクエリ文字列には入れません。本アプリは翻訳結果を
 メモリー内で一時的に再利用しますが、翻訳本文や結果を設定ファイル・ログへ永続保存しません。
@@ -120,8 +122,9 @@ MSIX版は、Windowsのアプリ設定にあるリセットまたはアンイン
 
 The application does not operate a developer-controlled analytics or collection server. X is displayed directly
 through Microsoft Edge WebView2. Translation is disabled by default and requires an in-app disclosure before use.
-When translation is requested, the visible post text is sent to `translate.googleapis.com`. Settings, WebView2
-profiles and logs are stored locally. Unpackaged builds contact the GitHub Releases API to check for
+When translation is requested with the Google method enabled, the visible post text is sent to
+`translate.googleapis.com`. The Google method can be disabled from the per-timeline consent settings;
+while disabled, this extension sends no translation requests to Google. Settings, WebView2 profiles and logs are stored locally. Unpackaged builds contact the GitHub Releases API to check for
 updates. The application intercepts attempts to start Google or Apple authentication from X's sign-in screen
 and instead explains how to sign in with an X password. Only when the user explicitly chooses the password-reset
 option does the application open X's password-reset page in an external browser. The application does not read,

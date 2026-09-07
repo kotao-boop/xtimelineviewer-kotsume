@@ -12,9 +12,10 @@ const backgroundSource = fs.readFileSync(
     'utf8'
 );
 
-function loadBackground({ consent = true, fetchImpl, values = {}, clock = Date }) {
+function loadBackground({ consent = true, provider = 'google', fetchImpl, values = {}, clock = Date }) {
     let listener;
     values.xtv_translation_external_consent_v1 = consent;
+    values.xtv_translation_provider_v1 = provider;
     const chrome = {
         runtime: {
             lastError: null,
@@ -213,7 +214,7 @@ function makeTweet(document, text) {
     return { article, textElement };
 }
 
-async function loadContent({ auto = false, language = 'ja-JP', pageLanguage = language, sendMessage }) {
+async function loadContent({ auto = false, provider = 'google', language = 'ja-JP', pageLanguage = language, sendMessage }) {
     const source = fs.readFileSync(
         path.join(__dirname, '..', 'extensions', 'xtv-translator', 'content.js'),
         'utf8'
@@ -222,7 +223,11 @@ async function loadContent({ auto = false, language = 'ja-JP', pageLanguage = la
     document.documentElement.lang = pageLanguage;
     document.documentElement.setAttribute('data-xtv-translation-language', language);
     const observers = [];
-    const values = { xtv_translation_external_consent_v1: true, xtv_auto_translate: auto };
+    const values = {
+        xtv_translation_external_consent_v1: true,
+        xtv_auto_translate: auto,
+        xtv_translation_provider_v1: provider
+    };
     const chrome = {
         runtime: { lastError: null, sendMessage },
         storage: {
@@ -334,6 +339,24 @@ async function testFailureCanBeRetriedManually() {
     assert.equal(tweet.article.querySelector('.xtv-trans-body')?.innerText, '再試行成功');
 }
 
+async function testGoogleProviderCanBeDisabled() {
+    let calls = 0;
+    const env = await loadContent({
+        provider: 'disabled',
+        auto: true,
+        sendMessage(_request, callback) {
+            calls++;
+            callback({ success: true, translatedText: 'must not be used', detectedLang: 'en' });
+        }
+    });
+    const tweet = makeTweet(env.document, 'Google must stay disabled');
+    env.observer.trigger();
+    await waitFor(100);
+    assert.equal(calls, 0, 'disabled provider does not send translation requests');
+    assert.equal(tweet.article.querySelector('.xtv-manual-btn'), null,
+        'disabled provider does not show a Google translation button');
+}
+
 async function testCacheSeparatesLanguageAndIsBounded() {
     const calls = [];
     const env = await loadContent({
@@ -426,8 +449,9 @@ async function testPacingAndCooldown() {
     assert.equal((await invoke(restarted, request('new post'))).code, 'rate_limited');
     assert.equal(limitedCalls, 1, 'worker restart retains cooldown');
     assert.deepEqual(Object.keys(values).sort(), [
-        'xtv_translation_blocked_until', 'xtv_translation_cooldown_ms', 'xtv_translation_external_consent_v1'
-    ], 'only timing and consent metadata is persisted');
+        'xtv_translation_blocked_until', 'xtv_translation_cooldown_ms',
+        'xtv_translation_external_consent_v1', 'xtv_translation_provider_v1'
+    ], 'only timing, provider, and consent metadata is persisted');
     now = blocked.retryAt;
     await invoke(restarted, request('new post'));
     assert.equal(limitedCalls, 2);
@@ -546,6 +570,15 @@ async function run() {
     assert.equal(noConsentResult.success, false);
     assert.equal(calls, 0, 'background re-checks consent before fetch');
 
+    const disabledProvider = loadBackground({
+        provider: 'disabled',
+        fetchImpl: async () => { calls++; throw new Error('must not fetch'); }
+    });
+    const disabledResult = await invoke(disabledProvider, { action: 'translate', text: 'hello', targetLang: 'en' });
+    assert.equal(disabledResult.success, false);
+    assert.equal(disabledResult.code, 'provider_disabled');
+    assert.equal(calls, 0, 'disabled provider never reaches Google');
+
     const requests = [];
     const allowlist = loadBackground({
         fetchImpl: async (_url, options) => {
@@ -598,6 +631,7 @@ async function run() {
     await testVisibleLanguageAndDeferredRetry();
     await testStaleTranslationIsDiscarded();
     await testFailureCanBeRetriedManually();
+    await testGoogleProviderCanBeDisabled();
     await testCacheSeparatesLanguageAndIsBounded();
 
     const source = fs.readFileSync(path.join(__dirname, '..', 'extensions', 'xtv-translator', 'content.js'), 'utf8');
