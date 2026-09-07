@@ -768,6 +768,40 @@ namespace XTimelineViewer.Views
             string profileId,
             CancellationToken cancellationToken)
         {
+            if (_extensionsLoadedProfiles.Contains(profileId)) return;
+
+            // 初期復元では同じプロファイルのペインを並行して作るため、
+            // それぞれが拡張機能フォルダーを同期・登録すると競合する。
+            // プロファイルごとに一つの Task を共有して、登録処理を直列化する。
+            if (_extensionLoadTasks.TryGetValue(profileId, out var existingTask))
+            {
+                await existingTask;
+                return;
+            }
+
+            var loadTask = LoadExtensionsCoreAsync(core, profileId, cancellationToken);
+            _extensionLoadTasks[profileId] = loadTask;
+            try
+            {
+                await loadTask;
+            }
+            finally
+            {
+                // WebView の破棄などで中断した場合だけ、次のペインで再試行できるようにする。
+                if (!loadTask.IsCompletedSuccessfully &&
+                    _extensionLoadTasks.TryGetValue(profileId, out var currentTask) &&
+                    ReferenceEquals(currentTask, loadTask))
+                {
+                    _extensionLoadTasks.Remove(profileId);
+                }
+            }
+        }
+
+        private async Task LoadExtensionsCoreAsync(
+            CoreWebView2 core,
+            string profileId,
+            CancellationToken cancellationToken)
+        {
             cancellationToken.ThrowIfCancellationRequested();
 
             // 完了済みのプロファイルだけ省略する。完了前に記録すると、

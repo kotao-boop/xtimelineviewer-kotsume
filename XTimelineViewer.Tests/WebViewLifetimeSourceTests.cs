@@ -64,5 +64,31 @@ namespace XTimelineViewer.Tests
             Assert.Contains("if (UiExceptionPolicy.CanContinue(e.Exception))", source);
             Assert.Contains("e.Handled = true", source);
         }
+
+        [Fact]
+        public void PackagedExtensions_DoNotDeleteTheLiveMirror()
+        {
+            var source = Read("Views/MainWindow.xaml.cs");
+
+            // WebView2 が使用中の content.css などを再帰削除すると、
+            // 0x80004005／IOException で拡張機能の読み込みが止まる。
+            Assert.Contains("PackagedExtensionsGate", source);
+            Assert.Contains("PackagedExtensionsMarker", source);
+            Assert.Contains("Directory.Move(localDir, previousDir)", source);
+            Assert.DoesNotContain("Directory.Delete(localDir, recursive: true)", source);
+        }
+
+        [Fact]
+        public void ExtensionLoading_IsSharedPerProfile()
+        {
+            var window = Read("Views/MainWindow.xaml.cs");
+            var webView = Read("Views/MainWindow.WebView2.cs");
+
+            // 同じプロファイルのペインが同時に初期化されても、
+            // フォルダー同期と AddBrowserExtensionAsync を一度だけ行う。
+            Assert.Contains("_extensionLoadTasks", window);
+            Assert.Contains("LoadExtensionsCoreAsync", webView);
+            Assert.Contains("await existingTask", webView);
+        }
     }
 }
