@@ -11,6 +11,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -77,19 +79,176 @@ namespace XTimelineViewer.Views
 
             var localDir = Path.Combine(
                 Windows.Storage.ApplicationData.Current.LocalFolder.Path, "extensions");
-            if (Directory.Exists(sourceDir))
+            if (!Directory.Exists(sourceDir)) return localDir;
+
+            // WebView2 は拡張機能の JavaScript/CSS を読み続けることがあるため、
+            // 毎起動・毎ペインで localDir を削除すると、別の WebView2 が使用中の
+            // ファイル（特に content.css）を消せず IOException になる。
+            // パッケージの内容を指紋付きのマーカーで一度だけ同期し、同じ内容なら
+            // 既存ファイルへ触れない。更新時は一時フォルダーを作り、現在のミラーを
+            // 退避してから入れ替える。使用中のフォルダーを再帰削除しないので、
+            // WebView2のファイルロックで途中まで消えることもない。
+            lock (PackagedExtensionsGate)
             {
-                // Store/MSIX版は、利用者が追加した動的コードを読み込まない。
-                // 毎起動時にパッケージ内の既知の拡張だけでミラーを作り直し、古い/不明なファイルを残さない。
-                if (Directory.Exists(localDir)) Directory.Delete(localDir, recursive: true);
-                Directory.CreateDirectory(localDir);
-                foreach (var src in Directory.GetDirectories(sourceDir))
-                {
-                    var dst = Path.Combine(localDir, Path.GetFileName(src));
-                    CopyDirectory(src, dst);
-                }
+                PreparePackagedExtensions(sourceDir, localDir);
             }
             return localDir;
+        }
+
+        private const string PackagedExtensionsMarker = ".xtv-bundle-fingerprint";
+        private static readonly object PackagedExtensionsGate = new();
+        private static string? _preparedPackagedExtensionsFingerprint;
+
+        private static void PreparePackagedExtensions(string sourceDir, string localDir)
+        {
+            string fingerprint;
+            try
+            {
+                fingerprint = ComputeExtensionsFingerprint(sourceDir);
+            }
+            catch (Exception ex)
+            {
+                // パッケージ内のファイルを読めない場合でも、既存のミラーがあれば
+                // それを使って起動を続ける。次回起動時にもう一度同期を試す。
+                Debug.WriteLine($"[Extensions] Could not fingerprint packaged extensions: {ex.Message}");
+                AppLog.Debug($"Packaged extension fingerprint failed: {ex.Message}");
+                return;
+            }
+
+            if (string.Equals(_preparedPackagedExtensionsFingerprint, fingerprint,
+                              StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var markerPath = Path.Combine(localDir, PackagedExtensionsMarker);
+            if (IsPackagedExtensionsReady(sourceDir, localDir, markerPath, fingerprint))
+            {
+                _preparedPackagedExtensionsFingerprint = fingerprint;
+                return;
+            }
+
+            var stagingDir = localDir + ".staging-" + Guid.NewGuid().ToString("N");
+            string? previousDir = null;
+            try
+            {
+                Directory.CreateDirectory(stagingDir);
+                foreach (var src in Directory.GetDirectories(sourceDir))
+                {
+                    if ((File.GetAttributes(src) & System.IO.FileAttributes.ReparsePoint) != 0) continue;
+                    CopyDirectory(src, Path.Combine(stagingDir, Path.GetFileName(src)));
+                }
+
+                // マーカーを先に書く。入れ替えが完了したフォルダーだけが「準備済み」と
+                // 判定されるので、途中で終了しても次回に再構築できる。
+                File.WriteAllText(
+                    Path.Combine(stagingDir, PackagedExtensionsMarker),
+                    fingerprint,
+                    Encoding.UTF8);
+
+                if (Directory.Exists(localDir))
+                {
+                    previousDir = localDir + ".previous-" + Guid.NewGuid().ToString("N");
+                    try
+                    {
+                        // Directory.Move は失敗しても元のミラーを変更しない。
+                        // 再帰削除のように、ロックされたファイルの手前まで消すことがない。
+                        Directory.Move(localDir, previousDir);
+                    }
+                    catch (IOException ex)
+                    {
+                        // 前の WebView2 がまだ拡張機能を使っている場合がある。
+                        // そのときは古いミラーを残して起動し、次回起動で更新を再試行する。
+                        Debug.WriteLine($"[Extensions] Existing packaged mirror is in use: {ex.Message}");
+                        AppLog.Debug($"Packaged extension mirror update deferred because it is in use: {ex.Message}");
+                        previousDir = null;
+                        return;
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Debug.WriteLine($"[Extensions] Existing packaged mirror is not writable: {ex.Message}");
+                        AppLog.Debug($"Packaged extension mirror update deferred because it is not writable: {ex.Message}");
+                        previousDir = null;
+                        return;
+                    }
+                }
+
+                try
+                {
+                    Directory.Move(stagingDir, localDir);
+                }
+                catch
+                {
+                    // 新しいミラーの配置に失敗した場合は、退避した古いミラーを元の
+                    // 名前へ戻して、次回起動でも拡張機能を使えるようにする。
+                    if (previousDir is not null && Directory.Exists(previousDir) && !Directory.Exists(localDir))
+                    {
+                        try { Directory.Move(previousDir, localDir); }
+                        catch { }
+                    }
+                    throw;
+                }
+                _preparedPackagedExtensionsFingerprint = fingerprint;
+            }
+            catch (Exception ex)
+            {
+                // 拡張機能の更新失敗でタイムライン全体を止めない。既存ミラーが有効なら
+                // LoadExtensionsAsync がそれを読み込み、無ければ拡張なしで続行する。
+                Debug.WriteLine($"[Extensions] Could not prepare packaged extensions: {ex}");
+                AppLog.Debug($"Packaged extension preparation failed: {ex.Message}");
+            }
+            finally
+            {
+                // 入れ替えに成功した場合は stagingDir がもう存在しない。
+                try
+                {
+                    if (Directory.Exists(stagingDir)) Directory.Delete(stagingDir, recursive: true);
+                }
+                catch { }
+            }
+        }
+
+        private static bool IsPackagedExtensionsReady(
+            string sourceDir,
+            string localDir,
+            string markerPath,
+            string fingerprint)
+        {
+            try
+            {
+                if (!Directory.Exists(localDir) || !File.Exists(markerPath)) return false;
+                if (!string.Equals(File.ReadAllText(markerPath).Trim(), fingerprint,
+                                   StringComparison.OrdinalIgnoreCase)) return false;
+
+                // マーカーだけが残った壊れたミラーを「準備済み」と扱わない。
+                foreach (var sourceExtension in Directory.GetDirectories(sourceDir))
+                {
+                    if ((File.GetAttributes(sourceExtension) & System.IO.FileAttributes.ReparsePoint) != 0) continue;
+                    var manifest = Path.Combine(localDir, Path.GetFileName(sourceExtension), "manifest.json");
+                    if (!File.Exists(manifest)) return false;
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string ComputeExtensionsFingerprint(string sourceDir)
+        {
+            using var data = new MemoryStream();
+            foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories)
+                         .Where(path => (File.GetAttributes(path) & System.IO.FileAttributes.ReparsePoint) == 0)
+                         .OrderBy(path => Path.GetRelativePath(sourceDir, path), StringComparer.OrdinalIgnoreCase))
+            {
+                var relative = Path.GetRelativePath(sourceDir, file).Replace('\\', '/');
+                var nameBytes = Encoding.UTF8.GetBytes(relative);
+                data.Write(nameBytes, 0, nameBytes.Length);
+                data.WriteByte(0);
+                using var input = File.OpenRead(file);
+                input.CopyTo(data);
+                data.WriteByte(0);
+            }
+            return Convert.ToHexString(SHA256.HashData(data.ToArray()));
         }
 
         private static void CopyDirectory(string src, string dst)
@@ -144,6 +303,7 @@ namespace XTimelineViewer.Views
         // WebView2 の拡張機能はプロファイルごとに保存されるため、
         // 「アプリ全体で一度だけ」ではなく、各プロファイルで一度だけ初期化する。
         private readonly HashSet<string> _extensionsLoadedProfiles = [];
+        private readonly Dictionary<string, Task> _extensionLoadTasks = [];
         private readonly List<ExtensionInfo> _loadedExtensions = [];
         // 環境そのものではなく「生成中の Task」をキャッシュする（#339）。
         // TryGetValue と await の間に隙間があると、同一プロファイルのペインを並行復元した
