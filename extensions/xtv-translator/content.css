@@ -205,3 +205,14 @@
         width: 100%;
     }
 }
+
+.xtv-translation-status {
+    margin: 6px 0;
+    padding: 6px 10px;
+    border-left: 3px solid #b8860b;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: inherit;
+    background: rgba(184, 134, 11, 0.12);
+}

@@ -12,9 +12,9 @@ const backgroundSource = fs.readFileSync(
     'utf8'
 );
 
-function loadBackground({ consent = true, fetchImpl }) {
+function loadBackground({ consent = true, fetchImpl, values = {}, clock = Date }) {
     let listener;
-    const values = { xtv_translation_external_consent_v1: consent };
+    values.xtv_translation_external_consent_v1 = consent;
     const chrome = {
         runtime: {
             lastError: null,
@@ -26,13 +26,15 @@ function loadBackground({ consent = true, fetchImpl }) {
                     const result = {};
                     for (const key of keys) result[key] = values[key];
                     callback(result);
-                }
+                },
+                set(changes, callback) { Object.assign(values, changes); callback?.(); }
             }
         }
     };
     const context = {
         chrome,
         fetch: fetchImpl,
+        Date: clock,
         URL,
         URLSearchParams,
         AbortController,
@@ -48,7 +50,7 @@ function loadBackground({ consent = true, fetchImpl }) {
 function invoke(listener, request, sender = { url: 'https://x.com/home' }) {
     return new Promise((resolve) => {
         const result = listener(request, sender, resolve);
-        assert.equal(result, request.action === 'translate' ? true : false);
+        assert.equal(typeof result, 'boolean');
     });
 }
 
@@ -132,6 +134,7 @@ class MockElement {
         this.attributes.set(name, String(value));
         if (name === 'class') this.className = String(value);
     }
+    removeAttribute(name) { this.attributes.delete(name); }
     getAttribute(name) { return this.attributes.get(name) ?? null; }
     focus() {}
 
@@ -210,13 +213,14 @@ function makeTweet(document, text) {
     return { article, textElement };
 }
 
-async function loadContent({ auto = false, language = 'ja-JP', sendMessage }) {
+async function loadContent({ auto = false, language = 'ja-JP', pageLanguage = language, sendMessage }) {
     const source = fs.readFileSync(
         path.join(__dirname, '..', 'extensions', 'xtv-translator', 'content.js'),
         'utf8'
     );
     const document = new MockDocument();
-    document.documentElement.lang = language;
+    document.documentElement.lang = pageLanguage;
+    document.documentElement.setAttribute('data-xtv-translation-language', language);
     const observers = [];
     const values = { xtv_translation_external_consent_v1: true, xtv_auto_translate: auto };
     const chrome = {
@@ -235,7 +239,8 @@ async function loadContent({ auto = false, language = 'ja-JP', sendMessage }) {
         disconnect() {}
         trigger() { this.callback([]); }
     }
-    const window = { navigator: { language }, _xtvTranslatorLoaded: false };
+    const window = new MockElement('window');
+    Object.assign(window, { navigator: { language }, _xtvTranslatorLoaded: false, innerHeight: 800, innerWidth: 1200 });
     window.window = window;
     // テストでは翻訳応答を必ず返すため、10 秒の製品タイムアウトが Node プロセスを保持しないよう短絡する。
     const contentSetTimeout = (callback, delay) =>
@@ -253,7 +258,7 @@ async function loadContent({ auto = false, language = 'ja-JP', sendMessage }) {
     vm.runInNewContext(source, context, { filename: 'content.js' });
     await waitFor(5);
     assert.equal(observers.length, 1, 'content script installs a MutationObserver');
-    return { document, chrome, observer: observers[0] };
+    return { document, window, chrome, values, observer: observers[0] };
 }
 
 function waitFor(milliseconds = 0) {
@@ -268,14 +273,14 @@ async function testStaleTranslationIsDiscarded() {
     });
     const tweet = makeTweet(env.document, 'text A');
     env.observer.trigger();
-    await waitFor(140);
+    await waitFor(600);
     assert.equal(pending.length, 1);
     assert.equal(pending[0].request.text, 'text A');
 
     // X が同じ article/text 要素を再利用して本文だけ B に差し替えた状態。
     tweet.textElement.innerText = 'text B';
     env.observer.trigger();
-    await waitFor(140);
+    await waitFor(600);
     assert.equal(pending.length, 2);
     assert.equal(pending[1].request.text, 'text B');
 
@@ -305,7 +310,7 @@ async function testFailureCanBeRetriedManually() {
     });
     const tweet = makeTweet(env.document, 'retry me');
     env.observer.trigger();
-    await waitFor(140);
+    await waitFor(600);
     let button = tweet.article.querySelector('.xtv-manual-btn');
     assert.ok(button, '自動翻訳OFFでは手動ボタンが表示される');
 
@@ -337,21 +342,22 @@ async function testCacheSeparatesLanguageAndIsBounded() {
     });
     makeTweet(env.document, 'same text');
     env.observer.trigger();
-    await waitFor(140);
+    await waitFor(600);
     assert.equal(calls.length, 1);
     assert.equal(calls[0].targetLang, 'ja');
 
     // 同じ本文・同じ対象言語はキャッシュから返る。
     makeTweet(env.document, 'same text');
     env.observer.trigger();
-    await waitFor(140);
+    await waitFor(600);
     assert.equal(calls.length, 1);
 
     // 対象言語が変わると同じ本文でも別キャッシュエントリになる。
-    env.document.documentElement.lang = 'en-US';
+    env.document.querySelectorAll('article').forEach(article => article.remove());
+    env.document.documentElement.setAttribute('data-xtv-translation-language', 'en');
     makeTweet(env.document, 'same text');
     env.observer.trigger();
-    await waitFor(140);
+    await waitFor(600);
     assert.equal(calls.length, 2);
     assert.equal(calls[1].targetLang, 'en');
 
@@ -359,13 +365,160 @@ async function testCacheSeparatesLanguageAndIsBounded() {
     const beforeCapacity = calls.length;
     for (let index = 0; index < 129; index++) makeTweet(env.document, `capacity-${index}`);
     env.observer.trigger();
-    await waitFor(160);
+    await waitFor(600);
     const afterCapacity = calls.length;
     assert.equal(afterCapacity - beforeCapacity, 129);
     makeTweet(env.document, 'capacity-0');
     env.observer.trigger();
-    await waitFor(140);
+    await waitFor(600);
     assert.equal(calls.length, afterCapacity + 1, 'キャッシュ上限を超えた最古の項目は再取得される');
+}
+
+async function testPacingAndCooldown() {
+    let now = 1000000;
+    const clock = { now: () => now, parse: Date.parse };
+    const request = text => ({ action: 'translate', text, targetLang: 'ja' });
+    const success = { ok: true, status: 200, json: async () => [[['訳文', 'source']], null, 'en'] };
+    let calls = 0;
+    let complete;
+    const worker = loadBackground({ clock, fetchImpl: () => {
+        calls++;
+        return new Promise(resolve => { complete = resolve; });
+    } });
+    const first = invoke(worker, request('same'));
+    const duplicate = invoke(worker, request('same'));
+    await waitFor();
+    assert.equal(calls, 1, 'simultaneous duplicate text shares one fetch');
+    assert.equal((await invoke(worker, request('other'))).code, 'busy');
+    complete(success);
+    assert.equal((await first).translatedText, '訳文');
+    assert.equal((await duplicate).success, true);
+    assert.equal((await invoke(worker, request('same'))).success, true, 'successful results are cached');
+    assert.equal((await invoke(worker, request('other'))).code, 'busy', 'completion enforces spacing');
+    assert.equal(calls, 1);
+    now += 1500;
+    const next = invoke(worker, request('other'));
+    await waitFor();
+    complete(success);
+    await next;
+    assert.equal(calls, 2);
+
+    const values = {};
+    let limitedCalls = 0;
+    const limitedFetch = async () => {
+        limitedCalls++;
+        return { ok: false, status: 429, headers: { get: () => '120' } };
+    };
+    const limited = loadBackground({ clock, values, fetchImpl: limitedFetch });
+    const blocked = await invoke(limited, request('first'));
+    assert.equal(blocked.code, 'rate_limited');
+    assert.equal(blocked.retryAt, now + 120000, 'Retry-After is respected');
+    assert.equal(limitedCalls, 1, '429 is never immediately retried');
+    const restarted = loadBackground({ clock, values, fetchImpl: limitedFetch });
+    assert.equal((await invoke(restarted, request('new post'))).code, 'rate_limited');
+    assert.equal(limitedCalls, 1, 'worker restart retains cooldown');
+    assert.deepEqual(Object.keys(values).sort(), [
+        'xtv_translation_blocked_until', 'xtv_translation_cooldown_ms', 'xtv_translation_external_consent_v1'
+    ], 'only timing and consent metadata is persisted');
+    now = blocked.retryAt;
+    await invoke(restarted, request('new post'));
+    assert.equal(limitedCalls, 2);
+    assert.equal(values.xtv_translation_cooldown_ms, 120000, 'backoff survives worker restart');
+
+    const empty = loadBackground({ clock, fetchImpl: async () => ({ ...success, json: async () => [[], null, 'en'] }) });
+    assert.equal((await invoke(empty, request('empty'))).code, 'response');
+
+    const consentValues = {};
+    let revokedCalls = 0;
+    const revoked = loadBackground({ clock, values: consentValues, fetchImpl: async () => {
+        revokedCalls++;
+        consentValues.xtv_translation_external_consent_v1 = false;
+        return success;
+    } });
+    assert.equal((await invoke(revoked, request('revoked while fetching'))).code, 'consent');
+    assert.equal((await invoke(revoked, request('next post'))).code, 'consent');
+    assert.equal(revokedCalls, 1, 'revoked consent suppresses result delivery and further requests');
+}
+
+async function testVisibleLanguageAndDeferredRetry() {
+    const calls = [];
+    const env = await loadContent({ auto: true, language: 'ja', pageLanguage: 'en-US', sendMessage(request, callback) {
+        calls.push(request);
+        callback({ success: true, translatedText: '翻訳結果', detectedLang: 'ja' });
+    } });
+    const visible = makeTweet(env.document, 'English text 日本語を含む');
+    const native = makeTweet(env.document, '今日は良い天気です。');
+    const offscreen = makeTweet(env.document, 'outside viewport');
+    offscreen.article.getBoundingClientRect = () => ({ width: 200, height: 100, top: 900, bottom: 1000, left: 0, right: 200 });
+    env.observer.trigger();
+    await waitFor(200);
+    assert.equal(calls.length, 0, 'brief scroll exposure does not trigger a request');
+    await waitFor(400);
+    assert.equal(calls.length, 1, 'only visible foreign-language posts are automatically translated');
+    assert.ok(native.article.querySelector('.xtv-manual-btn'), 'native Japanese avoids automatic requests but permits manual translation');
+    assert.equal(calls[0].targetLang, 'ja', 'app language overrides the X page language');
+    assert.ok(visible.article.querySelector('.xtv-trans-body'), 'mixed text is shown even when detected language matches target');
+    offscreen.article.getBoundingClientRect = () => ({ width: 200, height: 100, top: 100, bottom: 200, left: 0, right: 200 });
+    env.window.dispatchEvent({ type: 'scroll' });
+    await waitFor(600);
+    assert.equal(calls.length, 2, 'entering viewport resumes scanning');
+
+    let attempts = 0;
+    const deferred = await loadContent({ auto: true, sendMessage(_request, callback) {
+        attempts++;
+        callback(attempts === 1
+            ? { success: false, code: 'rate_limited', retryAt: Date.now() + 1500 }
+            : { success: true, translatedText: '再開成功', detectedLang: 'en' });
+    } });
+    const tweet = makeTweet(deferred.document, 'deferred translation');
+    deferred.observer.trigger();
+    await waitFor(600);
+    assert.match(tweet.article.querySelector('.xtv-translation-status')?.innerText, /通信制限/);
+    await waitFor(600);
+    assert.equal(attempts, 1, 'no early retry during cooldown');
+    await waitFor(1000);
+    assert.equal(attempts, 2);
+    assert.equal(tweet.article.querySelector('.xtv-trans-body')?.innerText, '再開成功');
+    assert.equal(tweet.article.querySelector('.xtv-translation-status'), null);
+
+    let englishTarget;
+    const english = await loadContent({ auto: true, language: 'en', sendMessage(request, callback) {
+        englishTarget = request.targetLang;
+        callback({ success: true, translatedText: 'Good morning', detectedLang: 'ja' });
+    } });
+    const japanese = makeTweet(english.document, 'おはようございます');
+    english.observer.trigger();
+    await waitFor(600);
+    assert.equal(englishTarget, 'en');
+    assert.equal(japanese.article.querySelector('.xtv-trans-body')?.innerText, 'Good morning');
+
+    let waitingCalls = 0;
+    const waiting = await loadContent({ auto: true, sendMessage(_request, callback) {
+        waitingCalls++;
+        callback({ success: false, code: 'busy', retryAt: Date.now() + 1500 });
+    } });
+    const waitingTweet = makeTweet(waiting.document, 'leave viewport while waiting');
+    waiting.observer.trigger();
+    await waitFor(600);
+    assert.equal(waitingCalls, 1);
+    waiting.document.hidden = true;
+    await waitFor(1600);
+    assert.equal(waitingCalls, 1, 'hidden columns do not send queued requests');
+    assert.ok(waitingTweet.article.querySelector('.xtv-translation-status'));
+
+    let failureCalls = 0;
+    const failed = await loadContent({ auto: true, sendMessage(_request, callback) {
+        failureCalls++;
+        callback({ success: false, code: 'http', error: 'HTTP 403' });
+    } });
+    const failedTweet = makeTweet(failed.document, 'do not automatically retry a permanent failure');
+    failed.observer.trigger();
+    await waitFor(600);
+    assert.ok(failedTweet.article.querySelector('.xtv-translation-status'));
+    assert.ok(failedTweet.article.querySelector('.xtv-manual-btn'));
+    failed.observer.trigger();
+    await waitFor(600);
+    assert.equal(failureCalls, 1, 'failed posts require explicit retry instead of a mutation-driven loop');
 }
 
 async function run() {
@@ -389,7 +542,7 @@ async function run() {
     const allowlist = loadBackground({
         fetchImpl: async (_url, options) => {
             requests.push(new URLSearchParams(options.body));
-            return { ok: true, status: 200, json: async () => [['こんにちは', 'hello'], null, 'en'] };
+            return { ok: true, status: 200, json: async () => [[['こんにちは', 'hello']], null, 'en'] };
         }
     });
     const allowlistResult = await invoke(allowlist, { action: 'translate', text: 'hello', targetLang: 'fr' });
@@ -402,7 +555,7 @@ async function run() {
         fetchImpl: async () => {
             retryCalls++;
             if (retryCalls === 1) throw new Error('temporary network failure');
-            return { ok: true, status: 200, json: async () => [['こんにちは', 'hello'], null, 'en'] };
+            return { ok: true, status: 200, json: async () => [[['こんにちは', 'hello']], null, 'en'] };
         }
     });
     const retryResult = await invoke(retry, { action: 'translate', text: 'hello', targetLang: 'en' });
@@ -414,7 +567,7 @@ async function run() {
         fetchImpl: async () => {
             statusCalls++;
             if (statusCalls === 1) return { ok: false, status: 503, json: async () => ({}) };
-            return { ok: true, status: 200, json: async () => [['こんにちは', 'hello'], null, 'en'] };
+            return { ok: true, status: 200, json: async () => [[['こんにちは', 'hello']], null, 'en'] };
         }
     });
     const statusResult = await invoke(statusRetry, { action: 'translate', text: 'hello', targetLang: 'en' });
@@ -433,6 +586,8 @@ async function run() {
     assert.match(finalResult.error, /400/);
     assert.equal(finalCalls, 1, 'non-retryable HTTP failures are not retried');
 
+    await testPacingAndCooldown();
+    await testVisibleLanguageAndDeferredRetry();
     await testStaleTranslationIsDiscarded();
     await testFailureCanBeRetriedManually();
     await testCacheSeparatesLanguageAndIsBounded();
