@@ -72,32 +72,112 @@ namespace XTimelineViewer.Views
             return newPath;
         }
 
-        internal static string GetExtensionsDir()
+        /// <summary>
+        /// 利用者が追加する拡張機能の保存先。GitHub版とStore版で同じ設定画面を
+        /// 使えるようにし、パッケージ内のファイルとは別に管理する。
+        /// </summary>
+        internal static string GetExtensionsDir() => GetUserExtensionsDir();
+
+        private static string GetUserExtensionsDir()
+        {
+            if (!PackageContext.IsPackaged)
+            {
+                return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "XTimelineViewer", "extensions");
+            }
+
+            return Path.Combine(
+                Windows.Storage.ApplicationData.Current.LocalFolder.Path,
+                "extensions", "user");
+        }
+
+        private static string GetBundledExtensionsDir()
         {
             var sourceDir = Path.Combine(AppContext.BaseDirectory, "extensions");
             if (!PackageContext.IsPackaged) return sourceDir;
 
-            var localDir = Path.Combine(
+            var localRoot = Path.Combine(
                 Windows.Storage.ApplicationData.Current.LocalFolder.Path, "extensions");
-            if (!Directory.Exists(sourceDir)) return localDir;
+            var bundledDir = Path.Combine(localRoot, "bundled");
+            var userDir = GetUserExtensionsDir();
 
-            // WebView2 は拡張機能の JavaScript/CSS を読み続けることがあるため、
-            // 毎起動・毎ペインで localDir を削除すると、別の WebView2 が使用中の
-            // ファイル（特に content.css）を消せず IOException になる。
-            // パッケージの内容を指紋付きのマーカーで一度だけ同期し、同じ内容なら
-            // 既存ファイルへ触れない。更新時は一時フォルダーを作り、現在のミラーを
-            // 退避してから入れ替える。使用中のフォルダーを再帰削除しないので、
-            // WebView2のファイルロックで途中まで消えることもない。
-            lock (PackagedExtensionsGate)
+            if (Directory.Exists(sourceDir))
             {
-                PreparePackagedExtensions(sourceDir, localDir);
+                // WebView2 は拡張機能の JavaScript/CSS を読み続けることがあるため、
+                // 同梱拡張のミラーだけを指紋付きで入れ替える。利用者が追加した
+                // user フォルダーには触れないので、content.css のロックで利用者の
+                // 拡張機能まで消えることがない。
+                lock (PackagedExtensionsGate)
+                {
+                    MigrateLegacyPackagedExtensions(sourceDir, localRoot, userDir);
+                    PreparePackagedExtensions(sourceDir, bundledDir);
+                }
             }
-            return localDir;
+            return bundledDir;
+        }
+
+        /// <summary>同梱拡張を先に、利用者追加拡張を後に登録する。</summary>
+        internal static IReadOnlyList<string> GetExtensionRoots()
+        {
+            var bundledDir = GetBundledExtensionsDir();
+            var userDir = GetUserExtensionsDir();
+            if (string.Equals(bundledDir, userDir, StringComparison.OrdinalIgnoreCase))
+                return [bundledDir];
+            return [bundledDir, userDir];
         }
 
         private const string PackagedExtensionsMarker = ".xtv-bundle-fingerprint";
+        private const string PackagedBundledDirectoryName = "bundled";
+        private const string PackagedUserDirectoryName = "user";
         private static readonly object PackagedExtensionsGate = new();
         private static string? _preparedPackagedExtensionsFingerprint;
+        private static bool _legacyPackagedExtensionsMigrated;
+
+        private static void MigrateLegacyPackagedExtensions(
+            string sourceDir,
+            string localRoot,
+            string userDir)
+        {
+            if (_legacyPackagedExtensionsMigrated || !Directory.Exists(localRoot)) return;
+            _legacyPackagedExtensionsMigrated = true;
+
+            try
+            {
+                var bundledNames = Directory.Exists(sourceDir)
+                    ? Directory.GetDirectories(sourceDir)
+                        .Select(path => Path.GetFileName(path))
+                        .Where(name => !string.IsNullOrWhiteSpace(name))
+                        .Select(name => name!)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase)
+                    : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var legacyDir in Directory.GetDirectories(localRoot))
+                {
+                    var name = Path.GetFileName(legacyDir);
+                    if (string.IsNullOrWhiteSpace(name) ||
+                        string.Equals(name, PackagedBundledDirectoryName, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(name, PackagedUserDirectoryName, StringComparison.OrdinalIgnoreCase) ||
+                        name.StartsWith(".xtv-", StringComparison.OrdinalIgnoreCase) ||
+                        name.Contains(".staging-", StringComparison.OrdinalIgnoreCase) ||
+                        name.Contains(".previous-", StringComparison.OrdinalIgnoreCase) ||
+                        bundledNames.Contains(name))
+                        continue;
+
+                    var destination = Path.Combine(userDir, name);
+                    if (Directory.Exists(destination)) continue;
+                    Directory.CreateDirectory(userDir);
+                    CopyDirectory(legacyDir, destination);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 移行失敗でタイムラインを止めず、次回起動でも再試行できるようにする。
+                _legacyPackagedExtensionsMigrated = false;
+                Debug.WriteLine($"[Extensions] Could not migrate legacy user extensions: {ex}");
+                AppLog.Debug($"Legacy user extension migration failed: {ex.Message}");
+            }
+        }
 
         private static void PreparePackagedExtensions(string sourceDir, string localDir)
         {

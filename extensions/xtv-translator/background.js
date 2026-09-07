@@ -3,6 +3,11 @@
 // 同意状態は X の localStorage ではなく、拡張機能専用の chrome.storage に保存します。
 
 const translationConsentKey = 'xtv_translation_external_consent_v1';
+// 翻訳先の選択。現時点では Google と無効化を扱い、将来のローカル翻訳先を
+// 同じ設定へ追加できるように値を固定する。
+const translationProviderKey = 'xtv_translation_provider_v1';
+const defaultTranslationProvider = 'google';
+const supportedTranslationProviders = Object.freeze(['google', 'disabled']);
 const maxTranslationChars = 10000;
 const supportedTargetLanguages = Object.freeze(['ja', 'en']);
 const defaultTargetLanguage = 'ja';
@@ -11,6 +16,10 @@ const retryDelayMs = 1500;
 
 function normalizeTargetLanguage(value) {
     return supportedTargetLanguages.includes(value) ? value : defaultTargetLanguage;
+}
+
+function normalizeTranslationProvider(value) {
+    return supportedTranslationProviders.includes(value) ? value : defaultTranslationProvider;
 }
 
 function shouldRetryTranslation(error, response) {
@@ -30,6 +39,18 @@ function getStoredConsent() {
                 return;
             }
             resolve(result[translationConsentKey] === true);
+        });
+    });
+}
+
+function getStoredTranslationProvider() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get([translationProviderKey], (result) => {
+            if (chrome.runtime.lastError) {
+                resolve(defaultTranslationProvider);
+                return;
+            }
+            resolve(normalizeTranslationProvider(result?.[translationProviderKey]));
         });
     });
 }
@@ -82,6 +103,9 @@ function remember(key, value) {
 }
 
 async function translate(text, targetLang) {
+    if (await getStoredTranslationProvider() !== 'google') {
+        return failure('provider_disabled', 'Google translation is disabled.');
+    }
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
@@ -141,6 +165,9 @@ async function translate(text, targetLang) {
 
 async function dispatchTranslation(request) {
     await cooldownReady;
+    if (await getStoredTranslationProvider() !== 'google') {
+        return failure('provider_disabled', 'Google translation is disabled.');
+    }
     if (!await getStoredConsent()) return failure('consent', 'Translation consent is not active.');
     const text = typeof request.text === 'string' ? request.text.trim() : '';
     if (!text || text.length > maxTranslationChars) return failure('input', 'Translation text is empty or too long.');
@@ -168,7 +195,7 @@ async function dispatchTranslation(request) {
 }
 
 chrome.storage.onChanged?.addListener((changes, area) => {
-    if (area === 'local' && changes[translationConsentKey]) {
+    if (area === 'local' && (changes[translationConsentKey] || changes[translationProviderKey])) {
         resultCache.clear();
         cacheChars = 0;
     }

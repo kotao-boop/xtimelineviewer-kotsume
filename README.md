@@ -32,10 +32,10 @@ Microsoft Store版は、Microsoftによる署名と自動更新に対応して�
 現在の配置で動かせる境界線をマウスでドラッグし、列の幅や行の高さを直感的に調整できます。`Alt + Shift + 矢印キー`でも少しずつ変更でき、調整結果は自動的に保存されます。グリッドの境界は `Tab` で選んで矢印キーでも動かせます。ツールバーの整列ボタンは、選択中の配置を保ったまま大きさをそろえます。
 
 ### 🌐 ツイート自動翻訳機能
-各タイムラインの三点メニューから自動翻訳を切り替えられます。必要な場合は設定で列ヘッダーに地球ボタンを表示できます。Xの画面や投稿を覆わず、海外のツイートをタイムライン上で直接日本語に翻訳して表示します。翻訳は初期状態でOFFです。初回利用時に、投稿本文がGoogleの翻訳用エンドポイントへ送信されることを画面で確認してから有効になります。列の詳細設定から同意をいつでも取り消せます。
+各タイムラインの三点メニューから自動翻訳を切り替えられます。必要な場合は設定で列ヘッダーに地球ボタンを表示できます。Xの画面や投稿を覆わず、海外のツイートをタイムライン上で直接日本語に翻訳して表示します。翻訳は初期状態でOFFです。初回利用時に、投稿本文がGoogleの翻訳用エンドポイントへ送信されることを画面で確認してから有効になります。列の詳細設定から同意をいつでも取り消せるほか、Google方式そのものを無効にできます。無効中はこの拡張機能からGoogleへ翻訳通信を行いません。
 
 ### 🔒 WebView2によるXの表示
-Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラウザエンジン（WebView2）でXのWebページを表示します。ただし、本アプリはX Corp.の公式クライアントではなく、利用時にはXの規約が適用されます。任意の翻訳機能はXとは別にGoogleの翻訳用エンドポイントを利用します。詳しくは[プライバシーポリシー](PRIVACY.md)を確認してください。
+Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラウザエンジン（WebView2）でXのWebページを表示します。ただし、本アプリはX Corp.の公式クライアントではなく、利用時にはXの規約が適用されます。翻訳機能はGoogleの翻訳用エンドポイントを利用しますが、利用者が無効化できます。詳しくは[プライバシーポリシー](PRIVACY.md)を確認してください。
 
 ### ⚡ その他の充実した機能
 - **マルチアカウント対応**: アカウントごとに異なるプロファイル（Cookie）で独立管理
@@ -54,16 +54,16 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 [ダウンロード案内](DOWNLOADS.md)から、お好みの形式を確認してご利用いただけます。
 
 > [!WARNING]
-> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.8.2のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
+> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.8.3のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
 
 | 形式 | ファイル名 | 説明 |
 |---|---|---|
-| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.8.2-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
-| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.8.2-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
+| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.8.3-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
+| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.8.3-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
 
 ### Microsoft Store版の状況
 
-Microsoft Store版は公開中です。最新の公開版はv2.7.1で、上部のMicrosoft Storeバッジからインストールできます。本アプリではGoogle／Apple認証への移動を止め、X用パスワードによるログイン方法を画面内で案内します。Microsoft Edgeなど外部ブラウザーのCookieやログイン状態を読み取ったり取り込んだりはしません。
+Microsoft Store版は公開中です。上部のMicrosoft Storeバッジからインストールできます。Store版の掲載バージョンと配信状況は、Microsoft Storeのページに表示される内容が最新です。本アプリではGoogle／Apple認証への移動を止め、X用パスワードによるログイン方法を画面内で案内します。Microsoft Edgeなど外部ブラウザーのCookieやログイン状態を読み取ったり取り込んだりはしません。
 
 Store版のMSIXはMicrosoftが署名し、Microsoft Storeからインストールと更新を行います。GitHub Releasesで配布するEXE・ZIPとは別の配布経路であり、現在のGitHub版はコード署名されていません。
 
@@ -135,7 +135,7 @@ Google／AppleでXアカウントを登録した場合も、この画面ではX�
 
 ## Code signing policy
 
-**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.8.2 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
+**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.8.3 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
 
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 

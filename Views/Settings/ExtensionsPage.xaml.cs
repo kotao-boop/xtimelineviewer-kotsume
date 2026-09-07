@@ -34,16 +34,13 @@ namespace XTimelineViewer.Views.Settings
 
             var extensions = _parent?.Extensions ?? [];
 
-            // MSIX版はStoreのパッケージ完全性を守るため、同梱済み拡張だけを読み込む。
-            ExtensionsInfoBar.Message = PackageContext.IsPackaged
-                ? R.Get("Extensions_InfoBar_Packaged")
-                : extensions.Count == 0
-                    ? R.Get("Extensions_InfoBar_Empty")
-                    : R.Get("Extensions_InfoBar_Installed");
+            // GitHub版とStore版で同じ拡張機能追加手順を使う。Store版でも
+            // 利用者追加分はパッケージ外の user フォルダーへ保存する。
+            ExtensionsInfoBar.Message = extensions.Count == 0
+                ? R.Get("Extensions_InfoBar_Empty")
+                : R.Get("Extensions_InfoBar_Installed");
             OpenExtensionsFolderBtn.Content = R.Get("Extensions_OpenFolder");
-            OpenExtensionsFolderBtn.Visibility = PackageContext.IsPackaged
-                ? Visibility.Collapsed
-                : Visibility.Visible;
+            OpenExtensionsFolderBtn.Visibility = Visibility.Visible;
 
             foreach (var ext in extensions)
             {
@@ -64,7 +61,7 @@ namespace XTimelineViewer.Views.Settings
             var card = new CommunityToolkit.WinUI.Controls.SettingsCard
             {
                 Header      = ext.Name,
-                Description = $"{(PackageContext.IsPackaged ? R.Get("Extensions_Bundled") : R.Get("Extensions_UserAdded"))}\n{R.Get("Extensions_SiteAccess")}\n{R.Get("Extensions_Capability")}",
+                Description = $"{(ext.IsUserAdded ? R.Get("Extensions_UserAdded") : R.Get("Extensions_Bundled"))}\n{R.Get("Extensions_SiteAccess")}\n{R.Get("Extensions_Capability")}",
                 // 右端のリンクアイコンと「設定を開く」ボタンの機能が重複していたため、
                 // 明示的なボタンを残してカード自体のクリック化は廃止
             };
