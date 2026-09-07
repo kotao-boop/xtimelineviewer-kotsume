@@ -11,7 +11,9 @@
     const translationCacheLimit = 128;
     const maxTranslationChars = 10000;
     const scanDebounceMs = 120;
-    const translationTimeoutMs = 10000;
+    const translationTimeoutMs = 12000;
+    let retryTimer = null;
+    let retryDeadline = 0;
     let translationConsent = false;
     let autoTranslateEnabled = false;
     let pendingConsent = null;
@@ -36,6 +38,12 @@
             close: '閉じる',
             revoke: '同意を取り消す',
             translating: '翻訳中...',
+            waiting: '翻訳の順番を待っています',
+            rateLimited: '翻訳先の通信制限で休止中です。時間を空けて再開します。',
+            failed: '翻訳できませんでした。通信状態を確認して再試行してください。',
+            unavailable: '翻訳機能を利用できません。アプリを再起動してください。',
+            tooLong: '投稿が長すぎるため翻訳できません。',
+            retry: '翻訳を再試行',
             hide: '翻訳を非表示',
             show: '翻訳を表示',
             from: value => `${value}からの翻訳`,
@@ -57,6 +65,12 @@
             close: 'Close',
             revoke: 'Withdraw consent',
             translating: 'Translating...',
+            waiting: 'Waiting for translation',
+            rateLimited: 'Translation is rate limited. It will resume after a pause.',
+            failed: 'Translation failed. Check your connection and try again.',
+            unavailable: 'Translation is unavailable. Please restart the app.',
+            tooLong: 'This post is too long to translate.',
+            retry: 'Retry translation',
             hide: 'Hide translation',
             show: 'Show translation',
             from: value => `Translated from ${value}`,
@@ -66,7 +80,7 @@
     };
 
     function getLocale() {
-        const value = String(document.documentElement?.lang || window.navigator?.language || '').toLowerCase();
+        const value = String(document.documentElement?.getAttribute('data-xtv-translation-language') || window.navigator?.language || '').toLowerCase();
         return value.startsWith('en') ? 'en' : 'ja';
     }
 
@@ -117,12 +131,13 @@
     }
 
     function clearInjectedUi(tweet) {
-        tweet.querySelectorAll?.('.xtv-translation-box, .xtv-manual-btn').forEach(el => el.remove());
+        tweet.querySelectorAll?.('.xtv-translation-box, .xtv-manual-btn, .xtv-translation-status').forEach(el => el.remove());
     }
 
     function refreshTranslationUi() {
         publishTranslationState();
-        document.querySelectorAll('.xtv-translation-box, .xtv-manual-btn').forEach(el => el.remove());
+        if (retryTimer !== null) { clearTimeout(retryTimer); retryTimer = null; }
+        document.querySelectorAll('.xtv-translation-box, .xtv-manual-btn, .xtv-translation-status').forEach(el => el.remove());
         document.querySelectorAll('article[data-testid="tweet"]').forEach(tweet => {
             const state = tweetStates.get(tweet);
             if (state) {
@@ -130,6 +145,9 @@
                 state.processing = false;
                 state.rawText = '';
                 state.noTranslation = false;
+                state.retryAt = 0;
+                state.pendingManual = false;
+                state.visibleSince = 0;
             }
         });
         scheduleScan(0);
@@ -190,8 +208,39 @@
         return pendingConsent;
     }
 
-    function containsJapanese(value) {
-        return /[\u3040-\u309F\u30A0-\u30FF]/.test(value);
+    function isVisible(tweet) {
+        if (document.hidden) return false;
+        if (!tweet.getBoundingClientRect) return true;
+        const rect = tweet.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.right > 0 &&
+            rect.top < window.innerHeight && rect.left < window.innerWidth;
+    }
+
+    function isJapaneseOnly(text) {
+        // Kana alone must not suppress a mixed-language post or Japanese → English.
+        return /[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text) &&
+            !/\p{Letter}/u.test(text.replace(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー]/gu, ''));
+    }
+
+    function retryScanAt(deadline) {
+        if (retryTimer !== null && retryDeadline <= deadline) return;
+        if (retryTimer !== null) clearTimeout(retryTimer);
+        retryDeadline = deadline;
+        retryTimer = setTimeout(() => {
+            retryTimer = null;
+            scheduleScan(0);
+        }, Math.min(2147483647, Math.max(0, deadline - Date.now())));
+    }
+
+    function showStatus(tweet, textEl, message) {
+        let status = tweet.querySelector('.xtv-translation-status');
+        if (!status) {
+            status = document.createElement('div');
+            status.className = 'xtv-translation-status';
+            status.setAttribute('role', 'status');
+            textEl.insertAdjacentElement('afterend', status);
+        }
+        if (status.textContent !== message) status.textContent = message;
     }
 
     function cacheKey(targetLang, text) {
@@ -219,36 +268,40 @@
     async function requestTranslation(text, targetLang = getTargetLanguage()) {
         const cached = cacheGet(targetLang, text);
         if (cached !== undefined) return cached;
-        if (!translationConsent || typeof text !== 'string' || text.length > maxTranslationChars) {
-            return { text: null, lang: '', error: 'Translation is not permitted.' };
+        if (!translationConsent) return { text: null, lang: '', code: 'consent' };
+        if (typeof text !== 'string' || text.length > maxTranslationChars) {
+            return { text: null, lang: '', code: 'input' };
         }
         const api = getChrome();
-        if (!api?.runtime?.sendMessage) return { text: null, lang: '', error: 'Translation service is unavailable.' };
+        if (!api?.runtime?.sendMessage) return { text: null, lang: '', code: 'unavailable' };
 
         return new Promise((resolve) => {
             let completed = false;
+            let timeoutId;
             const finish = (result) => {
                 if (completed) return;
                 completed = true;
+                clearTimeout(timeoutId);
                 resolve(result);
             };
-            api.runtime.sendMessage({ action: 'translate', text, targetLang }, (response) => {
+            timeoutId = setTimeout(() => finish({ text: null, lang: '', error: 'Translation timed out.', code: 'timeout' }), translationTimeoutMs);
+            try { api.runtime.sendMessage({ action: 'translate', text, targetLang }, (response) => {
+                if (completed) return;
                 if (api.runtime.lastError || !response?.success) {
-                    finish({ text: null, lang: '', error: response?.error || 'Translation failed.' });
+                    finish({ text: null, lang: '', error: response?.error || 'Translation failed.', code: response?.code || 'network', retryAt: response?.retryAt || 0 });
                     return;
                 }
                 const result = { text: response.translatedText, lang: response.detectedLang };
-                cacheSet(targetLang, text, result);
+                if (translationConsent) cacheSet(targetLang, text, result);
                 finish(result);
-            });
-            setTimeout(() => finish({ text: null, lang: '', error: 'Translation timed out.' }), translationTimeoutMs);
+            }); } catch (_) { finish({ text: null, lang: '', code: 'unavailable' }); }
         });
     }
 
     function getState(tweet) {
         let state = tweetStates.get(tweet);
         if (!state) {
-            state = { generation: 0, rawText: '', processing: false, noTranslation: false };
+            state = { generation: 0, rawText: '', processing: false, noTranslation: false, retryAt: 0, visibleSince: 0, targetLang: '' };
             tweetStates.set(tweet, state);
         }
         return state;
@@ -269,6 +322,7 @@
     async function applyTranslation(tweet, textEl, rawText, generation) {
         if (!isCurrent(tweet, textEl, rawText, generation)) return;
         const text = ui[getLocale()];
+        tweet.querySelector('.xtv-translation-status')?.remove();
         let box = tweet.querySelector('.xtv-translation-box');
         if (!box) {
             box = document.createElement('div');
@@ -282,11 +336,22 @@
         if (!isCurrent(tweet, textEl, rawText, generation)) return;
         if (!result?.text) {
             box.remove();
-            // 一時的な失敗でMutationObserverが無限再試行しないよう、手動再試行へ戻します。
-            showTranslateButton(tweet, textEl, rawText, generation);
+            const state = getState(tweet);
+            if (result?.code === 'busy' || result?.code === 'rate_limited') {
+                state.retryAt = Math.max(Date.now() + 1500, Number(result.retryAt) || 0);
+                state.pendingManual = state.pendingManual || !autoTranslateEnabled;
+                showStatus(tweet, textEl, result.code === 'busy' ? text.waiting : text.rateLimited);
+                retryScanAt(state.retryAt);
+            } else {
+                showStatus(tweet, textEl, result?.code === 'input' ? text.tooLong :
+                    result?.code === 'unavailable' ? text.unavailable : text.failed);
+                showTranslateButton(tweet, textEl, rawText, generation, true);
+            }
             return;
         }
-        if (result.lang === targetLang) {
+        getState(tweet).retryAt = 0;
+        getState(tweet).pendingManual = false;
+        if (result.lang === targetLang && result.text.trim() === rawText) {
             box.remove();
             getState(tweet).noTranslation = true;
             return;
@@ -305,17 +370,19 @@
         });
     }
 
-    function showTranslateButton(tweet, textEl, rawText, generation) {
+    function showTranslateButton(tweet, textEl, rawText, generation, failed = false) {
         if (!isCurrent(tweet, textEl, rawText, generation) || tweet.querySelector('.xtv-manual-btn, .xtv-translation-box')) return;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'xtv-manual-btn';
-        btn.innerHTML = `🌐 ${ui[getLocale()].show}`;
+        btn.innerHTML = `🌐 ${failed ? ui[getLocale()].retry : ui[getLocale()].show}`;
         btn.addEventListener('click', async (event) => {
             event.stopPropagation();
             if (!await requestTranslationConsent() || !isCurrent(tweet, textEl, rawText, generation)) return;
             btn.remove();
             const state = getState(tweet);
+            state.retryAt = 0;
+            state.pendingManual = true;
             state.processing = true;
             await applyTranslation(tweet, textEl, rawText, generation);
             if (isCurrent(tweet, textEl, rawText, generation)) state.processing = false;
@@ -339,7 +406,7 @@
         }
         const rawText = String(textEl.innerText || '').trim();
         if (!rawText || rawText.length < 2) {
-            if (state.rawText !== rawText) {
+            if (state.rawText !== rawText || state.targetLang !== getTargetLanguage()) {
                 state.rawText = rawText;
                 state.generation++;
                 state.processing = false;
@@ -348,8 +415,12 @@
             }
             return;
         }
-        if (state.rawText !== rawText) {
+        if (state.rawText !== rawText || state.targetLang !== getTargetLanguage()) {
             state.rawText = rawText;
+            state.targetLang = getTargetLanguage();
+            state.retryAt = 0;
+            state.visibleSince = 0;
+            state.pendingManual = false;
             state.generation++;
             state.processing = false;
             state.noTranslation = false;
@@ -358,9 +429,18 @@
         const generation = state.generation;
         if (state.processing || tweet.querySelector('.xtv-translation-box, .xtv-manual-btn')) return;
         if (state.noTranslation) return;
-        if (containsJapanese(rawText)) return;
+        if (!isVisible(tweet)) { state.visibleSince = 0; return; }
+        if (autoTranslateEnabled && !state.pendingManual && getTargetLanguage() === 'ja' && isJapaneseOnly(rawText)) {
+            showTranslateButton(tweet, textEl, rawText, generation);
+            return;
+        }
+        if (Date.now() < state.retryAt) { retryScanAt(state.retryAt); return; }
+        if (autoTranslateEnabled && !state.pendingManual) {
+            if (!state.visibleSince) state.visibleSince = Date.now();
+            if (Date.now() - state.visibleSince < 400) { retryScanAt(state.visibleSince + 400); return; }
+        }
         state.processing = true;
-        if (autoTranslateEnabled && translationConsent) {
+        if ((autoTranslateEnabled || state.pendingManual) && translationConsent) {
             await applyTranslation(tweet, textEl, rawText, generation);
         } else if (!autoTranslateEnabled) {
             showTranslateButton(tweet, textEl, rawText, generation);
@@ -469,6 +549,10 @@
             try { await writeStoredSettings({ [autoTranslateKey]: false }); } catch (_) { }
         }
         publishTranslationState();
+        window.addEventListener?.('scroll', () => scheduleScan(), { passive: true, capture: true });
+        window.addEventListener?.('resize', () => scheduleScan(), { passive: true });
+        document.addEventListener('visibilitychange', () => scheduleScan());
+        document.addEventListener('xtv-translator-language', refreshTranslationUi);
         scheduleScan(0);
         const observer = new MutationObserver(() => scheduleScan());
         observer.observe(document.body || document.documentElement, { childList: true, subtree: true, characterData: true });

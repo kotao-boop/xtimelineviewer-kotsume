@@ -10,6 +10,7 @@ namespace XTimelineViewer.Views
         // 拡張機能の isolated world と WebView2 のページ world は変数を共有しないため、
         // DOM 属性とイベントを小さな指令用ブリッジとして使う。
         private static string TranslationCommandScript(string command) =>
+            TranslationLanguageScript +
             $"document.documentElement.setAttribute('data-xtv-translator-command','{command}');" +
             "document.dispatchEvent(new Event('xtv-translator-command'));";
 
@@ -19,10 +20,19 @@ namespace XTimelineViewer.Views
             await pane.WebView.CoreWebView2.ExecuteScriptAsync(TranslationCommandScript(command));
         }
 
-        private static readonly string TranslationStateBridgeScript = """
+        private static string TranslationLanguageScript =>
+            "(function(){var language='" +
+            (Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride.StartsWith("ja", StringComparison.OrdinalIgnoreCase) ? "ja" : "en") +
+            "';function update(){if(document.documentElement.getAttribute('data-xtv-translation-language')!==language){" +
+            "document.documentElement.setAttribute('data-xtv-translation-language',language);" +
+            "document.dispatchEvent(new Event('xtv-translator-language'));}}" +
+            "if(document.documentElement)update();else document.addEventListener('DOMContentLoaded',update,{once:true});})();";
+
+        private static string TranslationStateBridgeScript => TranslationLanguageScript + """
             (function () {
                 if (window._xtvTranslationStateBridge) return;
                 window._xtvTranslationStateBridge = true;
+                function initialize() {
                 var last = '';
                 function report() {
                     var state = document.documentElement.getAttribute('data-xtv-translation-state') || 'off';
@@ -35,6 +45,9 @@ namespace XTimelineViewer.Views
                     attributeFilter: ['data-xtv-translation-state']
                 });
                 report();
+                }
+                if (document.documentElement) initialize();
+                else document.addEventListener('DOMContentLoaded', initialize, { once: true });
             })();
             """;
 
