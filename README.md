@@ -54,12 +54,12 @@ Xの非公式APIやスクレイピングは使わず、Microsoft Edgeのブラ�
 [ダウンロード案内](DOWNLOADS.md)から、お好みの形式を確認してご利用いただけます。
 
 > [!WARNING]
-> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.8.0のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
+> Microsoft Store版はMicrosoftが署名して配布します。GitHubで配布するv2.8.1のEXE・ZIPはコード署名されていないため、Windowsで「不明な発行元」やSmartScreenの警告が表示される場合があります。実行前に、リリースに添付された`SHA256SUMS.txt`とGitHub Artifact Attestationでファイルを確認してください。これらは改ざん確認の助けになりますが、コード署名や安全性の保証そのものではありません。
 
 | 形式 | ファイル名 | 説明 |
 |---|---|---|
-| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.8.0-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
-| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.8.0-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
+| **インストーラー版 (EXE)** | `XTimelineViewer-Kotsume-v2.8.1-Setup.exe` | ダブルクリックで実行する標準インストーラー。デスクトップアイコン作成、スタートメニュー登録、アンインストールに対応。 |
+| **ポータブル版 (ZIP)** | `XTimelineViewer-Kotsume-v2.8.1-win-x64-Portable.zip` / `...-win-arm64-Portable.zip` | 解凍して `XTimelineViewer.exe` を起動するだけで使える自己完結パッケージ。CPUに合う版を選びます。 |
 
 ### Microsoft Store版の状況
 
@@ -135,7 +135,7 @@ Google／AppleでXアカウントを登録した場合も、この画面ではX�
 
 ## Code signing policy
 
-**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.8.0 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
+**Status:** Microsoft Store distribution is live and Store packages are signed by Microsoft. The GitHub v2.8.1 EXE/ZIP release remains unsigned while the separate SignPath application is deferred.
 
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 
