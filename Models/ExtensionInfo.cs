@@ -7,6 +7,7 @@ namespace XTimelineViewer.Models
         string? OptionsPage,
         string? HomepageUrl,
         string? ExtensionId,
-        bool IsUserAdded = false
+        bool IsUserAdded = false,
+        string? LoadError = null
     );
 }

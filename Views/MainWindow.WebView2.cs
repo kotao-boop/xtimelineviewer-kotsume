@@ -845,6 +845,10 @@ namespace XTimelineViewer.Views
                     catch (Exception ex)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
+                        var failure = new ExtensionInfo(Path.GetFileName(extDir), extDir, null, null, null, null,
+                            isUserAdded, $"{profileId}\n{ex}\nWebView2: {core.Environment.BrowserVersionString}");
+                        _loadedExtensions.RemoveAll(item => string.Equals(item.DirectoryPath, extDir, StringComparison.OrdinalIgnoreCase));
+                        _loadedExtensions.Add(failure);
                         errors.AppendLine($"・{Path.GetFileName(extDir)}");
                         errors.AppendLine($"  {ex}");
                     }
@@ -889,26 +893,10 @@ namespace XTimelineViewer.Views
             if (errors.Length > 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var dlg = new ContentDialog
-                {
-                    Title           = R.Get("ExtLoadError_Title"),
-                    Content         = new ScrollViewer
-                    {
-                        MaxHeight = 300,
-                        Content   = new TextBlock
-                        {
-                            Text       = errors.ToString().TrimEnd()
-                            + "\n\n" + core.Environment.BrowserVersionString,
-                            FontFamily = new FontFamily("Cascadia Mono, Consolas, Courier New"),
-                            FontSize   = 12,
-                            IsTextSelectionEnabled = true,
-                            TextWrapping = TextWrapping.Wrap
-                        }
-                    },
-                    CloseButtonText = R.Get("Button_Close"),
-                    XamlRoot        = Content.XamlRoot
-                };
-                await ShowDialogAsync(dlg);
+                ExtensionErrorBar.Title = R.Get("ExtLoadError_Title");
+                ExtensionErrorBar.Message = R.Get("Extensions_ErrorNotice");
+                ExtensionErrorSettingsBtn.Content = R.Get("Nav_Extensions");
+                ExtensionErrorBar.IsOpen = true;
             }
 
             cancellationToken.ThrowIfCancellationRequested();

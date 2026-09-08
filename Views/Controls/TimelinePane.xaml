@@ -79,6 +79,9 @@
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="TranslationHealthLabel" FontSize="11"
+                               TextTrimming="CharacterEllipsis" Visibility="Collapsed"
+                               AutomationProperties.LiveSetting="Polite"/>
                     <TextBlock x:Name="UrlLabel"
                                FontSize="9"
                                TextTrimming="CharacterEllipsis"

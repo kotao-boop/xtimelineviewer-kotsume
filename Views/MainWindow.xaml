@@ -515,6 +515,12 @@
                     <TextBlock x:Name="BossModeEmptyText" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                 </Grid>
             </Border>
+            <InfoBar x:Name="ExtensionErrorBar" Grid.Column="0" VerticalAlignment="Bottom"
+                     Margin="12" IsOpen="False" IsClosable="True" Severity="Warning" Canvas.ZIndex="52">
+                <InfoBar.ActionButton>
+                    <Button x:Name="ExtensionErrorSettingsBtn" Click="ExtensionErrorSettings_Click"/>
+                </InfoBar.ActionButton>
+            </InfoBar>
             <InfoBar x:Name="LayoutSuggestionBar"
                      Grid.Column="0"
                      HorizontalAlignment="Center"

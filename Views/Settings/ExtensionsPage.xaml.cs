@@ -61,7 +61,7 @@ namespace XTimelineViewer.Views.Settings
             var card = new CommunityToolkit.WinUI.Controls.SettingsCard
             {
                 Header      = ext.Name,
-                Description = $"{(ext.IsUserAdded ? R.Get("Extensions_UserAdded") : R.Get("Extensions_Bundled"))}\n{R.Get("Extensions_SiteAccess")}\n{R.Get("Extensions_Capability")}",
+                Description = $"{(ext.IsUserAdded ? R.Get("Extensions_UserAdded") : R.Get("Extensions_Bundled"))}\n{R.Get(ext.LoadError is null ? "Extensions_Loaded" : "Extensions_LoadFailed")}",
                 // 右端のリンクアイコンと「設定を開く」ボタンの機能が重複していたため、
                 // 明示的なボタンを残してカード自体のクリック化は廃止
             };
@@ -89,6 +89,30 @@ namespace XTimelineViewer.Views.Settings
                 Orientation = Orientation.Horizontal,
                 Spacing     = 8,
             };
+
+            if (ext.LoadError is not null)
+            {
+                var details = new Expander
+                {
+                    Header = R.Get("Extensions_Details"),
+                    Content = new TextBlock { Text = ext.LoadError, TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true, MaxWidth = 480 },
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                };
+                var copy = new Button { Content = R.Get("Extensions_CopyDiagnostics") };
+                copy.Click += (_, _) =>
+                {
+                    var data = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                    data.SetText($"{ext.Name}\n{ext.DirectoryPath}\n{ext.LoadError}");
+                    Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(data);
+                    copy.Content = R.Get("Extensions_Copied");
+                };
+                card.Description += "\n" + R.Get("Extensions_Recovery");
+                card.Content = copy;
+                RootPanel.Children.Add(card);
+                RootPanel.Children.Add(details);
+                return;
+            }
 
             if (ext.OptionsPage is not null && ext.ExtensionId is not null)
             {

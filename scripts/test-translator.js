@@ -332,11 +332,14 @@ async function testFailureCanBeRetriedManually() {
     button = tweet.article.querySelector('.xtv-manual-btn');
     assert.ok(button, '失敗後は手動再試行ボタンへ戻る');
     assert.equal(calls, 1);
+    assert.equal(env.document.documentElement.getAttribute('data-xtv-translation-health'), 'error');
+    assert.equal(env.document.documentElement.getAttribute('data-xtv-translation-state'), 'off');
 
     button.dispatchEvent({ type: 'click' });
     await waitFor(0);
     assert.equal(calls, 2);
     assert.equal(tweet.article.querySelector('.xtv-trans-body')?.innerText, '再試行成功');
+    assert.equal(env.document.documentElement.getAttribute('data-xtv-translation-health'), 'ready');
 }
 
 async function testGoogleProviderCanBeDisabled() {
@@ -353,6 +356,7 @@ async function testGoogleProviderCanBeDisabled() {
     env.observer.trigger();
     await waitFor(100);
     assert.equal(calls, 0, 'disabled provider does not send translation requests');
+    assert.equal(env.document.documentElement.getAttribute('data-xtv-translation-health'), 'disabled');
     assert.equal(tweet.article.querySelector('.xtv-manual-btn'), null,
         'disabled provider does not show a Google translation button');
 }
@@ -506,11 +510,14 @@ async function testVisibleLanguageAndDeferredRetry() {
     deferred.observer.trigger();
     await waitUntil(() => tweet.article.querySelector('.xtv-translation-status'));
     assert.match(tweet.article.querySelector('.xtv-translation-status')?.innerText, /通信制限/);
+    assert.equal(deferred.document.documentElement.getAttribute('data-xtv-translation-health'), 'rate_limited');
+    assert.equal(deferred.document.documentElement.getAttribute('data-xtv-translation-state'), 'on');
     await waitFor(600);
     assert.equal(attempts, 1, 'no early retry during cooldown');
     await waitUntil(() => attempts === 2);
     assert.equal(attempts, 2);
     assert.equal(tweet.article.querySelector('.xtv-trans-body')?.innerText, '再開成功');
+    assert.equal(deferred.document.documentElement.getAttribute('data-xtv-translation-health'), 'ready');
     assert.equal(tweet.article.querySelector('.xtv-translation-status'), null);
 
     let englishTarget;
@@ -548,6 +555,7 @@ async function testVisibleLanguageAndDeferredRetry() {
     await waitUntil(() => failedTweet.article.querySelector('.xtv-translation-status'));
     assert.ok(failedTweet.article.querySelector('.xtv-translation-status'));
     assert.ok(failedTweet.article.querySelector('.xtv-manual-btn'));
+    assert.equal(failed.document.documentElement.getAttribute('data-xtv-translation-health'), 'error');
     failed.observer.trigger();
     await waitFor(600);
     assert.equal(failureCalls, 1, 'failed posts require explicit retry instead of a mutation-driven loop');

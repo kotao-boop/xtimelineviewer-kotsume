@@ -36,7 +36,7 @@
             googlePrivacy: 'Googleのプライバシーポリシー',
             cancel: '今回は使わない',
             accept: '同意して翻訳する',
-            settingsTitle: '翻訳データ送信の同意設定',
+            settingsTitle: '翻訳設定',
             status: value => value ? '同意済み' : '未同意',
             settingsNote: '同意を取り消すと自動翻訳もOFFになり、次回の翻訳時にもう一度説明を表示します。',
             providerStatus: value => value ? 'Google方式：有効' : 'Google方式：無効',
@@ -68,7 +68,7 @@
             googlePrivacy: 'Google privacy policy',
             cancel: 'Not now',
             accept: 'Agree and translate',
-            settingsTitle: 'Translation data consent',
+            settingsTitle: 'Translation settings',
             status: value => value ? 'Consent given' : 'No consent',
             settingsNote: 'Withdrawing consent also turns off automatic translation. You will see this explanation again before the next translation.',
             providerStatus: value => value ? 'Google method: enabled' : 'Google method: disabled',
@@ -148,10 +148,21 @@
         });
     }
 
+    let translationHealth = 'ready';
+    function reportTranslationHealth(result) {
+        if (result?.text) translationHealth = 'ready';
+        else if (result?.code === 'rate_limited') translationHealth = 'rate_limited';
+        else if (result?.code === 'unavailable') translationHealth = 'unavailable';
+        else if (['network', 'timeout', 'http', 'response', 'source'].includes(result?.code)) translationHealth = 'error';
+        publishTranslationState();
+    }
+
     function publishTranslationState() {
         document.documentElement.setAttribute(
             'data-xtv-translation-state',
             translationProvider === 'google' && autoTranslateEnabled ? 'on' : 'off');
+        document.documentElement.setAttribute('data-xtv-translation-health',
+            translationProvider !== 'google' ? 'disabled' : translationHealth);
     }
 
     function clearInjectedUi(tweet) {
@@ -299,7 +310,11 @@
             return { text: null, lang: '', code: 'input' };
         }
         const api = getChrome();
-        if (!api?.runtime?.sendMessage) return { text: null, lang: '', code: 'unavailable' };
+        if (!api?.runtime?.sendMessage) {
+            const result = { text: null, lang: '', code: 'unavailable' };
+            reportTranslationHealth(result);
+            return result;
+        }
 
         return new Promise((resolve) => {
             let completed = false;
@@ -308,6 +323,7 @@
                 if (completed) return;
                 completed = true;
                 clearTimeout(timeoutId);
+                reportTranslationHealth(result);
                 resolve(result);
             };
             timeoutId = setTimeout(() => finish({ text: null, lang: '', error: 'Translation timed out.', code: 'timeout' }), translationTimeoutMs);
@@ -511,6 +527,7 @@
                 <p>${text.providerStatus(googleEnabled)}</p>
                 <p class="xtv-consent-note">${text.settingsNote}</p>
                 <p class="xtv-consent-note">${text.providerNote}</p>
+                <p class="xtv-consent-note">${getLocale() === 'ja' ? 'この設定は同じアカウントのタイムラインに共有されます。' : 'These settings apply to timelines using the same account.'}</p>
                 <div class="xtv-consent-links">
                     <a class="xtv-consent-link" href="https://github.com/kotao-boop/xtimelineviewer-kotsume/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">${text.appPrivacy}</a>
                     <a class="xtv-consent-link" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">${text.googlePrivacy}</a>
