@@ -399,7 +399,7 @@
   <data name="Pane_NewItems_Tooltip" xml:space="preserve"><value>Jump to new posts</value></data>
   <data name="Pane_Translation_On" xml:space="preserve"><value>Auto-translate: on (click to turn off)</value></data>
   <data name="Pane_Translation_Off" xml:space="preserve"><value>Auto-translate: off (click to turn on)</value></data>
-  <data name="Pane_Translation_Consent" xml:space="preserve"><value>Open translation data consent settings</value></data>
+  <data name="Pane_Translation_Consent" xml:space="preserve"><value>Open translation settings</value></data>
   <data name="Shortcut_FocusTimeline" xml:space="preserve"><value>Go to a numbered timeline</value></data>
   <data name="Shortcut_MoveBetween" xml:space="preserve"><value>Move between timelines</value></data>
   <data name="Shortcut_Reorder" xml:space="preserve"><value>Reorder the current timeline</value></data>
@@ -435,4 +435,15 @@
   <data name="Settings_Restore_SuccessBody" xml:space="preserve"><value>Restored {0} configuration files and applied them to the app.</value></data>
   <data name="Settings_Restore_ErrorTitle" xml:space="preserve"><value>Couldn't restore the backup</value></data>
   <data name="Configuration_ReadFailed" xml:space="preserve"><value>Saved data could not be read, so automatic saving is paused. Use Restore from backup in Settings, or check the configuration files and restart the app. The original data has been kept.</value></data>
+  <data name="Extensions_ErrorNotice" xml:space="preserve"><value>Open Extensions to review loading results and recovery steps.</value></data>
+  <data name="Extensions_Loaded" xml:space="preserve"><value>Loaded</value></data>
+  <data name="Extensions_LoadFailed" xml:space="preserve"><value>Loading failed for one or more accounts</value></data>
+  <data name="Extensions_Details" xml:space="preserve"><value>Diagnostic details</value></data>
+  <data name="Extensions_CopyDiagnostics" xml:space="preserve"><value>Copy diagnostics</value></data>
+  <data name="Extensions_Copied" xml:space="preserve"><value>Copied</value></data>
+  <data name="Extensions_Recovery" xml:space="preserve"><value>Close and reopen the app. For user-added extensions, also check manifest.json in the extension folder.</value></data>
+  <data name="Translation_HealthLimited" xml:space="preserve"><value>Translation: paused by service limit</value></data>
+  <data name="Translation_HealthError" xml:space="preserve"><value>Translation: request failed; retry from the post</value></data>
+  <data name="Translation_HealthUnavailable" xml:space="preserve"><value>Translation: not loaded or unavailable</value></data>
+  <data name="Translation_HealthDisabled" xml:space="preserve"><value>Translation: Google method disabled</value></data>
 </root>

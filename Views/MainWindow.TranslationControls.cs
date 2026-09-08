@@ -35,14 +35,15 @@ namespace XTimelineViewer.Views
                 function initialize() {
                 var last = '';
                 function report() {
-                    var state = document.documentElement.getAttribute('data-xtv-translation-state') || 'off';
+                    var state = (document.documentElement.getAttribute('data-xtv-translation-state') || 'off') + ':' +
+                        (document.documentElement.getAttribute('data-xtv-translation-health') || 'unavailable');
                     if (state === last) return;
                     last = state;
                     try { window.chrome.webview.postMessage('translationState:' + state); } catch (_) {}
                 }
                 new MutationObserver(report).observe(document.documentElement, {
                     attributes: true,
-                    attributeFilter: ['data-xtv-translation-state']
+                    attributeFilter: ['data-xtv-translation-state', 'data-xtv-translation-health']
                 });
                 report();
                 }
@@ -51,10 +52,15 @@ namespace XTimelineViewer.Views
             })();
             """;
 
+        private void ExtensionErrorSettings_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+            => OpenSettingsWindow("Extensions");
+
         private bool TryHandleTranslationStateMessage(WebView2 webView, string message)
         {
             if (!message.StartsWith("translationState:", StringComparison.Ordinal)) return false;
-            PaneOf(webView)?.SetTranslationState(message.EndsWith(":on", StringComparison.Ordinal));
+            var parts = message.Split(':');
+            PaneOf(webView)?.SetTranslationState(parts.Length > 1 && parts[1] == "on",
+                parts.Length > 2 ? parts[2] : "unavailable");
             return true;
         }
     }

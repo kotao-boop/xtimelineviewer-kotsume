@@ -557,9 +557,20 @@ namespace XTimelineViewer.Views.Controls
 
         private bool _translationEnabled;
 
-        public void SetTranslationState(bool enabled)
+        public void SetTranslationState(bool enabled, string health = "ready")
         {
             _translationEnabled = enabled;
+            var healthKey = health switch
+            {
+                "rate_limited" => "Translation_HealthLimited",
+                "error" => "Translation_HealthError",
+                "unavailable" => "Translation_HealthUnavailable",
+                "disabled" => "Translation_HealthDisabled",
+                _ => null,
+            };
+            TranslationHealthLabel.Text = healthKey is null ? "" : R.Get(healthKey);
+            TranslationHealthLabel.Visibility = healthKey is null ? Visibility.Collapsed : Visibility.Visible;
+            ToolTipService.SetToolTip(TranslationHealthLabel, TranslationHealthLabel.Text);
             UpdateTranslationButtonVisual();
         }
 

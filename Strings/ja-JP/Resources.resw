@@ -399,7 +399,7 @@
   <data name="Pane_NewItems_Tooltip" xml:space="preserve"><value>新着投稿へ移動</value></data>
   <data name="Pane_Translation_On" xml:space="preserve"><value>自動翻訳：オン（クリックでオフ）</value></data>
   <data name="Pane_Translation_Off" xml:space="preserve"><value>自動翻訳：オフ（クリックでオン）</value></data>
-  <data name="Pane_Translation_Consent" xml:space="preserve"><value>翻訳データ送信の同意設定を開く</value></data>
+  <data name="Pane_Translation_Consent" xml:space="preserve"><value>翻訳設定を開く</value></data>
   <data name="Shortcut_FocusTimeline" xml:space="preserve"><value>指定した番号のタイムラインへ移動</value></data>
   <data name="Shortcut_MoveBetween" xml:space="preserve"><value>前後のタイムラインへ移動</value></data>
   <data name="Shortcut_Reorder" xml:space="preserve"><value>タイムラインを並べ替え</value></data>
@@ -435,4 +435,15 @@
   <data name="Settings_Restore_SuccessBody" xml:space="preserve"><value>{0}個の設定ファイルを復元し、画面へ反映しました。</value></data>
   <data name="Settings_Restore_ErrorTitle" xml:space="preserve"><value>バックアップを復元できませんでした</value></data>
   <data name="Configuration_ReadFailed" xml:space="preserve"><value>保存データを読み込めなかったため、自動保存を停止しています。設定の「バックアップから復元」を使うか、設定ファイルを確認してからアプリを再起動してください。元のデータは保持されています。</value></data>
+  <data name="Extensions_ErrorNotice" xml:space="preserve"><value>拡張機能の設定で、読み込み結果と復旧方法を確認できます。</value></data>
+  <data name="Extensions_Loaded" xml:space="preserve"><value>読み込み済み</value></data>
+  <data name="Extensions_LoadFailed" xml:space="preserve"><value>読み込めませんでした（一部のアカウントを含む）</value></data>
+  <data name="Extensions_Details" xml:space="preserve"><value>診断情報の詳細</value></data>
+  <data name="Extensions_CopyDiagnostics" xml:space="preserve"><value>診断情報をコピー</value></data>
+  <data name="Extensions_Copied" xml:space="preserve"><value>コピーしました</value></data>
+  <data name="Extensions_Recovery" xml:space="preserve"><value>アプリを終了して起動し直してください。追加した拡張機能の場合は、フォルダー内の manifest.json も確認してください。</value></data>
+  <data name="Translation_HealthLimited" xml:space="preserve"><value>翻訳：通信制限で休止中</value></data>
+  <data name="Translation_HealthError" xml:space="preserve"><value>翻訳：通信に失敗（投稿から再試行）</value></data>
+  <data name="Translation_HealthUnavailable" xml:space="preserve"><value>翻訳：未読込・利用できません</value></data>
+  <data name="Translation_HealthDisabled" xml:space="preserve"><value>翻訳：Google方式は無効</value></data>
 </root>
