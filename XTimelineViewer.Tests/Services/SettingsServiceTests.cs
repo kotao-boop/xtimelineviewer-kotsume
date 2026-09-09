@@ -263,6 +263,8 @@ public class SettingsServiceTests : IDisposable
         Assert.Null(s.LastUsedProfileId);
         Assert.NotNull(s.SavedSearchQueries);
         Assert.Empty(s.SavedSearchQueries);
+        Assert.NotNull(s.DisabledExtensionKeys);
+        Assert.Empty(s.DisabledExtensionKeys);
     }
 
     [Fact]
@@ -281,7 +283,7 @@ public class SettingsServiceTests : IDisposable
     public void LoadSettings_NullLayoutWeights_AreRecoveredAsEmpty()
     {
         File.WriteAllText(At("settings.json"),
-            """{"LayoutColumnWeights":null,"LayoutRowWeights":null}""");
+            """{"LayoutColumnWeights":null,"LayoutRowWeights":null,"DisabledExtensionKeys":null}""");
 
         var s = SettingsService.LoadSettings(At("settings.json"));
 
@@ -289,6 +291,8 @@ public class SettingsServiceTests : IDisposable
         Assert.Empty(s.LayoutColumnWeights);
         Assert.NotNull(s.LayoutRowWeights);
         Assert.Empty(s.LayoutRowWeights);
+        Assert.NotNull(s.DisabledExtensionKeys);
+        Assert.Empty(s.DisabledExtensionKeys);
     }
 
     [Fact]
@@ -309,6 +313,7 @@ public class SettingsServiceTests : IDisposable
             EdgeProfileDirectory   = "Profile 1",
             LastUsedProfileId      = "abc123",
             SavedSearchQueries     = ["/search?q=%E6%97%A5%E6%9C%AC&f=live", "/search?q=test"],
+            DisabledExtensionKeys  = ["bundled:xtv-translator", "user:example"],
         };
 
         SettingsService.SaveSettings(path, original);
@@ -327,6 +332,8 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal("abc123",    loaded.LastUsedProfileId);
         Assert.Equal(["/search?q=%E6%97%A5%E6%9C%AC&f=live", "/search?q=test"],
                      loaded.SavedSearchQueries);
+        Assert.Equal(["bundled:xtv-translator", "user:example"],
+                     loaded.DisabledExtensionKeys);
     }
 
     // ── LoadProfiles ──────────────────────────────────────────────────────────

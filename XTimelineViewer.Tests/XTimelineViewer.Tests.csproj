@@ -30,6 +30,7 @@
   <ItemGroup>
     <Compile Include="..\Models\*.cs"                  Link="Models\%(Filename)%(Extension)" />
     <Compile Include="..\Services\SettingsService.cs" Link="Services\SettingsService.cs" />
+    <Compile Include="..\Services\ExtensionSettingsService.cs" Link="Services\ExtensionSettingsService.cs" />
     <Compile Include="..\Services\TimelineStore.cs" Link="Services\TimelineStore.cs" />
     <Compile Include="..\Services\AppLog.cs" Link="Services\AppLog.cs" />
     <Compile Include="..\Services\TaskExtensions.cs" Link="Services\TaskExtensions.cs" />

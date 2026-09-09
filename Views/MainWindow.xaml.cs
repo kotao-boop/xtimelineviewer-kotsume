@@ -385,6 +385,7 @@ namespace XTimelineViewer.Views
         private readonly HashSet<string> _extensionsLoadedProfiles = [];
         private readonly Dictionary<string, Task> _extensionLoadTasks = [];
         private readonly List<ExtensionInfo> _loadedExtensions = [];
+        private readonly SemaphoreSlim _extensionReloadGate = new(1, 1);
         // 環境そのものではなく「生成中の Task」をキャッシュする（#339）。
         // TryGetValue と await の間に隙間があると、同一プロファイルのペインを並行復元した
         // ときに同じ user data folder に対して CreateWithOptionsAsync が重複しうるため。

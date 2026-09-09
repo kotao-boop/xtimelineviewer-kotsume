@@ -16,6 +16,11 @@ namespace XTimelineViewer.Models
         public string  EdgeProfileDirectory  { get; set; } = "";        // "Default" | "Profile 1" など
         public string? LastUsedProfileId     { get; set; } = null;      // 投稿画面で最後に使ったプロファイル
         public List<string> SavedSearchQueries { get; set; } = [];        // 検索ボックスのサジェスト用
+        /// <summary>
+        /// 設定画面で無効にした拡張機能の識別キー。新しく見つかった拡張機能は
+        /// 既定で有効にするため、無効なものだけを保存する。
+        /// </summary>
+        public List<string> DisabledExtensionKeys { get; set; } = [];
         public bool    HomeAutoLoadEnabled   { get; set; } = true;       // ホーム自動更新（#207）の ON/OFF
         public int     HomeAutoLoadIntervalSeconds { get; set; } = 8;    // ホーム自動更新の間隔（秒, 最小 5）
         public bool    ComposePreloadEnabled { get; set; } = false;     // 投稿ウィンドウのプリロード（試験機能 #244 案B）
