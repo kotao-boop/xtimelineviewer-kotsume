@@ -116,7 +116,7 @@ SignPathの承認と実際の署名が完了するまでは、GitHub版を署名
 
 ### Microsoft Store版
 
-Microsoft Store版は公開中で、GitHub v2.8.5とは別の提出・更新経路になる。`.github/workflows/store-package.yml`は更新の提出候補を手動で作成する。更新時も次の条件を確認する。
+Microsoft Store版は公開中で、GitHub v2.8.6とは別の提出・更新経路になる。`.github/workflows/store-package.yml`は更新の提出候補を手動で作成する。更新時も次の条件を確認する。
 
 - Partner Centerで予約した正式な製品ID（Identity）を設定する。
 - x64版とARM64版の両方でWindows App Certification Kit（WACK）を実行する。
