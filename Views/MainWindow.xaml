@@ -282,7 +282,8 @@
                                     <FontIcon Glyph="&#xE8FA;" FontFamily="Segoe Fluent Icons"/>
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
-                            <MenuFlyoutSubItem x:Name="AddTimelineSubMenu">
+                            <MenuFlyoutSubItem x:Name="AddTimelineSubMenu"
+                                                AutomationProperties.AutomationId="AddTimelineSubMenu">
                                 <MenuFlyoutSubItem.Icon>
                                     <FontIcon Glyph="&#xE710;" FontFamily="Segoe Fluent Icons"/>
                                 </MenuFlyoutSubItem.Icon>
@@ -335,7 +336,9 @@
                                 <RadioMenuFlyoutItem x:Name="ThemeSakuraItem" GroupName="Theme" Click="ThemeItem_Click" Tag="Sakura"/>
                             </MenuFlyoutSubItem>
                             <MenuFlyoutSeparator/>
-                            <MenuFlyoutItem x:Name="AppSettingsMenuItem" Click="OpenSettingsWindow_Click">
+                            <MenuFlyoutItem x:Name="AppSettingsMenuItem"
+                                            Click="OpenSettingsWindow_Click"
+                                            AutomationProperties.AutomationId="AppSettingsMenuItem">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE713;" FontFamily="Segoe Fluent Icons"/>
                                 </MenuFlyoutItem.Icon>
