@@ -216,7 +216,7 @@
   <data name="ExtSettings_StoreLink" xml:space="preserve"><value>Open in Chrome Web Store</value></data>
   <data name="ExtSettings_OpenSettings" xml:space="preserve"><value>Open Settings</value></data>
   <data name="Extensions_InfoBar_Empty" xml:space="preserve"><value>No extensions are installed. Place an unpacked extension in the extensions folder to load it at startup.</value></data>
-  <data name="Extensions_InfoBar_Installed" xml:space="preserve"><value>Place an unpacked extension in the extensions folder to load it at startup.</value></data>
+  <data name="Extensions_InfoBar_Installed" xml:space="preserve"><value>Use each card's switch to turn an extension on or off. The change is saved and timelines reload automatically to apply it.</value></data>
   <data name="Extensions_InfoBar_Packaged" xml:space="preserve"><value>Microsoft Store and MSIX builds can also load unpacked extensions placed in the extensions folder. User-added extensions are kept separate from bundled files.</value></data>
   <data name="Extensions_OpenFolder" xml:space="preserve"><value>Open extensions folder</value></data>
 
@@ -438,10 +438,16 @@
   <data name="Extensions_ErrorNotice" xml:space="preserve"><value>Open Extensions to review loading results and recovery steps.</value></data>
   <data name="Extensions_Loaded" xml:space="preserve"><value>Loaded</value></data>
   <data name="Extensions_LoadFailed" xml:space="preserve"><value>Loading failed for one or more accounts</value></data>
+  <data name="Extensions_Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Extensions_On" xml:space="preserve"><value>On</value></data>
+  <data name="Extensions_Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Extensions_ToggleName" xml:space="preserve"><value>Enable or disable {0}</value></data>
+  <data name="Extensions_ToggleDescription" xml:space="preserve"><value>Turn this extension on or off. Timelines reload automatically to apply the change.</value></data>
+  <data name="Extensions_ToggleFailed" xml:space="preserve"><value>The extension state could not be changed. Check the current setting.</value></data>
   <data name="Extensions_Details" xml:space="preserve"><value>Diagnostic details</value></data>
   <data name="Extensions_CopyDiagnostics" xml:space="preserve"><value>Copy diagnostics</value></data>
   <data name="Extensions_Copied" xml:space="preserve"><value>Copied</value></data>
-  <data name="Extensions_Recovery" xml:space="preserve"><value>Close and reopen the app. For user-added extensions, also check manifest.json in the extension folder.</value></data>
+  <data name="Extensions_Recovery" xml:space="preserve"><value>To reload the extension, turn the switch off and then on again. For user-added extensions, also check manifest.json in the extension folder.</value></data>
   <data name="Translation_HealthLimited" xml:space="preserve"><value>Translation: paused by service limit</value></data>
   <data name="Translation_HealthError" xml:space="preserve"><value>Translation: request failed; retry from the post</value></data>
   <data name="Translation_HealthUnavailable" xml:space="preserve"><value>Translation: not loaded or unavailable</value></data>

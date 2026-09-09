@@ -797,6 +797,64 @@ namespace XTimelineViewer.Views
             }
         }
 
+        /// <summary>
+        /// 拡張機能の有効・無効を現在のタイムラインへ反映するため、
+        /// WebView2 を安全に作り直す。Cookieやログイン状態は同じプロファイルを使うため保持される。
+        /// </summary>
+        private async Task ReloadExtensionsAsync()
+        {
+            await _extensionReloadGate.WaitAsync();
+            try
+            {
+                // 初期化途中の登録処理があれば、先に終わるのを待つ。
+                // 途中で辞書を消すと、同じプロファイルに二重登録するおそれがある。
+                var pending = _extensionLoadTasks.Values
+                    .Where(task => !task.IsCompleted)
+                    .Distinct()
+                    .ToArray();
+                if (pending.Length > 0)
+                {
+                    try
+                    {
+                        await Task.WhenAll(pending);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // 既に閉じられたペインのキャンセルは、再読み込みの妨げにしない。
+                    }
+                    catch (Exception ex)
+                    {
+                        LogError("Wait for extension loading", ex);
+                    }
+                }
+
+                _extensionsLoadedProfiles.Clear();
+                _extensionLoadTasks.Clear();
+                _loadedExtensions.Clear();
+                ExtensionErrorBar.IsOpen = false;
+
+                var panes = Panes.ToList();
+                var initializeTasks = new List<Task>(panes.Count);
+                foreach (var pane in panes)
+                {
+                    var config = pane.Config;
+                    CleanupWebView(pane.WebView);
+                    pane.ReplaceWebView();
+                    AttachWebViewHandlers(pane, pane.WebView);
+                    ApplyProfileBadge(pane);
+                    pane.ShowLoadingState();
+                    initializeTasks.Add(InitWebViewAsync(pane.WebView, config));
+                }
+
+                if (initializeTasks.Count > 0)
+                    await Task.WhenAll(initializeTasks);
+            }
+            finally
+            {
+                _extensionReloadGate.Release();
+            }
+        }
+
         private async Task LoadExtensionsCoreAsync(
             CoreWebView2 core,
             string profileId,
@@ -811,8 +869,12 @@ namespace XTimelineViewer.Views
             // MSIX パッケージ内の同梱拡張は LocalState の bundled ミラーへコピーしてから
             // 読み込む。利用者追加拡張は bundled とは別の user フォルダーから読み込む。
             // どちらの配布形式でも同じ2つのルートを使う。
+            var bundledRoot = GetBundledExtensionsDir();
             var extensionRoots = GetExtensionRoots()
                 .Where(Directory.Exists)
+                .Select(root => (
+                    Root: root,
+                    IsUserAdded: !string.Equals(root, bundledRoot, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
             if (extensionRoots.Count == 0)
             {
@@ -826,13 +888,54 @@ namespace XTimelineViewer.Views
             // 先に同梱拡張、後に利用者追加拡張を登録する。
             // 同じ拡張 ID が既に入っていれば WebView2 が後の登録で更新するため、
             // 利用者が追加した版を優先できる。
-            for (var rootIndex = 0; rootIndex < extensionRoots.Count; rootIndex++)
+            foreach (var (root, isUserAdded) in extensionRoots)
             {
-                var root = extensionRoots[rootIndex];
-                var isUserAdded = rootIndex > 0;
                 foreach (var extDir in Directory.GetDirectories(root))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+
+                    if (!ExtensionSettingsService.IsEnabled(_appSettings, extDir, isUserAdded))
+                    {
+                        ExtensionInfo disabledInfo;
+                        try
+                        {
+                            disabledInfo = ReadExtensionManifest(extDir, isUserAdded: isUserAdded)
+                                with { IsEnabled = false };
+                        }
+                        catch (Exception ex)
+                        {
+                            disabledInfo = new ExtensionInfo(
+                                Path.GetFileName(extDir), extDir, null, null, null, null,
+                                isUserAdded,
+                                $"{profileId}\n無効化済み拡張機能の manifest.json を読み込めませんでした。\n{ex}",
+                                false);
+                        }
+
+                        try
+                        {
+                            // WebView2 のプロファイルに前回登録された拡張機能が残っている場合も
+                            // Add -> Remove で確実に外す。新しいプロファイルでは一時登録だけになる。
+                            var installedDisabled = await core.Profile.AddBrowserExtensionAsync(extDir);
+                            cancellationToken.ThrowIfCancellationRequested();
+                            await installedDisabled.RemoveAsync();
+                            cancellationToken.ThrowIfCancellationRequested();
+                        }
+                        catch (Exception ex)
+                        {
+                            disabledInfo = disabledInfo with
+                            {
+                                LoadError = disabledInfo.LoadError is null
+                                    ? $"{profileId}\n無効化した拡張機能をWebView2から外せませんでした。\n{ex}"
+                                    : $"{disabledInfo.LoadError}\n\n無効化した拡張機能をWebView2から外せませんでした。\n{ex}"
+                            };
+                            errors.AppendLine($"・無効化した拡張機能 {Path.GetFileName(extDir)} の確認");
+                            errors.AppendLine($"  {ex}");
+                        }
+
+                        AddOrReplaceLoadedExtension(disabledInfo);
+                        continue;
+                    }
+
                     try
                     {
                         if ((File.GetAttributes(extDir) & System.IO.FileAttributes.ReparsePoint) != 0)
@@ -846,9 +949,8 @@ namespace XTimelineViewer.Views
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         var failure = new ExtensionInfo(Path.GetFileName(extDir), extDir, null, null, null, null,
-                            isUserAdded, $"{profileId}\n{ex}\nWebView2: {core.Environment.BrowserVersionString}");
-                        _loadedExtensions.RemoveAll(item => string.Equals(item.DirectoryPath, extDir, StringComparison.OrdinalIgnoreCase));
-                        _loadedExtensions.Add(failure);
+                            isUserAdded, $"{profileId}\n{ex}\nWebView2: {core.Environment.BrowserVersionString}", true);
+                        AddOrReplaceLoadedExtension(failure);
                         errors.AppendLine($"・{Path.GetFileName(extDir)}");
                         errors.AppendLine($"  {ex}");
                     }
@@ -906,6 +1008,13 @@ namespace XTimelineViewer.Views
         private static bool IsXTimelineTranslator(CoreWebView2BrowserExtension extension) =>
             string.Equals(extension.Name, "X Timeline Translator", StringComparison.OrdinalIgnoreCase);
 
+        private void AddOrReplaceLoadedExtension(ExtensionInfo info)
+        {
+            _loadedExtensions.RemoveAll(item =>
+                string.Equals(item.DirectoryPath, info.DirectoryPath, StringComparison.OrdinalIgnoreCase));
+            _loadedExtensions.Add(info);
+        }
+
         internal static ExtensionInfo ReadExtensionManifest(
             string extDir,
             string? extensionId = null,
@@ -956,10 +1065,10 @@ namespace XTimelineViewer.Views
         private void AddExtensionButton(CoreWebView2BrowserExtension ext, string extDir, bool isUserAdded)
         {
             var info = ReadExtensionManifest(extDir, ext.Id, ext.Name, isUserAdded);
-            if (_loadedExtensions.Any(existing =>
-                    string.Equals(existing.DirectoryPath, info.DirectoryPath, StringComparison.OrdinalIgnoreCase)))
-                return;
-            _loadedExtensions.Add(info);
+            var alreadyKnown = _loadedExtensions.Any(existing =>
+                string.Equals(existing.DirectoryPath, info.DirectoryPath, StringComparison.OrdinalIgnoreCase));
+            AddOrReplaceLoadedExtension(info);
+            if (alreadyKnown) return;
 
             if (info.OptionsPage is null) return;
 

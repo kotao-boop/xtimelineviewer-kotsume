@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using XTimelineViewer.Models;
 using XTimelineViewer.Services;
 
@@ -76,6 +77,9 @@ namespace XTimelineViewer.Views
             settingsWin.Extensions = _loadedExtensions;
             settingsWin.OpenExtensionSettingsAsync = (info, xamlRoot) =>
                 ShowExtensionSettingsDialogAsync(info, xamlRoot, LaunchUriByEdgeProfileAsync);
+            settingsWin.IsExtensionEnabled = info =>
+                ExtensionSettingsService.IsEnabled(_appSettings, info.DirectoryPath, info.IsUserAdded);
+            settingsWin.SetExtensionEnabledAsync = SetExtensionEnabledAsync;
             settingsWin.LaunchUriAsync = LaunchUriByEdgeProfileAsync;
 
             // プロファイル情報とコールバックを設定
@@ -198,6 +202,18 @@ namespace XTimelineViewer.Views
                 settingsWin.SelectPage(initialPage);
 
             settingsWin.Activate();
+        }
+
+        private async Task SetExtensionEnabledAsync(ExtensionInfo info, bool enabled)
+        {
+            var current = ExtensionSettingsService.IsEnabled(
+                _appSettings, info.DirectoryPath, info.IsUserAdded);
+            if (current == enabled) return;
+
+            ExtensionSettingsService.SetEnabled(
+                _appSettings, info.DirectoryPath, info.IsUserAdded, enabled);
+            SaveSettings();
+            await ReloadExtensionsAsync();
         }
 
         /// <summary>復元された設定を、アプリを再起動せず現在の画面へ反映する。</summary>

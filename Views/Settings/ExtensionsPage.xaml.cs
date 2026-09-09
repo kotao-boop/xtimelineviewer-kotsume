@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
@@ -25,6 +26,8 @@ namespace XTimelineViewer.Views.Settings
             PopulateUI();
         }
 
+        internal void Refresh() => PopulateUI();
+
         private void PopulateUI()
         {
             PageTitle.Text = R.Get("Nav_Extensions");
@@ -39,6 +42,7 @@ namespace XTimelineViewer.Views.Settings
             ExtensionsInfoBar.Message = extensions.Count == 0
                 ? R.Get("Extensions_InfoBar_Empty")
                 : R.Get("Extensions_InfoBar_Installed");
+            ExtensionsInfoBar.Severity = InfoBarSeverity.Informational;
             OpenExtensionsFolderBtn.Content = R.Get("Extensions_OpenFolder");
             OpenExtensionsFolderBtn.Visibility = Visibility.Visible;
 
@@ -58,10 +62,14 @@ namespace XTimelineViewer.Views.Settings
 
         private void AddExtensionCard(ExtensionInfo ext)
         {
+            var enabled = _parent?.IsExtensionEnabled?.Invoke(ext) ?? ext.IsEnabled;
+            var stateKey = !enabled
+                ? "Extensions_Disabled"
+                : ext.LoadError is null ? "Extensions_Loaded" : "Extensions_LoadFailed";
             var card = new CommunityToolkit.WinUI.Controls.SettingsCard
             {
                 Header      = ext.Name,
-                Description = $"{(ext.IsUserAdded ? R.Get("Extensions_UserAdded") : R.Get("Extensions_Bundled"))}\n{R.Get(ext.LoadError is null ? "Extensions_Loaded" : "Extensions_LoadFailed")}",
+                Description = $"{(ext.IsUserAdded ? R.Get("Extensions_UserAdded") : R.Get("Extensions_Bundled"))}\n{R.Get(stateKey)}",
                 // 右端のリンクアイコンと「設定を開く」ボタンの機能が重複していたため、
                 // 明示的なボタンを残してカード自体のクリック化は廃止
             };
@@ -90,6 +98,42 @@ namespace XTimelineViewer.Views.Settings
                 Spacing     = 8,
             };
 
+            var enabledToggle = new ToggleSwitch
+            {
+                IsOn = enabled,
+                OnContent = R.Get("Extensions_On"),
+                OffContent = R.Get("Extensions_Off"),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            AutomationProperties.SetName(
+                enabledToggle,
+                string.Format(R.Get("Extensions_ToggleName"), ext.Name));
+            ToolTipService.SetToolTip(enabledToggle, R.Get("Extensions_ToggleDescription"));
+            enabledToggle.Toggled += async (_, _) =>
+            {
+                var setter = _parent?.SetExtensionEnabledAsync;
+                if (setter is null) return;
+
+                enabledToggle.IsEnabled = false;
+                try
+                {
+                    await setter(ext, enabledToggle.IsOn);
+                    _parent?.RefreshExtensionsPage();
+                }
+                catch
+                {
+                    // 保存済みの値を読み直して、画面と実際の状態を一致させる。
+                    _parent?.RefreshExtensionsPage();
+                    ExtensionsInfoBar.Severity = InfoBarSeverity.Warning;
+                    ExtensionsInfoBar.Message = R.Get("Extensions_ToggleFailed");
+                }
+                finally
+                {
+                    enabledToggle.IsEnabled = true;
+                }
+            };
+            buttonsPanel.Children.Add(enabledToggle);
+
             if (ext.LoadError is not null)
             {
                 var details = new Expander
@@ -108,13 +152,14 @@ namespace XTimelineViewer.Views.Settings
                     copy.Content = R.Get("Extensions_Copied");
                 };
                 card.Description += "\n" + R.Get("Extensions_Recovery");
-                card.Content = copy;
+                buttonsPanel.Children.Add(copy);
+                card.Content = buttonsPanel;
                 RootPanel.Children.Add(card);
                 RootPanel.Children.Add(details);
                 return;
             }
 
-            if (ext.OptionsPage is not null && ext.ExtensionId is not null)
+            if (enabled && ext.OptionsPage is not null && ext.ExtensionId is not null)
             {
                 var settingsBtn = new Button
                 {

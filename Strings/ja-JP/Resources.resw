@@ -216,7 +216,7 @@
   <data name="ExtSettings_StoreLink" xml:space="preserve"><value>Chrome Web Store で開く</value></data>
   <data name="ExtSettings_OpenSettings" xml:space="preserve"><value>設定を開く</value></data>
   <data name="Extensions_InfoBar_Empty" xml:space="preserve"><value>拡張機能はインストールされていません。extensions フォルダーに展開済みの拡張機能を置くと、起動時に読み込まれます。</value></data>
-  <data name="Extensions_InfoBar_Installed" xml:space="preserve"><value>extensions フォルダーに展開済みの拡張機能を置くと、起動時に読み込まれます。</value></data>
+  <data name="Extensions_InfoBar_Installed" xml:space="preserve"><value>各カードのスイッチで拡張機能をオン／オフできます。変更を保存し、反映のためタイムラインを自動で読み直します。</value></data>
   <data name="Extensions_InfoBar_Packaged" xml:space="preserve"><value>Microsoft Store / MSIX版でも、extensions フォルダーに置いた展開済み拡張機能を読み込めます。同梱拡張とは別に管理されます。</value></data>
   <data name="Extensions_OpenFolder" xml:space="preserve"><value>extensions フォルダーを開く</value></data>
 
@@ -438,10 +438,16 @@
   <data name="Extensions_ErrorNotice" xml:space="preserve"><value>拡張機能の設定で、読み込み結果と復旧方法を確認できます。</value></data>
   <data name="Extensions_Loaded" xml:space="preserve"><value>読み込み済み</value></data>
   <data name="Extensions_LoadFailed" xml:space="preserve"><value>読み込めませんでした（一部のアカウントを含む）</value></data>
+  <data name="Extensions_Disabled" xml:space="preserve"><value>無効</value></data>
+  <data name="Extensions_On" xml:space="preserve"><value>オン</value></data>
+  <data name="Extensions_Off" xml:space="preserve"><value>オフ</value></data>
+  <data name="Extensions_ToggleName" xml:space="preserve"><value>「{0}」の有効状態</value></data>
+  <data name="Extensions_ToggleDescription" xml:space="preserve"><value>拡張機能をオンまたはオフにします。変更を反映するため、タイムラインを自動で読み直します。</value></data>
+  <data name="Extensions_ToggleFailed" xml:space="preserve"><value>拡張機能の状態を変更できませんでした。現在の設定を確認してください。</value></data>
   <data name="Extensions_Details" xml:space="preserve"><value>診断情報の詳細</value></data>
   <data name="Extensions_CopyDiagnostics" xml:space="preserve"><value>診断情報をコピー</value></data>
   <data name="Extensions_Copied" xml:space="preserve"><value>コピーしました</value></data>
-  <data name="Extensions_Recovery" xml:space="preserve"><value>アプリを終了して起動し直してください。追加した拡張機能の場合は、フォルダー内の manifest.json も確認してください。</value></data>
+  <data name="Extensions_Recovery" xml:space="preserve"><value>再読み込みするにはスイッチをいったんオフにしてからオンにしてください。追加した拡張機能の場合は、フォルダー内の manifest.json も確認してください。</value></data>
   <data name="Translation_HealthLimited" xml:space="preserve"><value>翻訳：通信制限で休止中</value></data>
   <data name="Translation_HealthError" xml:space="preserve"><value>翻訳：通信に失敗（投稿から再試行）</value></data>
   <data name="Translation_HealthUnavailable" xml:space="preserve"><value>翻訳：未読込・利用できません</value></data>

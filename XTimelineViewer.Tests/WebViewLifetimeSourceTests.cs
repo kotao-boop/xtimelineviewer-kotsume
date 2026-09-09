@@ -90,5 +90,20 @@ namespace XTimelineViewer.Tests
             Assert.Contains("LoadExtensionsCoreAsync", webView);
             Assert.Contains("await existingTask", webView);
         }
+
+        [Fact]
+        public void ExtensionLoading_HonorsDisabledStateAndCanReload()
+        {
+            var webView = Read("Views/MainWindow.WebView2.cs");
+            var settings = Read("Views/MainWindow.Settings.cs");
+            var page = Read("Views/Settings/ExtensionsPage.xaml.cs");
+
+            Assert.Contains("ExtensionSettingsService.IsEnabled", webView);
+            Assert.Contains("installedDisabled.RemoveAsync()", webView);
+            Assert.Contains("_extensionReloadGate", webView);
+            Assert.Contains("ReloadExtensionsAsync", settings);
+            Assert.Contains("ToggleSwitch", page);
+            Assert.Contains("SetExtensionEnabledAsync", page);
+        }
     }
 }

@@ -421,6 +421,7 @@ namespace XTimelineViewer.Services
                 {
                     settings.LayoutColumnWeights ??= [];
                     settings.LayoutRowWeights ??= [];
+                    settings.DisabledExtensionKeys ??= [];
                 });
         }
 

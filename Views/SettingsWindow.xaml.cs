@@ -45,6 +45,12 @@ namespace XTimelineViewer.Views
         /// <summary>拡張機能の設定ダイアログを開くコールバック。MainWindow が提供する。</summary>
         internal Func<ExtensionInfo, Microsoft.UI.Xaml.XamlRoot, Task>? OpenExtensionSettingsAsync { get; set; }
 
+        /// <summary>拡張機能が現在有効かどうかを確認するコールバック。</summary>
+        internal Func<ExtensionInfo, bool>? IsExtensionEnabled { get; set; }
+
+        /// <summary>拡張機能の有効・無効を保存し、現在のタイムラインへ反映するコールバック。</summary>
+        internal Func<ExtensionInfo, bool, Task>? SetExtensionEnabledAsync { get; set; }
+
         /// <summary>外部ブラウザー設定に従って URI を開くコールバック。MainWindow が提供する。</summary>
         internal Func<Uri, Task>? LaunchUriAsync { get; set; }
 
@@ -212,6 +218,13 @@ namespace XTimelineViewer.Views
                     break;
                 }
             }
+        }
+
+        /// <summary>拡張機能の読み込み結果が変わったとき、表示を作り直す。</summary>
+        internal void RefreshExtensionsPage()
+        {
+            if (ContentFrame.Content is Settings.ExtensionsPage page)
+                page.Refresh();
         }
 
         private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
