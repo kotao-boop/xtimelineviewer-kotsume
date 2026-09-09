@@ -9,6 +9,7 @@ namespace XTimelineViewer.Models
         string? ExtensionId,
         bool IsUserAdded = false,
         string? LoadError = null,
-        bool IsEnabled = true
+        bool IsEnabled = true,
+        bool IsSuppressed = false
     );
 }

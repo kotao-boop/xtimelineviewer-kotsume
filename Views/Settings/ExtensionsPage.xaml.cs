@@ -63,7 +63,9 @@ namespace XTimelineViewer.Views.Settings
         private void AddExtensionCard(ExtensionInfo ext)
         {
             var enabled = _parent?.IsExtensionEnabled?.Invoke(ext) ?? ext.IsEnabled;
-            var stateKey = !enabled
+            var stateKey = ext.IsSuppressed
+                ? "Extensions_Duplicate"
+                : !enabled
                 ? "Extensions_Disabled"
                 : ext.LoadError is null ? "Extensions_Loaded" : "Extensions_LoadFailed";
             var card = new CommunityToolkit.WinUI.Controls.SettingsCard
@@ -108,7 +110,11 @@ namespace XTimelineViewer.Views.Settings
             AutomationProperties.SetName(
                 enabledToggle,
                 string.Format(R.Get("Extensions_ToggleName"), ext.Name));
-            ToolTipService.SetToolTip(enabledToggle, R.Get("Extensions_ToggleDescription"));
+            ToolTipService.SetToolTip(
+                enabledToggle,
+                R.Get(ext.IsSuppressed
+                    ? "Extensions_DuplicateDescription"
+                    : "Extensions_ToggleDescription"));
             enabledToggle.Toggled += async (_, _) =>
             {
                 var setter = _parent?.SetExtensionEnabledAsync;
@@ -159,7 +165,7 @@ namespace XTimelineViewer.Views.Settings
                 return;
             }
 
-            if (enabled && ext.OptionsPage is not null && ext.ExtensionId is not null)
+            if (enabled && !ext.IsSuppressed && ext.OptionsPage is not null && ext.ExtensionId is not null)
             {
                 var settingsBtn = new Button
                 {

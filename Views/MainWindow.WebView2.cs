@@ -830,6 +830,7 @@ namespace XTimelineViewer.Views
 
                 _extensionsLoadedProfiles.Clear();
                 _extensionLoadTasks.Clear();
+                RemoveExtensionToolbarButtons();
                 _loadedExtensions.Clear();
                 ExtensionErrorBar.IsOpen = false;
 
@@ -884,13 +885,17 @@ namespace XTimelineViewer.Views
 
             var errors = new System.Text.StringBuilder();
             var currentExtensionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var knownExtensionNames = new HashSet<string>(StringComparer.Ordinal);
+            var claimedExtensionNames = new HashSet<string>(StringComparer.Ordinal);
 
-            // 先に同梱拡張、後に利用者追加拡張を登録する。
-            // 同じ拡張 ID が既に入っていれば WebView2 が後の登録で更新するため、
-            // 利用者が追加した版を優先できる。
+            // 同梱拡張を先に登録し、利用者追加拡張を後に確認する。
+            // 同じ表示名の拡張機能は、先に読み込めた1つだけを使う。
+            // 同梱版を先にすることで、古い利用者追加版が同じページへ
+            // 翻訳スクリプトを重ねて実行することを防ぐ。
             foreach (var (root, isUserAdded) in extensionRoots)
             {
-                foreach (var extDir in Directory.GetDirectories(root))
+                foreach (var extDir in Directory.GetDirectories(root)
+                    .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -910,6 +915,7 @@ namespace XTimelineViewer.Views
                                 $"{profileId}\n無効化済み拡張機能の manifest.json を読み込めませんでした。\n{ex}",
                                 false);
                         }
+                        ExtensionConflictService.ClaimName(knownExtensionNames, disabledInfo.Name);
 
                         try
                         {
@@ -936,12 +942,39 @@ namespace XTimelineViewer.Views
                         continue;
                     }
 
+                    ExtensionInfo? manifestInfo = null;
+                    try
+                    {
+                        manifestInfo = ReadExtensionManifest(extDir, isUserAdded: isUserAdded);
+                        ExtensionConflictService.ClaimName(knownExtensionNames, manifestInfo.Name);
+                    }
+                    catch
+                    {
+                        // manifest.json の不正は AddBrowserExtensionAsync の失敗情報へ
+                        // まとめる。ここで二重判定を止めず、正常な拡張機能の読み込みを続ける。
+                    }
+
+                    if (manifestInfo is not null &&
+                        ExtensionConflictService.IsNameClaimed(
+                            claimedExtensionNames, manifestInfo.Name))
+                    {
+                        // ファイルは利用者の管理下に残す。現在の WebView2 へは登録せず、
+                        // 設定画面には「同名の先行版を使用中」と表示する。
+                        AddOrReplaceLoadedExtension(manifestInfo with { IsSuppressed = true });
+                        continue;
+                    }
+
                     try
                     {
                         if ((File.GetAttributes(extDir) & System.IO.FileAttributes.ReparsePoint) != 0)
                             throw new InvalidDataException("Reparse-point extension directories are not allowed.");
                         var ext = await core.Profile.AddBrowserExtensionAsync(extDir);
                         cancellationToken.ThrowIfCancellationRequested();
+                        // manifest の読み込みに失敗していても、WebView2 が返した名前で
+                        // 予約する。次の同名拡張機能が重なって読み込まれないようにする。
+                        var loadedName = manifestInfo?.Name ?? ext.Name;
+                        ExtensionConflictService.ClaimName(knownExtensionNames, loadedName);
+                        ExtensionConflictService.ClaimName(claimedExtensionNames, loadedName);
                         currentExtensionIds.Add(ext.Id);
                         AddExtensionButton(ext, extDir, isUserAdded);
                     }
@@ -967,14 +1000,20 @@ namespace XTimelineViewer.Views
                 foreach (var existing in installed)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    if (!IsXTimelineTranslator(existing) || currentExtensionIds.Contains(existing.Id))
+                    if (currentExtensionIds.Contains(existing.Id))
+                        continue;
+
+                    var existingName = ExtensionConflictService.NormalizeName(existing.Name);
+                    var isStaleDuplicate = existingName.Length > 0 &&
+                        knownExtensionNames.Contains(existingName);
+                    if (!isStaleDuplicate && !IsXTimelineTranslator(existing))
                         continue;
 
                     try
                     {
                         await existing.RemoveAsync();
                         cancellationToken.ThrowIfCancellationRequested();
-                        Debug.WriteLine($"[Extensions] Removed stale X Timeline Translator: {existing.Id}");
+                        Debug.WriteLine($"[Extensions] Removed stale duplicate extension: {existing.Name} ({existing.Id})");
                     }
                     catch (Exception ex)
                     {
@@ -1013,6 +1052,13 @@ namespace XTimelineViewer.Views
             _loadedExtensions.RemoveAll(item =>
                 string.Equals(item.DirectoryPath, info.DirectoryPath, StringComparison.OrdinalIgnoreCase));
             _loadedExtensions.Add(info);
+        }
+
+        private void RemoveExtensionToolbarButtons()
+        {
+            foreach (var button in _extensionToolbarButtons.ToArray())
+                RightToolbar.Children.Remove(button);
+            _extensionToolbarButtons.Clear();
         }
 
         internal static ExtensionInfo ReadExtensionManifest(
@@ -1086,8 +1132,11 @@ namespace XTimelineViewer.Views
                 Width   = 32,
                 Height  = 32,
                 Padding = new Thickness(0),
+                Tag     = info,
             };
-            ToolTipService.SetToolTip(btn, string.Format(R.Get("ExtSettings_Format"), info.Name));
+            var tooltip = string.Format(R.Get("ExtSettings_Format"), info.Name);
+            ToolTipService.SetToolTip(btn, tooltip);
+            AutomationProperties.SetName(btn, tooltip);
 
             btn.Click += async (_, _) =>
             {
@@ -1097,6 +1146,7 @@ namespace XTimelineViewer.Views
             // 設定ボタン（末尾）の左隣に挿入
             int insertIdx = Math.Max(0, RightToolbar.Children.Count - 1);
             RightToolbar.Children.Insert(insertIdx, btn);
+            _extensionToolbarButtons.Add(btn);
         }
 
         internal async Task ShowExtensionSettingsDialogAsync(

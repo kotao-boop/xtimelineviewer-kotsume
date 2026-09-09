@@ -439,6 +439,8 @@
   <data name="Extensions_Loaded" xml:space="preserve"><value>Loaded</value></data>
   <data name="Extensions_LoadFailed" xml:space="preserve"><value>Loading failed for one or more accounts</value></data>
   <data name="Extensions_Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Extensions_Duplicate" xml:space="preserve"><value>Not loaded to prevent a duplicate (bundled version has priority)</value></data>
+  <data name="Extensions_DuplicateDescription" xml:space="preserve"><value>An extension with the same name is already enabled, so this one is suppressed. Turn off the bundled version to load this extension.</value></data>
   <data name="Extensions_On" xml:space="preserve"><value>On</value></data>
   <data name="Extensions_Off" xml:space="preserve"><value>Off</value></data>
   <data name="Extensions_ToggleName" xml:space="preserve"><value>Enable or disable {0}</value></data>

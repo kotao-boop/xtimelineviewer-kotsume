@@ -439,6 +439,8 @@
   <data name="Extensions_Loaded" xml:space="preserve"><value>読み込み済み</value></data>
   <data name="Extensions_LoadFailed" xml:space="preserve"><value>読み込めませんでした（一部のアカウントを含む）</value></data>
   <data name="Extensions_Disabled" xml:space="preserve"><value>無効</value></data>
+  <data name="Extensions_Duplicate" xml:space="preserve"><value>重複を防ぐため未読み込み（同梱版を優先）</value></data>
+  <data name="Extensions_DuplicateDescription" xml:space="preserve"><value>同じ名前の拡張機能が既に有効なため、重複を防いでいます。同梱版をオフにすると、この拡張機能を読み込めます。</value></data>
   <data name="Extensions_On" xml:space="preserve"><value>オン</value></data>
   <data name="Extensions_Off" xml:space="preserve"><value>オフ</value></data>
   <data name="Extensions_ToggleName" xml:space="preserve"><value>「{0}」の有効状態</value></data>

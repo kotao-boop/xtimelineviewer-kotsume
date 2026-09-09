@@ -385,6 +385,7 @@ namespace XTimelineViewer.Views
         private readonly HashSet<string> _extensionsLoadedProfiles = [];
         private readonly Dictionary<string, Task> _extensionLoadTasks = [];
         private readonly List<ExtensionInfo> _loadedExtensions = [];
+        private readonly List<Button> _extensionToolbarButtons = [];
         private readonly SemaphoreSlim _extensionReloadGate = new(1, 1);
         // 環境そのものではなく「生成中の Task」をキャッシュする（#339）。
         // TryGetValue と await の間に隙間があると、同一プロファイルのペインを並行復元した
@@ -675,6 +676,13 @@ namespace XTimelineViewer.Views
             ToolTipService.SetToolTip(AppMenuBtn, R.Get("AppMenu_Tooltip"));
             AutomationProperties.SetName(PostBtn,    R.Get("PostBtn_Tooltip"));
             AutomationProperties.SetName(AppMenuBtn, R.Get("AppMenu_Tooltip"));
+            foreach (var button in _extensionToolbarButtons)
+            {
+                if (button.Tag is not ExtensionInfo info) continue;
+                var extensionTip = string.Format(R.Get("ExtSettings_Format"), info.Name);
+                ToolTipService.SetToolTip(button, extensionTip);
+                AutomationProperties.SetName(button, extensionTip);
+            }
             LayoutClassicItem.Text = R.Get("Layout_Classic");
             LayoutAutoItem.Text = R.Get("Layout_Auto");
             LayoutGrid2x2Item.Text = R.Get("Layout_Grid2x2");
