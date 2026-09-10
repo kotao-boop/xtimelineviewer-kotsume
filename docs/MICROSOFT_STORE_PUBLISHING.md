@@ -1,6 +1,6 @@
 # Microsoft Store無料MSIX配布の運用・提出状況
 
-最終更新日: 2026年8月31日
+最終更新日: 2026年9月10日
 
 ## 目的と範囲
 
@@ -26,21 +26,38 @@ Partner Centerで `XTimelineViewer Kotsume Edition` を予約し、発行され�
 
 ## 現在の提出状況
 
-2026年8月26日、正式なPartner Center Identityで作成したx64版・ARM64版のv2.3.0
-MSIXUploadパッケージをMicrosoft Storeへ提出した。認定に合格し、2026年8月27日に一般公開された。
+### 現在Storeで公開されている内容
 
-- Store掲載: 公開済み
+2026年9月10日時点で、StoreではSubmission 12が公開されている。Partner Centerで確認した
+公開パッケージはv2.8.5.0のx64版・ARM64版である。
+
+- Store掲載: 公開済み（Submission 12）
 - 公開名: `XTimelineViewer Kotsume Edition`
 - 公開発行者: `Kotsume Project`
 - 対応アーキテクチャ: x64 / ARM64
-- `runFullTrust`: 初回提出の認定に合格
-- 年齢区分: X上で利用者投稿が表示される可能性を含めたIARC区分を使用
 - 更新経路: Microsoft Store
 
-2026年8月31日現在、v2.5.0の機能・掲載更新を準備している。ワークスペースタブ、列追加画面、
-検索条件ビルダー、新着件数と列操作、自動翻訳ボタンの配置改善、設定画面の拡大を含む。公開ページは
-日本語・英語の説明、機能一覧、検索語、副カテゴリ、4枚以上のスクリーンショットへ改善する。
-提出前と提出後の最新状態はPartner Centerの表示を優先する。
+### v2.8.6の提出
+
+2026年9月10日、v2.8.6.0のx64版・ARM64版を含むSubmission 13を作成し、Partner Centerへ
+認定提出した。
+
+- Submission: `13`
+- Gitコミット: `5a06e2f5a27171b7911719f0cdb44eb90ba3a848`
+- パッケージ: `XTimelineViewer_2.8.6.0_x64.msixupload`
+- パッケージ: `XTimelineViewer_2.8.6.0_arm64.msixupload`
+- パッケージ状態: x64 / ARM64とも `Validated`
+- 日本語Store掲載情報: v2.8.6用へ更新済み
+- 英語Store掲載情報: v2.8.6用へ更新済み
+- 旧版のリリースノート: v2.8.6の内容へ置き換え済み
+- Partner Center状態: `In certification`
+- 現在の進行: Submission完了、Pre-processing進行中、Certification／Publishing待ち
+
+認定提出用パッケージは、GitHub Actionsの
+[`Microsoft Store Package Candidate`](../.github/workflows/store-package.yml)で生成した。
+ワークフロー実行は[GitHub Actionsの実行履歴](https://github.com/kotao-boop/xtimelineviewer-kotsume/actions/runs/34435371931)
+で成功している。認定が完了して公開されるまでは、Store利用者へ配布される版はv2.8.5.0のままである。
+提出後と公開後の最新状態は、引き続きPartner Centerの表示を優先する。
 
 ## 提出前に確認する手順
 
@@ -50,7 +67,8 @@ MSIXUploadパッケージをMicrosoft Storeへ提出した。認定に合格し�
 4. 公開プレビューに本名、住所、電話番号などが表示されていないことを確認する。
 5. 内容に問題がないことを確認してから、審査へ提出する。
 
-初回提出では、上記を確認したうえで2026年8月26日に送信し、認定に合格した。次回の更新でも、この手順を使う。
+初回提出では、上記を確認したうえで2026年8月26日に送信し、認定に合格した。v2.8.6更新でも同じ手順で
+確認し、2026年9月10日に認定へ提出した。
 
 本人確認資料、Microsoftアカウントの認証情報、回復コードはリポジトリやチャットへ貼り付けない。
 
@@ -58,10 +76,10 @@ MSIXUploadパッケージをMicrosoft Storeへ提出した。認定に合格し�
 
 1. [x] `Package.appxmanifest`のIdentityをPartner Centerの値へ更新する。
 2. [x] DisplayName、Description、PublisherDisplayNameをKotsume Editionへ更新する。
-3. [x] x64/arm64のStore upload packageをローカルで生成する。
+3. [x] v2.8.6.0のx64/ARM64 Store upload packageを生成し、内部Identityとハッシュを確認する。
 4. [ ] Windows App Certification Kitで確認する。
-5. [x] Partner Centerへ提出する（2026年8月26日）。
-6. [x] 認定結果とStore公開状況を確認する（2026年8月27日公開）。
+5. [x] Partner Centerへv2.8.6を提出する（2026年9月10日、Submission 13）。
+6. [ ] v2.8.6の認定結果とStore公開状況を確認する（Microsoft審査待ち）。
 7. [x] Store版とGitHub版の更新経路・署名状態をREADMEで区別する。
 
 提出前の全確認は `docs/store/SUBMISSION_CHECKLIST.md`、認証担当者向け説明は
@@ -88,6 +106,6 @@ Partner Centerの正確なIdentityへ置き換えた後は、GitHub Actionsの
 - Windows App Certification Kit（WACK）のx64/ARM64結果
 - XおよびGoogle側の規約と、Storeの最新ポリシーに照らした最終的な許容範囲
 - 他の利用者が書いた投稿をGoogleへ送る翻訳について、Storeポリシー10.5.3がどのように適用されるか
-- v2.5.0更新パッケージの認定結果と、既存利用者への更新配信
+- v2.8.6更新パッケージの認定結果と、既存利用者への更新配信
 
 初回提出の認定合格は、今後の更新が自動的に合格する保証ではない。実際のPartner Centerと認定結果を優先する。
