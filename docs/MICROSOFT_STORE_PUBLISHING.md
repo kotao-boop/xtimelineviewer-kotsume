@@ -109,3 +109,21 @@ Partner Centerの正確なIdentityへ置き換えた後は、GitHub Actionsの
 - v2.8.6更新パッケージの認定結果と、既存利用者への更新配信
 
 初回提出の認定合格は、今後の更新が自動的に合格する保証ではない。実際のPartner Centerと認定結果を優先する。
+
+## v2.8.7セキュリティ更新候補
+
+v2.8.7では、.NET 8.0.32、Windows App SDK 2.5.1、WebView2 SDK 1.0.4314.35、
+Windows SDK BuildTools 10.0.26100.9169へ更新した。v2.8.6の提出・認定履歴は変更せず、
+次回提出用の候補として別管理する。
+
+- [x] `Package.appxmanifest`のIdentityとVersion `2.8.7.0`を確認した。
+- [x] x64の`XTimelineViewer_2.8.7.0_x64.msixupload`を生成した。
+- [x] ARM64の`XTimelineViewer_2.8.7.0_arm64.msixupload`を生成した。
+- [x] v2.8.7用の日本語・英語掲載情報を`docs/store/LISTING_UPDATE_v2.8.7.md`へ保存した。
+- [x] NuGetの脆弱性監査で既知の脆弱なパッケージがないことを確認した。
+- [ ] x64/ARM64でWindows App Certification Kitを実行する。
+- [ ] Partner Centerの掲載文を`docs/store/LISTING_UPDATE_v2.8.7.md`と照合する。
+- [ ] Partner Centerへv2.8.7を提出する。
+- [ ] 認定結果と公開後のStore表示を確認する。
+
+提出候補の生成と検証が完了するまでは、v2.8.7を公開済みとして説明しない。
