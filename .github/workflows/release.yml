@@ -9,7 +9,7 @@ on:
       version:
         description: 'Version to test without publishing (MAJOR.MINOR.PATCH)'
         required: true
-        default: '2.8.6'
+        default: '2.8.7'
 
 permissions:
   contents: read
@@ -75,7 +75,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
-          dotnet-version: '8.0.424'
+          dotnet-version: '8.0.426'
 
       - name: Restore locked dependencies
         shell: pwsh
