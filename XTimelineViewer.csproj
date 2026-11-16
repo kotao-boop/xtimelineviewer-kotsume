@@ -46,7 +46,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.9169" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2957" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
     <!-- Microsoft.Windows.SDK.BuildTools.MSIX のStore containerタスクが実行時に読み込む互換依存。 -->
     <PackageReference Include="System.Security.Permissions" Version="8.0.0" PrivateAssets="all" />
